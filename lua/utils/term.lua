@@ -12,7 +12,7 @@ local function config()
 end
 
 local function shell_name()
-  return vim.fn.fnamemodify(vim.o.shell, ":t"):lower():gsub("%.exe$", "")
+  return (vim.fn.fnamemodify(vim.o.shell, ":t"):lower():gsub("%.exe$", ""))
 end
 
 local function terminal_cmd(opts)
