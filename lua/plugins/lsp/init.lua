@@ -1,10 +1,11 @@
-dofile(vim.g.base46_cache .. "mason")
-
 local utils_lsp = require("utils.lsp")
 local ft = require("utils.ft")
 local utils_table = require("utils.table")
 local fs = require("utils.fs")
+local ui = require("utils.ui")
 local icons = require("config").icons
+
+ui.load_base46_cache("mason")
 
 ---@type LazySpec[]
 return {

@@ -8,7 +8,8 @@ return {
     keys = { "<leader>", "<c-r>", "<c-w>", '"', "'", "`", "c", "v", "g" },
     cmd = "WhichKey",
     opts = function()
-      dofile(vim.g.base46_cache .. "whichkey")
+      local ui = require("utils.ui")
+      ui.load_base46_cache("whichkey")
 
       ---@module "which-key"
       ---@type wk.Opts

@@ -16,14 +16,8 @@ function M.setup()
     require("cmds." .. vim.fn.fnamemodify(cmd_file, ":r"))
   end
 
-  local ok, err = pcall(function()
-    dofile(vim.g.base46_cache .. "defaults")
-    dofile(vim.g.base46_cache .. "statusline")
-  end)
-  if not ok then
-    vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
-  end
-
+  utils.ui.load_base46_cache("defaults")
+  utils.ui.load_base46_cache("statusline")
   utils.shell.setup()
   utils.hl.setup()
 

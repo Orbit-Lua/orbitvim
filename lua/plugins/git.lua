@@ -1,11 +1,7 @@
-local ok, err = pcall(function()
-  dofile(vim.g.base46_cache .. "git")
-end)
-if not ok then
-  vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
-end
-
 local configs = require("config")
+local ui = require("utils.ui")
+
+ui.load_base46_cache("git")
 
 ---@type LazySpec[]
 return {

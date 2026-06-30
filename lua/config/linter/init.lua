@@ -36,7 +36,7 @@ return {
 
   -- refer to: https://github.com/mfussenegger/nvim-lint#custom-linters
   linters = {
-    -- FIXME:
+    -- FIX:
     -- Mason-installed luacheck (1.1.0) crashes on Lua 5.5 because Lua 5.5 makes
     -- for-loop variables <const>. Point directly at the luarocks-installed 1.2.0
     -- binary (lua5.4) which is already on PATH but shadowed by Mason's bin dir.

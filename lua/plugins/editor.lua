@@ -1,10 +1,7 @@
-local ok, err = pcall(function()
-  dofile(vim.g.base46_cache .. "syntax")
-  dofile(vim.g.base46_cache .. "treesitter")
-end)
-if not ok then
-  vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
-end
+local ui = require("utils.ui")
+
+ui.load_base46_cache("syntax")
+ui.load_base46_cache("treesitter")
 
 ---@type LazySpec[]
 return {
@@ -103,7 +100,7 @@ return {
       scope = { char = "│", highlight = "IblScopeChar" },
     },
     config = function(_, opts)
-      dofile(vim.g.base46_cache .. "blankline")
+      ui.load_base46_cache("blankline")
 
       local hooks = require("ibl.hooks")
       hooks.register(
@@ -112,7 +109,7 @@ return {
       )
       require("ibl").setup(opts)
 
-      dofile(vim.g.base46_cache .. "blankline")
+      ui.load_base46_cache("blankline")
     end,
   },
 

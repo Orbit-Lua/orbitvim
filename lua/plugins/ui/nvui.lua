@@ -14,4 +14,13 @@ return {
       require("nvchad")
     end,
   },
+
+  {
+    "nvim-tree/nvim-web-devicons",
+    opts = function()
+      local ui = require("utils.ui")
+      ui.load_base46_cache("devicons")
+      return { override = require("nvchad.icons.devicons") }
+    end,
+  },
 }

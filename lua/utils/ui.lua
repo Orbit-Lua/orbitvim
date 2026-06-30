@@ -265,4 +265,13 @@ M.close_lazy_view = function()
   end
 end
 
+M.load_base46_cache = function(name)
+  local ok, err = pcall(function()
+    dofile(vim.g.base46_cache .. name)
+  end)
+  if not ok then
+    vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
 return M

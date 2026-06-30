@@ -1,3 +1,4 @@
+---@type ChadrcConfig
 local defaults = {
   base46 = {
     theme = "onedark",
@@ -5,6 +6,7 @@ local defaults = {
     hl_override = {},
     integrations = {},
     excluded = {},
+    ---@diagnostic disable-next-line
     changed_themes = {},
     transparency = false,
     theme_toggle = { "onedark", "one_light" },

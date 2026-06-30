@@ -1,14 +1,9 @@
-local ok, err = pcall(function()
-  dofile(vim.g.base46_cache .. "cmp")
-end)
-if not ok then
-  vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
-end
-
 local config = require("config")
 local borders = require("config.borders")
 local ui = require("utils.ui")
 local utils_cmp = require("utils.cmp")
+
+ui.load_base46_cache("cmp")
 
 vim.o.pumheight = select(2, ui.get_completion_window_size())
 
@@ -135,7 +130,7 @@ local options = {
   sources = {
     { name = "nvim_lsp" },
     { name = "luasnip" },
-    { name = "async_path" },
+    { name = "path" },
     { name = "buffer" },
     { name = "lazydev" },
   },

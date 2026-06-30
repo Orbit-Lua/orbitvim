@@ -139,6 +139,7 @@ M.ui = {
   statusline = {
     theme = "lucid",
     separator_style = "round",
+    show_lsp_msg = false,
   },
 
   tabufline = {
