@@ -1,0 +1,10 @@
+default: true
+extends: null
+
+MD007: false
+MD004: false
+MD013: false
+MD024: false
+MD040: false
+MD041: false
+MD060: false

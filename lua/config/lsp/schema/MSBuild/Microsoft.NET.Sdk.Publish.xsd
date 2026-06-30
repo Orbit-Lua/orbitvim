@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="unqualified">
+
+  <!-- ── Import common MSBuild schema ────────────────────────────────────── -->
+  <xs:include schemaLocation="MSBuild/Microsoft.Build.CommonTypes.xsd" />
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Publish Properties  (substitutionGroup="Property")
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── Publish method ──────────────────────────────────────────────────── -->
+  <xs:element name="WebPublishMethod" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Specifies how the application is published (FileSystem, MSDeploy, Package, ZipDeploy, or OneDeploy).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="FileSystem" />
+          <xs:enumeration value="MSDeploy" />
+          <xs:enumeration value="Package" />
+          <xs:enumeration value="ZipDeploy" />
+          <xs:enumeration value="OneDeploy" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PublishProvider" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Identifies the publish provider used by Visual Studio tooling (e.g. FileSystem, AzureWebSite).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="FileSystem" />
+          <xs:enumeration value="AzureWebSite" />
+          <xs:enumeration value="AzureVirtualMachine" />
+          <xs:enumeration value="AzureAppServiceEnvironment" />
+          <xs:enumeration value="IIS" />
+          <xs:enumeration value="FTP" />
+          <xs:enumeration value="CustomProvider" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PublishProtocol" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Transport protocol used to deliver the published output (e.g. Kudu for Azure App Service, FileSystem, MSDeploy, FTP).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="Kudu" />
+          <xs:enumeration value="FileSystem" />
+          <xs:enumeration value="MSDeploy" />
+          <xs:enumeration value="FTP" />
+          <xs:enumeration value="OneDeploy" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── Common publish settings ─────────────────────────────────────────── -->
+  <xs:element name="PublishUrl" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Destination URL or local file-system path where the application is published.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- Lower-case alias used in some older tooling -->
+  <xs:element name="publishUrl" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Destination path for FileSystem publish (lower-case alias of PublishUrl).</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="PublishDir" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Output directory used by `dotnet publish` when no profile is specified.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="IsTransformWebConfigDisabled" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, skips the web.config transformation step during publish (useful when web.config is managed externally or transformations are not needed).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="DeleteExistingFiles" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, deletes all existing files at the destination before publishing.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="DeployOnBuild" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, triggers a publish as part of the build.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="LastUsedBuildConfiguration" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>The build configuration (Debug/Release) last used when publishing from Visual Studio.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="LastUsedPlatform" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>The target platform (e.g. "Any CPU") last used when publishing from Visual Studio.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- ── Launch-after-publish ─────────────────────────────────────────────── -->
+  <xs:element name="SiteUrlToLaunchAfterPublish" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>URL to open in the browser after a successful publish.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="LaunchSiteAfterPublish" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, opens the site URL in the browser after publish.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── MSDeploy settings ────────────────────────────────────────────────── -->
+  <xs:element name="MSDeployServiceURL" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>The MSDeploy service endpoint URL (e.g. "mysite.scm.azurewebsites.net:443").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="DeployIisAppPath" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>The IIS application path to deploy to (e.g. "Default Web Site/MyApp").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="SkipExtraFilesOnServer" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, files on the server that have no corresponding local file are left intact.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MSDeployPublishMethod" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>The MSDeploy transport used for publishing (WMSVC, InProc, or RemoteAgent).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="WMSVC" />
+          <xs:enumeration value="InProc" />
+          <xs:enumeration value="RemoteAgent" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="EnableMSDeployBackup" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, backs up the remote site before overwriting it with MSDeploy.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="AllowUntrustedCertificate" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, allows MSDeploy to connect to a server with an untrusted SSL certificate.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── Credentials ──────────────────────────────────────────────────────── -->
+  <xs:element name="UserName" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Username for deployment authentication.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="Password" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Password for deployment authentication. Prefer using MSBuild command-line arguments or Azure Key Vault instead of storing this in the profile.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- ── Package publish settings ─────────────────────────────────────────── -->
+  <xs:element name="DesktopBuildPackageLocation" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Local path where the MSDeploy zip package is written (e.g. "c:\artifacts\WebApp.zip").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="PackageAsSingleFile" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, produces a single zip package file instead of a folder hierarchy.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PackageLocation" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Path or name of the output deploy package.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- ── Runtime / framework targeting ────────────────────────────────────── -->
+  <xs:element name="RuntimeIdentifier" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Target runtime identifier for self-contained publish (e.g. "win-x64", "linux-x64").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="SelfContained" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, publishes the app as self-contained (includes the .NET runtime).</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ReadyToRun" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, compiles the application assemblies as ReadyToRun (R2R) format.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PublishSingleFile" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, bundles all app files into a single executable.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PublishTrimmed" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, trims unused assemblies from the published output to reduce size.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TieredPGO" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, enables Profile-Guided Optimization during publish.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TargetFramework" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Target framework moniker used when publishing (e.g. "net9.0").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- ── Azure / container publish ────────────────────────────────────────── -->
+  <xs:element name="ContainerImageName" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Name of the Docker container image to produce during publish.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="ContainerImageTag" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Tag applied to the produced container image.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="ContainerRegistry" type="StringPropertyType" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>Target container registry (e.g. "myregistry.azurecr.io").</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <xs:element name="PublishReadyToRunEmitSymbols" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, emits native symbol files alongside ReadyToRun output.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ExcludeApp_Data" substitutionGroup="Property">
+    <xs:annotation>
+      <xs:documentation>When True, excludes the App_Data folder from the published output.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:restriction base="StringPropertyType">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Publish Item Types  (substitutionGroup="Item")
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── DestinationConnectionStrings ─────────────────────────────────────── -->
+  <xs:element name="DestinationConnectionStrings" substitutionGroup="Item">
+    <xs:annotation>
+      <xs:documentation>Overrides a named connection string in the deployed web.config / appsettings.json at publish time.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="SimpleItemType">
+          <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:choice>
+              <xs:element name="Value">
+                <xs:annotation>
+                  <xs:documentation>The replacement connection string value.</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:choice>
+          </xs:sequence>
+          <xs:attribute name="Value" type="xs:string" use="optional">
+            <xs:annotation>
+              <xs:documentation>The replacement connection string value (attribute form).</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── EFMigrations ──────────────────────────────────────────────────────── -->
+  <xs:element name="EFMigrations" substitutionGroup="Item">
+    <xs:annotation>
+      <xs:documentation>Specifies an Entity Framework migration context and its target connection string to run during publish.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="SimpleItemType">
+          <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:choice>
+              <xs:element name="Value">
+                <xs:annotation>
+                  <xs:documentation>Connection string used to run EF migrations at publish time.</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:choice>
+          </xs:sequence>
+          <xs:attribute name="Value" type="xs:string" use="optional">
+            <xs:annotation>
+              <xs:documentation>Connection string used to run EF migrations at publish time (attribute form).</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── MsDeploySkipRules ─────────────────────────────────────────────────── -->
+  <xs:element name="MsDeploySkipRules" substitutionGroup="Item">
+    <xs:annotation>
+      <xs:documentation>Defines paths that MSDeploy should skip during synchronisation.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="SimpleItemType">
+          <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:choice>
+              <xs:element name="ObjectName">
+                <xs:annotation>
+                  <xs:documentation>MSDeploy object type to skip: "dirPath" for directories or "filePath" for individual files.</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="dirPath" />
+                    <xs:enumeration value="filePath" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="AbsolutePath">
+                <xs:annotation>
+                  <xs:documentation>Absolute or regex path of the directory / file to skip.</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="SkipAction">
+                <xs:annotation>
+                  <xs:documentation>MSDeploy skip action (default is all actions).</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+            </xs:choice>
+          </xs:sequence>
+          <xs:attribute name="ObjectName" type="xs:string" use="optional" />
+          <xs:attribute name="AbsolutePath" type="xs:string" use="optional" />
+          <xs:attribute name="SkipAction" type="xs:string" use="optional" />
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ── PublishProfile ────────────────────────────────────────────────────── -->
+  <xs:element name="PublishProfile" type="SimpleItemType" substitutionGroup="Item">
+    <xs:annotation>
+      <xs:documentation>References a .pubxml publish profile to apply during the build.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+</xs:schema>

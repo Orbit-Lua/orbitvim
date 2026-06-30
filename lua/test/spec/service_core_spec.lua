@@ -1,0 +1,20 @@
+describe("service.core", function()
+  local core = require("service.core")
+
+  it("identifies categories with configurable order", function()
+    assert.is_true(core.is_ordered_category("formatter"))
+    assert.is_true(core.is_ordered_category("linter"))
+    assert.is_false(core.is_ordered_category("lsp"))
+    assert.is_false(core.is_ordered_category("dap"))
+  end)
+
+  it("builds stable expansion keys", function()
+    assert.equals("lsp:lua_ls", core.service_key("lsp", "lua_ls"))
+    assert.equals("formatter:ft:python", core.ft_key("formatter", "python"))
+  end)
+
+  it("builds stable order keys", function()
+    assert.equals("formatter_order", core.order_key("formatter"))
+    assert.equals("linter_order", core.order_key("linter"))
+  end)
+end)
