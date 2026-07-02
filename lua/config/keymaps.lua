@@ -37,6 +37,11 @@ end, { desc = "buffer goto next" })
 map("n", "<S-tab>", function()
   require("utils.buffer").prev()
 end, { desc = "buffer goto prev" })
+map("n", "<leader>fi", function ()
+  vim.cmd("e ++enc=big5")
+  vim.cmd("set fileencoding=utf-8")
+  vim.cmd("w")
+end, {desc = "reload file as utf-8 format (from big5)"})
 
 -------------------- navigation  --------------------
 map("n", "<C-h>", "<C-w>h", { desc = "switch window left" })
