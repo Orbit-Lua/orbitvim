@@ -78,7 +78,6 @@ M.formatter = {
     mason = "markdown-toc",
     ft = { "markdown", "markdown.mdx" },
   },
-  ["sql-formatter"] = { mason = "sql-formatter", ft = { "sql" } },
   sqlfluff = { mason = "sqlfluff", ft = { "sql", "mysql", "plsql" } },
   prisma_fmt = {
     mason = nil,
