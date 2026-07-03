@@ -39,7 +39,23 @@ return {
       quickfile = { enabled = true },
       scope = { enabled = true },
       scroll = { enabled = true },
-      statuscomn = { enabled = true },
+      statuscolumn = {
+        enabled = true,
+
+        -- priority of signs on the left (high to low)
+        left = { "mark", "sign" },
+        right = { "fold", "git" },
+
+        folds = {
+          open = true, -- show open fold icons
+          git_hl = false, -- use Git Signs hl for fold icons
+        },
+        git = {
+          -- patterns to match Git signs
+          patterns = { "GitSign", "MiniDiffSign" },
+        },
+        refresh = 50, -- refresh at most every 50ms
+      },
       words = { enabled = true },
 
       -- reference: https://github.com/folke/snacks.nvim/discussions/111#discussioncomment-11986334

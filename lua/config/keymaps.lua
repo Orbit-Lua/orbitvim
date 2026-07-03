@@ -77,13 +77,13 @@ map(
   "x",
   "J",
   ":move '>+1<CR>gv-gv",
-  { desc = "move selected block up and stay in visual mode" }
+  { desc = "move selected block down and stay in visual mode" }
 )
 map(
   "x",
   "K",
   ":move '<-2<CR>gv-gv",
-  { desc = "move selected block down and stay in visual mode" }
+  { desc = "move selected block up and stay in visual mode" }
 )
 map("x", "p", "P", { desc = "paste without yanking replaced text" })
 map("i", "jk", "<ESC>")
@@ -101,3 +101,11 @@ end, { desc = "floating diagnostic" })
 map("n", "<leader>ut", function()
   require("config.theme").open()
 end, { desc = "theme picker" })
+map("n", "<leader>ur", function()
+  require("config.theme").reload(require("nvconfig").base46.theme)
+  vim.notify(
+    "theme reloaded, please restart neovim",
+    vim.log.levels.INFO,
+    { title = "nvui" }
+  )
+end, { desc = "reload theme" })
