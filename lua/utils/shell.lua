@@ -3,7 +3,7 @@ local M = {}
 
 M.setup = function()
   if os_utils.is_win() then
-    vim.o.shell = vim.fn.has("win64") and "powershell.exe" or "pwsh.exe"
+    vim.o.shell = vim.fn.has("win64") == 1 and "powershell.exe" or "pwsh.exe"
 
     -- refer to https://www.reddit.com/r/neovim/comments/1crdv93/neovim_on_windows_using_windows_terminal_and
     vim.o.shellcmdflag = "-NoLogo -ExecutionPolicy RemoteSigned "

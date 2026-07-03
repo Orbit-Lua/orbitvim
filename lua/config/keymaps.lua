@@ -40,7 +40,7 @@ map("n", "<C-l>", "<C-w>l", { desc = "switch window right" })
 map("n", "<C-j>", "<C-w>j", { desc = "switch window down" })
 map("n", "<C-k>", "<C-w>k", { desc = "switch window up" })
 map("n", "<leader>fd", function()
-  vim.cmd("cd " .. fs.get_root())
+  vim.api.nvim_set_current_dir(fs.get_root())
 end, { desc = "set cwd to file root" })
 
 -------------------- terminal --------------------

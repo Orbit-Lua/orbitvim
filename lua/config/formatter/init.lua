@@ -63,11 +63,12 @@ return {
     },
     ["prisma_fmt"] = {
       command = function()
+        local root = fs.get_root()
         if os_utils.is_win() then
-          return vim.fn.getcwd() .. "/node_modules/.bin/prisma.CMD"
+          return root .. "/node_modules/.bin/prisma.CMD"
         end
 
-        return "/node_modules/.bin/prisma"
+        return root .. "/node_modules/.bin/prisma"
       end,
       condition = function(_, ctx)
         return vim.bo[ctx.buf].filetype == "prisma"
