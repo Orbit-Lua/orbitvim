@@ -1,3 +1,6 @@
+---@module "ui"
+
+---Do not delete any default fields which is needed for nv-ui
 ---@type ChadrcConfig
 local defaults = {
   base46 = {

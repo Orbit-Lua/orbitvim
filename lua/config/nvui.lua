@@ -10,25 +10,30 @@ M.base46 = {
   theme = "tokyonight",
   theme_toggle = { "tokyonight", "vscode_light" },
 
-  -- NOTE: merged into ALL integrations (treesitter, lsp, cmp, etc.)
+  -- Merged into ALL integrations (treesitter, lsp, cmp, etc.).
   -- Only affects EXISTING highlight groups, can NOT add new groups.
   -- Uses per-key merge, not full override.
   hl_override = {
-    -- Editor
-    Comment = { italic = true },
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Editor                                                                  --
+    -- ------------------------------------------------------------------------- --
     ["@comment"] = { italic = true },
     ["@comment.todo"] = {
       bg = "green",
     },
-
-    TreesitterContext = { link = "CursorLine" },
-    LspInlayHint = { fg = "#808080", bg = "one_bg", italic = true },
+    Comment = { italic = true },
     IblChar = { fg = "grey" },
     IblScopeChar = { fg = "purple" },
+    NvimTreeOpenedFolderName = { fg = "green", bold = true },
+    TreesitterContext = { link = "CursorLine" },
+    LspInlayHint = { fg = "#808080", bg = "one_bg", italic = true },
 
-    -- Telescope
+    -- ------------------------------------------------------------------------- --
+    -- ■ Telescope                                                               --
+    -- ------------------------------------------------------------------------- --
     TelescopeMatching = {
-      fg = "yellow",
+      fg = "red",
       bg = "NONE",
     },
 
@@ -44,10 +49,9 @@ M.base46 = {
     TelescopePromptBorder = { link = "SnacksPickerInputBorder" },
     TelescopeResultsTitle = { link = "SnacksPickerPreviewTitle" },
 
-    -- Misc
-    NvimTreeOpenedFolderName = { fg = "green", bold = true },
-
-    -- Window
+    -- ------------------------------------------------------------------------- --
+    -- ■ Window                                                                  --
+    -- ------------------------------------------------------------------------- --
     NormalFloat = {
       bg = "black",
     },
@@ -70,14 +74,21 @@ M.base46 = {
     },
   },
 
-  -- NOTE: merged into the "defaults" integration ONLY.
+  -- Merged into the "defaults" integration ONLY.
   -- CAN add new highlight groups (not limited to existing ones).
   -- Uses per-key merge, not full override.
   hl_add = {
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Misc                                                                    --
+    -- ------------------------------------------------------------------------- --
     active_context = { fg = "blue" },
     CmpGhostText = { link = "Comment", default = true },
+    DapBreakpointColor = { fg = "red" },
 
-    -- Noice
+    -- ------------------------------------------------------------------------- --
+    -- ■ Noice.nvim                                                              --
+    -- ------------------------------------------------------------------------- --
     NoiceCmdlineIcon = { fg = "purple" },
     NoiceCmdlinePopupBorder = { fg = "green" },
     NoiceCmdlinePopup = { bg = "black" },
@@ -86,6 +97,9 @@ M.base46 = {
     NoiceCmdlinePopupTitle = { fg = "blue" },
     NoicePopupBorder = { fg = "blue" },
 
+    -- ------------------------------------------------------------------------- --
+    -- ■ Snacks.nvim                                                             --
+    -- ------------------------------------------------------------------------- --
     -- Snacks input
     -- SnacksInputPrompt = { fg = "purple" },
     -- SnacksInputBorder = { fg = "green" },
@@ -93,8 +107,10 @@ M.base46 = {
 
     -- Snacks picker
     SnacksPickerMatch = { link = "TelescopeMatching" },
-    SnacksPickerDir = { fg = "#928374" },
-    SnacksPickerPathHidden = { fg = "#928374" },
+    SnacksPickerDir = { fg = "blue" },
+    SnacksPickerPathHidden = { fg = "grey_fg" },
+    -- SnacksPickerDir = { fg = "#928374" },
+    -- SnacksPickerPathHidden = { fg = "#928374" },
 
     --
     -- SnacksPickerInput = { link = "TelescopePromptNormal" },
@@ -109,9 +125,6 @@ M.base46 = {
     -- SnacksPickerInputBorder = { fg = "blue", bg = "black2" },
     -- SnacksPickerPreviewBorder = { fg = "blue", bg = "darker_black" },
     -- SnacksPickerListBorder = { fg = "blue", bg = "darker_black" },
-
-    -- DAP
-    DapBreakpointColor = { fg = "red" },
   },
 }
 
