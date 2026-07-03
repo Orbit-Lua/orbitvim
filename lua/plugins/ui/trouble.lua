@@ -31,17 +31,17 @@ return {
       {
         "<leader>td",
         "<cmd>Trouble diagnostic_preview_float toggle win.position=bottom<cr>",
-        desc = "Diagnostics (Trouble)",
+        desc = "diagnostics (trouble)",
       },
       {
         "<leader>tD",
         "<cmd>Trouble diagnostic_preview_float toggle filter.buf=0 win.position=bottom<cr>",
-        desc = "Buffer Diagnostics (Trouble)",
+        desc = "buffer diagnostics (trouble)",
       },
       {
         "<leader>cs",
         "<cmd>Trouble symbols toggle focus=false win.position=right<cr>",
-        desc = "Symbols (Trouble)",
+        desc = "symbols (trouble)",
       },
       {
         "<leader>cL",
@@ -60,17 +60,17 @@ return {
             focus = false,
           })
         end,
-        desc = "LSP Definitions / references / ... (Trouble)",
+        desc = "lsp definitions / references / ... (trouble)",
       },
       {
         "<leader>tL",
         "<cmd>Trouble loclist toggle win.position=bottom<cr>",
-        desc = "Location List (Trouble)",
+        desc = "location list (trouble)",
       },
       {
         "<leader>tQ",
         "<cmd>Trouble qflist toggle win.position=bottom<cr>",
-        desc = "Quickfix List (Trouble)",
+        desc = "quickfix list (trouble)",
       },
     },
   },
@@ -80,7 +80,7 @@ return {
     lazy = false,
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-      { "<leader>tt", "<cmd>TodoTelescope<cr>", desc = "Open ToDo Telescope" },
+      { "<leader>tt", "<cmd>TodoTelescope<cr>", desc = "open todo telescope" },
     },
 
     ---@module "todo-comments"

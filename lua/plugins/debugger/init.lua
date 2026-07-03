@@ -21,48 +21,48 @@ return {
       {
         "<leader>dt",
         "<cmd>DapToggleBreakpoint<CR>",
-        desc = "DAP Toggle Breakpoint",
+        desc = "dap toggle breakpoint",
       },
       {
         "<leader>ds",
         "<cmd>DapNew<CR>",
-        desc = "DAP New Session",
+        desc = "dap new session",
       },
       {
         "<leader>dR",
         "<cmd>DapToggleRepl<CR>",
-        desc = "DAP Toggle REPL",
+        desc = "dap toggle repl",
       },
 
       {
         "<leader>dc",
         "<cmd>DapContinue<CR>",
-        desc = "DAP Continue",
+        desc = "dap continue",
       },
       {
         "<leader>dl",
         "<cmd>DapShowLog<CR>",
-        desc = "DAP Show Log",
+        desc = "dap show log",
       },
       {
         "<leader>dn",
         "<cmd>DapStepOver<CR>",
-        desc = "DAP Step Over",
+        desc = "dap step over",
       },
       {
         "<leader>di",
         "<cmd>DapStepInto<CR>",
-        desc = "DAP Step Into",
+        desc = "dap step into",
       },
       {
         "<leader>do",
         "<cmd>DapStepOut<CR>",
-        desc = "DAP Step Out",
+        desc = "dap step out",
       },
       {
         "<leader>dw",
         "<cmd>DapViewWatch<CR>",
-        desc = "DAP Open Watch window",
+        desc = "dap open watch window",
       },
     },
   },
@@ -76,14 +76,14 @@ return {
         function()
           require("dapui").toggle()
         end,
-        desc = "DAP Toggle UI",
+        desc = "dap toggle ui",
       },
       {
         "<leader>dr",
         function()
           require("dap").restart()
         end,
-        desc = "DAP Restart",
+        desc = "dap restart",
       },
     },
     dependencies = { "Orbit-Lua/nvim-dap", "nvim-neotest/nvim-nio" },

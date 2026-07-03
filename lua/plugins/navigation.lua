@@ -27,9 +27,10 @@ return {
         signcolumn = "no",
       },
       renderer = {
-        root_folder_label = function()
-          return fs.new():get_cwd():pretty_path({ transform_home = true })
-        end,
+        -- root_folder_label = function()
+        --   return fs.new():get_cwd():pretty_path({ transform_home = true })
+        -- end,
+        root_folder_label = false,
         highlight_git = "all",
         highlight_diagnostics = "all",
         indent_markers = { enable = true },
@@ -51,26 +52,33 @@ return {
         icons = icons.diagnostics,
       },
       git = {
-        enable = true,
+        enable = false,
         timeout = 200,
       },
     },
     keys = {
-      { "<C-n>", "<cmd>NvimTreeToggle<CR>", desc = "NvimTree Toggle Window" },
+      { "<C-n>", "<cmd>NvimTreeToggle<CR>", desc = "nvimtree toggle window" },
       {
-        "<leader>e",
+        "<leader>fe",
         "<cmd>NvimTreeFocus<CR>",
-        desc = "NvimTree Focus Window",
+        desc = "nvimtree focus window",
       },
       {
         "<C-Right>",
         "<cmd>NvimTreeResize +5<CR>",
-        desc = "NvimTree Resize +5",
+        desc = "nvimtree resize +5",
       },
       {
         "<C-Left>",
         "<cmd>NvimTreeResize -5<CR>",
-        desc = "NvimTree Resize -5",
+        desc = "nvimtree resize -5",
+      },
+      {
+        "<leader>fC",
+        function()
+          require("nvim-tree.api").fs.create()
+        end,
+        desc = "create file",
       },
     },
     config = function(_, opts)
@@ -145,9 +153,9 @@ return {
     -- "ThePrimeagen/harpoon",
     keys = {
       { "<C-e>", desc = "toggle harpoon quick menu" },
-      { "<M-S-p>", desc = "toggle previous of harpoon list" },
-      { "<M-S-n>", desc = "toggle next of harpoon list" },
-      { "<leader>ba", desc = "buffer add into harpoon list" },
+      { "<M-S-p>", desc = "harpoon previous item" },
+      { "<M-S-n>", desc = "harpoon next item" },
+      { "<leader>ba", desc = "add buffer to harpoon" },
     },
     branch = "harpoon2",
     dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
@@ -200,16 +208,16 @@ return {
 
       vim.keymap.set("n", "<leader>ba", function()
         harpoon:list():add()
-      end, { desc = "buffer add into harpoon list" })
+      end, { desc = "add buffer to harpoon" })
 
       -- Toggle previous & next buffers stored within Harpoon list
       vim.keymap.set("n", "<M-S-p>", function()
         harpoon:list():prev()
-      end, { desc = "toggle previous of harpoon list" })
+      end, { desc = "harpoon previous item" })
 
       vim.keymap.set("n", "<M-S-n>", function()
         harpoon:list():next()
-      end, { desc = "toggle next of harpoon list" })
+      end, { desc = "harpoon next item" })
 
       -- https://github.com/ThePrimeagen/harpoon/issues/491
       -- currently, telescope is broken on windows so using simple menu

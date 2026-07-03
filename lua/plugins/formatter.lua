@@ -5,6 +5,16 @@ return {
   {
     "stevearc/conform.nvim",
     event = { "BufWritePost", "BufReadPost", "InsertLeave" },
+    keys = {
+      {
+        "<leader>fm",
+        function()
+          require("conform").format({ lsp_format = "fallback" })
+        end,
+        desc = "format file",
+        mode = { "n", "x" },
+      },
+    },
     opts = function()
       local opts = require("config.formatter")
       local state_mod = require("service.state")

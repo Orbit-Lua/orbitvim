@@ -33,7 +33,8 @@ M.base46 = {
     -- ■ Telescope                                                               --
     -- ------------------------------------------------------------------------- --
     TelescopeMatching = {
-      fg = "red",
+      fg = "green",
+      bold = true,
       bg = "NONE",
     },
 

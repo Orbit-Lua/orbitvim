@@ -20,6 +20,12 @@ vim.api.nvim_create_autocmd("User", {
     vim.api.nvim_create_user_command("ServiceManager", function()
       require("service").open()
     end, { desc = "Open Service Manager" })
+    vim.keymap.set(
+      "n",
+      "<leader>us",
+      "<cmd>ServiceManager<CR>",
+      { desc = "service manager" }
+    )
   end,
 })
 

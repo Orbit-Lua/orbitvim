@@ -9,6 +9,9 @@ return {
       "DotnetPublish",
       "DotnetGlobalJson",
     },
+    keys = {
+      { "<leader>ud", "<cmd>DotnetManager<CR>", desc = "open dotnet manager" },
+    },
     ft = "cs",
     opts = {},
   },

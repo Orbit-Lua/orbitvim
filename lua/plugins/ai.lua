@@ -45,7 +45,7 @@ local specs = {
 
       -- https://github.com/zbirenbaum/copilot.lua#nes-next-edit-suggestion
       nes = {
-        enabled = true,
+        enabled = false,
         auto_trigger = true,
         keymap = {
           accept_and_goto = "<leader>p",

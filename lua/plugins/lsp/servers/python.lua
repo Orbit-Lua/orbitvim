@@ -21,7 +21,7 @@ return {
         {
           "<leader>co",
           lsp.action["source.organizeImports"],
-          desc = "Organize Imports",
+          desc = "organize imports",
         },
       },
     },

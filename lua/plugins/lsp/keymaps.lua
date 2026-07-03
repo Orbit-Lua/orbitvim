@@ -22,18 +22,18 @@ function M.get()
       function()
         require("snacks").picker.lsp_config()
       end,
-      desc = "Lsp Info",
+      desc = "lsp info",
     },
     {
       "gd",
       vim.lsp.buf.definition,
-      desc = "Goto Definition",
+      desc = "goto definition",
       has = "definition",
     },
-    { "gR", vim.lsp.buf.references, desc = "References", nowait = true },
-    { "gI", vim.lsp.buf.implementation, desc = "Goto Implementation" },
-    { "gy", vim.lsp.buf.type_definition, desc = "Goto Type Definition" },
-    { "gD", vim.lsp.buf.declaration, desc = "Goto Declaration" },
+    { "gR", vim.lsp.buf.references, desc = "references", nowait = true },
+    { "gI", vim.lsp.buf.implementation, desc = "goto implementation" },
+    { "gy", vim.lsp.buf.type_definition, desc = "goto type definition" },
+    { "gD", vim.lsp.buf.declaration, desc = "goto declaration" },
     {
       "K",
       function()
@@ -45,7 +45,7 @@ function M.get()
           max_height = select(2, ui.get_doc_window_size()),
         })
       end,
-      desc = "Hover",
+      desc = "hover",
     },
     {
       "gK",
@@ -58,7 +58,7 @@ function M.get()
           border = borders.default,
         })
       end,
-      desc = "Signature Help",
+      desc = "signature help",
       has = "signatureHelp",
     },
     {
@@ -73,7 +73,7 @@ function M.get()
         })
       end,
       mode = "i",
-      desc = "Signature Help",
+      desc = "signature help",
       has = "signatureHelp",
     },
     {
@@ -88,14 +88,14 @@ function M.get()
           end,
         })
       end,
-      desc = "Code Action",
+      desc = "code action",
       mode = { "n", "v" },
       has = "codeAction",
     },
     {
       "<leader>cC",
       vim.lsp.codelens.run,
-      desc = "Run Codelens",
+      desc = "run code lens",
       mode = { "n", "v" },
       has = "codeLens",
     },
@@ -104,14 +104,14 @@ function M.get()
       function()
         vim.lsp.codelens.enable(not vim.lsp.codelens.is_enabled())
       end,
-      desc = "Toggle Display Codelens",
+      desc = "toggle code lens",
       mode = { "n" },
       has = "codeLens",
     },
     {
       "<leader>ci",
       utils_lsp.toggle_inlay_hints,
-      desc = "Toggle Inlay Hints",
+      desc = "toggle inlay hints",
       mode = { "n" },
       has = "inlayHint",
     },
@@ -120,15 +120,15 @@ function M.get()
       function()
         require("snacks").rename.rename_file()
       end,
-      desc = "Rename File",
+      desc = "rename file",
       mode = { "n" },
       has = { "workspace/didRenameFiles", "workspace/willRenameFiles" },
     },
-    { "<leader>cr", vim.lsp.buf.rename, desc = "Rename", has = "rename" },
+    { "<leader>cr", vim.lsp.buf.rename, desc = "rename", has = "rename" },
     {
       "<leader>cA",
       utils_lsp.action.source,
-      desc = "Source Action",
+      desc = "code source action",
       has = "codeAction",
     },
     {
@@ -137,7 +137,7 @@ function M.get()
         require("snacks").words.jump(vim.v.count1)
       end,
       has = "documentHighlight",
-      desc = "Next Reference",
+      desc = "next reference",
       cond = function()
         return require("snacks").words.is_enabled()
       end,
@@ -148,7 +148,7 @@ function M.get()
         require("snacks").words.jump(-vim.v.count1)
       end,
       has = "documentHighlight",
-      desc = "Prev Reference",
+      desc = "prev reference",
       cond = function()
         return require("snacks").words.is_enabled()
       end,
@@ -159,7 +159,7 @@ function M.get()
         require("snacks").words.jump(vim.v.count1, true)
       end,
       has = "documentHighlight",
-      desc = "Next Reference",
+      desc = "next reference",
       cond = function()
         return require("snacks").words.is_enabled()
       end,
@@ -170,7 +170,7 @@ function M.get()
         require("snacks").words.jump(-vim.v.count1, true)
       end,
       has = "documentHighlight",
-      desc = "Prev Reference",
+      desc = "prev reference",
       cond = function()
         return require("snacks").words.is_enabled()
       end,

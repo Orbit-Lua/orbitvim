@@ -14,14 +14,14 @@ return {
         function()
           require("edgy").toggle()
         end,
-        desc = "Edgy Toggle",
+        desc = "edgy toggle",
       },
       {
         "<leader>uE",
         function()
           require("edgy").select()
         end,
-        desc = "Edgy Select Window",
+        desc = "edgy select window",
       },
     },
     opts = function()

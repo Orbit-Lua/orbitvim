@@ -6,7 +6,7 @@ return {
     prismals = {
       keys = {
         {
-          "<leader>fp",
+          "<leader>fP",
           function()
             require("conform").format({ lsp_fallback = true })
             vim.cmd("e!")
