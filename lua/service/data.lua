@@ -6,6 +6,46 @@ local mason = require("service.mason")
 local state_mod = require("service.state")
 local category_handlers = require("service.category")
 
+---@param meta Service.Meta
+---@param ft string?
+---@return boolean
+function M.supports_ft(meta, ft)
+  if not ft or ft == "" then
+    return false
+  end
+  return vim.tbl_contains(meta.ft or {}, ft)
+end
+
+---@param category ServiceCategory
+---@param ft string?
+---@return { name: string, meta: Service.Meta }[]
+function M.service_entries(category, ft)
+  local flat = {}
+  for name, meta in pairs(services[category] or {}) do
+    if not ft or M.supports_ft(meta, ft) then
+      table.insert(flat, { name = name, meta = meta })
+    end
+  end
+  table.sort(flat, function(a, b)
+    return a.name < b.name
+  end)
+  return flat
+end
+
+---@param category ServiceCategory
+---@return { total: integer, enabled: integer, disabled: integer }
+function M.state_summary(category)
+  local total = 0
+  local enabled = 0
+  for name in pairs(services[category] or {}) do
+    total = total + 1
+    if state_mod.is_enabled(category, name) then
+      enabled = enabled + 1
+    end
+  end
+  return { total = total, enabled = enabled, disabled = total - enabled }
+end
+
 local function with_install_state(status_text, installed)
   if installed == true then
     return status_text .. " · installed"
@@ -67,9 +107,17 @@ function M.entry_status(category, name, meta)
 end
 
 ---@param category ServiceCategory
+---@param ft? string
 ---@return Service.FtGroup[]
-function M.build_ft_groups(category)
-  return order.build_ft_groups(category)
+function M.build_ft_groups(category, ft)
+  local groups = order.build_ft_groups(category)
+  if not ft or ft == "" then
+    return groups
+  end
+
+  return vim.tbl_filter(function(group)
+    return group.ft == ft
+  end, groups)
 end
 
 ---@param category ServiceCategory

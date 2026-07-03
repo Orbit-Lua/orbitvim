@@ -50,7 +50,7 @@ describe("service.category.formatter", function()
       installed = true,
     })
 
-    assert.equals("not wired", status)
+    assert.equals("not configured", status)
     assert.equals("DiagnosticWarn", hl)
 
     conform.formatters_by_ft.html = { "deno_fmt" }
@@ -61,11 +61,11 @@ describe("service.category.formatter", function()
       installed = true,
     })
 
-    assert.equals("partly wired 1/5", status)
+    assert.equals("partly configured 1/5", status)
     assert.equals("DiagnosticWarn", hl)
   end)
 
-  it("reports fully wired formatters", function()
+  it("reports fully configured formatters", function()
     conform.formatters_by_ft.lua = { "stylua" }
 
     local status, hl = formatter.entry_status({
@@ -74,7 +74,7 @@ describe("service.category.formatter", function()
       installed = true,
     })
 
-    assert.equals("wired", status)
+    assert.equals("configured", status)
     assert.equals("DiagnosticOk", hl)
   end)
 end)

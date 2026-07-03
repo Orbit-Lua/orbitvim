@@ -384,7 +384,11 @@ function M.toggle_expand()
   local key
   if core.is_ordered_category(category) and entry.ft then
     key = core.ft_key(category, entry.ft)
-    _state.ui.expanded[key] = _state.ui.expanded[key] == false
+    local is_expanded = _state.ui.expanded[key]
+    if is_expanded == nil then
+      is_expanded = _state.ui.scope == "buffer"
+    end
+    _state.ui.expanded[key] = not is_expanded
   elseif entry.name then
     key = core.service_key(category, entry.name)
     _state.ui.expanded[key] = not _state.ui.expanded[key]
@@ -399,6 +403,19 @@ end
 ---@return nil
 function M.switch_tab(idx)
   _state.ui.category_idx = idx
+  _state.render()
+  local first
+  for lnum in pairs(_state.ui.line_map) do
+    first = first and math.min(first, lnum) or lnum
+  end
+  if first and _state.ui.win and vim.api.nvim_win_is_valid(_state.ui.win) then
+    vim.api.nvim_win_set_cursor(_state.ui.win, { first, 0 })
+  end
+end
+
+---@return nil
+function M.toggle_scope()
+  _state.ui.scope = _state.ui.scope == "buffer" and "states" or "buffer"
   _state.render()
   local first
   for lnum in pairs(_state.ui.line_map) do

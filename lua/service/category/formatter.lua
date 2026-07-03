@@ -64,12 +64,12 @@ function M.entry_status(opts)
   end
 
   if configured == total then
-    return "wired", "DiagnosticOk"
+    return "configured", "DiagnosticOk"
   elseif configured > 0 then
-    return string.format("partly wired %d/%d", configured, total),
+    return string.format("partly configured %d/%d", configured, total),
       "DiagnosticWarn"
   end
-  return "not wired", "DiagnosticWarn"
+  return "not configured", "DiagnosticWarn"
 end
 
 return M

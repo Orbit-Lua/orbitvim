@@ -95,6 +95,12 @@ describe("service.data", function()
       end
     )
 
+    it("filters groups by filetype when requested", function()
+      local groups = data.build_ft_groups("formatter", "python")
+      assert.equals(1, #groups)
+      assert.equals("python", groups[1].ft)
+    end)
+
     it(
       "groups respect canonical defaults when no saved order exists",
       function()
@@ -123,6 +129,39 @@ describe("service.data", function()
         )
       end
     )
+  end)
+
+  describe("service_entries", function()
+    it("returns sorted services for a category", function()
+      local entries = data.service_entries("lsp")
+      local prev = nil
+      for _, entry in ipairs(entries) do
+        if prev then
+          assert.is_true(entry.name >= prev)
+        end
+        prev = entry.name
+      end
+    end)
+
+    it("filters services by filetype", function()
+      local entries = data.service_entries("lsp", "lua")
+      assert.is_true(#entries > 0)
+      for _, entry in ipairs(entries) do
+        assert.is_true(vim.tbl_contains(entry.meta.ft or {}, "lua"))
+      end
+    end)
+
+    it("returns no entries for an empty filetype filter", function()
+      assert.same({}, data.service_entries("lsp", ""))
+    end)
+  end)
+
+  describe("state_summary", function()
+    it("counts total services for a category", function()
+      local summary = data.state_summary("formatter")
+      assert.equals(vim.tbl_count(services.formatter), summary.total)
+      assert.equals(summary.total, summary.enabled + summary.disabled)
+    end)
   end)
 
   describe("build_ft_groups for linter", function()
@@ -226,7 +265,7 @@ describe("service.data", function()
 
       package.loaded.conform = nil
 
-      assert.equals("wired · external", status)
+      assert.equals("configured · external", status)
     end)
   end)
 end)

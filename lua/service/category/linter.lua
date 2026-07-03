@@ -27,9 +27,9 @@ local function wiring_status(name, meta)
   end
 
   if configured == 0 then
-    return "not wired", "DiagnosticWarn"
+    return "not configured", "DiagnosticWarn"
   elseif configured < total then
-    return string.format("partly wired %d/%d", configured, total),
+    return string.format("partly configured %d/%d", configured, total),
       "DiagnosticWarn"
   end
   return nil, nil

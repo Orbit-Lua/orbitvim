@@ -8,6 +8,7 @@ local borders = require("config.borders")
 local state_mod = require("service.state")
 local ui_utils = require("utils.ui")
 local order = require("service.order")
+local table_view = require("service.table")
 
 ---@class Service.Renderer.State
 ---@field ui Service.UI?
@@ -24,13 +25,25 @@ function M.init(opts)
 end
 
 local function is_ft_expanded(category, ft)
-  return _state.ui.expanded[core.ft_key(category, ft)] ~= false
+  local key = core.ft_key(category, ft)
+  if _state.ui.expanded[key] ~= nil then
+    return _state.ui.expanded[key]
+  end
+  return _state.ui.scope == "buffer"
+end
+
+local function active_ft()
+  if _state.ui.scope == "buffer" then
+    return _state.ui.source_ft
+  end
+  return nil
 end
 
 local function content_lines(category)
+  local ft = active_ft()
   if core.is_ordered_category(category) then
     local count = 0
-    for _, group in ipairs(data.build_ft_groups(category)) do
+    for _, group in ipairs(data.build_ft_groups(category, ft)) do
       count = count + 1
       if is_ft_expanded(category, group.ft) then
         count = count + #group.names
@@ -39,8 +52,11 @@ local function content_lines(category)
     return count
   end
 
-  local count = vim.tbl_count(services[category])
-  for name, meta in pairs(services[category]) do
+  local count = 0
+  for _, service_entry in ipairs(data.service_entries(category, ft)) do
+    local name = service_entry.name
+    local meta = service_entry.meta
+    count = count + 1
     if _state.ui.expanded[core.service_key(category, name)] then
       count = count + #(meta.ft or {})
     end
@@ -48,49 +64,67 @@ local function content_lines(category)
   return count
 end
 
+---@return integer
+local function chrome_lines()
+  return 4 + (cfg.layout.section_margin * 4)
+end
+
 ---@return vim.api.keyset.win_config
 function M.make_win_cfg()
+  local win_cfg = cfg.window
   local win_width = math.min(
-    vim.o.columns - 2,
-    math.max(cfg.min_w, math.min(cfg.max_w, vim.o.columns - 4))
+    vim.o.columns - win_cfg.editor_padding,
+    math.max(
+      cfg.min_w,
+      math.min(cfg.max_w, vim.o.columns - win_cfg.width_margin)
+    )
   )
-  local natural = 4
+  local natural = chrome_lines()
     + content_lines(cfg.service_categories[_state.ui.category_idx])
-  local win_height =
-    math.min(vim.o.lines - 2, math.max(cfg.min_h, math.min(cfg.max_h, natural)))
+  local win_height = math.min(
+    vim.o.lines - win_cfg.height_margin,
+    math.max(cfg.min_h, math.min(cfg.max_h, natural))
+  )
   return {
-    relative = "editor",
+    relative = win_cfg.relative,
     width = win_width,
     height = win_height,
     row = math.floor((vim.o.lines - win_height) / 2),
     col = math.floor((vim.o.columns - win_width) / 2),
-    style = "minimal",
+    style = win_cfg.style,
     border = borders.default,
-    title = " Service Manager ",
-    title_pos = "center",
-    noautocmd = true,
+    title = win_cfg.title,
+    title_pos = win_cfg.title_pos,
+    noautocmd = win_cfg.noautocmd,
   }
 end
 
 ---@param win_width integer
 ---@return string tabline, integer[][] tab_ranges, integer hint_byte, string hint
 local function build_tabline(win_width)
-  local tabline = "  "
+  local tab_cfg = cfg.tabline
+  local tabline = tab_cfg.prefix
   local tab_ranges = {}
   for i, category_name in ipairs(cfg.service_categories) do
-    local lbl = "  " .. i .. " " .. cfg.cat_label[category_name] .. "  "
+    local lbl =
+      string.format(tab_cfg.item_format, i, cfg.cat_label[category_name])
     local start_byte = #tabline
     tabline = tabline .. lbl
     tab_ranges[i] = { start_byte, #tabline }
   end
 
-  local hint = "press g? for help"
+  local hint = (
+    _state.ui.scope == "buffer" and tab_cfg.buffer_scope_hint
+    or tab_cfg.states_scope_hint
+  )
+    .. tab_cfg.hint_separator
+    .. tab_cfg.help_hint
   local hint_pad = math.max(
     0,
     win_width
       - vim.fn.strdisplaywidth(tabline)
       - vim.fn.strdisplaywidth(hint)
-      - 2
+      - tab_cfg.right_padding
   )
   local hint_byte = #tabline + hint_pad
   tabline = tabline .. string.rep(" ", hint_pad) .. hint
@@ -100,33 +134,26 @@ end
 
 ---@param category ServiceCategory
 ---@param icon_disp_w integer
----@return string
-local function build_col_header(category, icon_disp_w)
+---@return Service.Table.Column[]
+local function build_columns(category, icon_disp_w)
+  local labels = cfg.labels.columns
+  local cell_padding = cfg.table.cell_padding
   local name_w = (category == "lsp" or category == "dap") and cfg.col_name
     or cfg.col_tool
-  local name_label = core.is_ordered_category(category) and "Filetype / Service"
-    or "Service"
-  return string.rep(" ", cfg.pad_flat + 2 + icon_disp_w + 2)
-    .. ui_utils.rpad(name_label, name_w)
-    .. "  "
-    .. ui_utils.rpad("Package", cfg.col_package)
-    .. "  "
-    .. "Status"
+  local name_label = core.is_ordered_category(category)
+      and labels.grouped_service
+    or labels.service
+  return {
+    { key = "tree", label = "", width = cfg.table.tree_width },
+    { key = "icon", label = "", width = icon_disp_w + (cell_padding * 2) },
+    { key = "name", label = name_label, width = name_w },
+    { key = "package", label = labels.package, width = cfg.col_package },
+    { key = "status", label = labels.status, grow = true },
+  }
 end
 
 local function package_label(meta)
-  return meta.mason or "external"
-end
-
-local function service_entries(category)
-  local flat = {}
-  for name, meta in pairs(services[category]) do
-    table.insert(flat, { name = name, meta = meta })
-  end
-  table.sort(flat, function(a, b)
-    return a.name < b.name
-  end)
-  return flat
+  return meta.mason or cfg.labels.external
 end
 
 local function ft_order_rows(category, name, meta)
@@ -155,26 +182,58 @@ local function ft_order_rows(category, name, meta)
   return rows
 end
 
----@param lines string[]
----@param win_width integer
----@param prefix string
----@param status_text string
----@return integer status_byte
-local function append_status_line(lines, win_width, prefix, status_text)
-  local status_w = math.max(1, win_width - vim.fn.strdisplaywidth(prefix))
-  table.insert(
-    lines,
-    ui_utils.fill_line(
-      prefix .. ui_utils.trunc(status_text, status_w),
-      win_width
-    )
+---@param category ServiceCategory
+---@return string
+local function scope_line(category)
+  local labels = cfg.labels
+  local prefix = cfg.layout.line_prefix
+  local sep = cfg.tabline.hint_separator
+  if _state.ui.scope == "buffer" then
+    local ft = _state.ui.source_ft or ""
+    local name = _state.ui.source_name or ""
+    local label = name ~= "" and vim.fn.fnamemodify(name, ":t")
+      or labels.no_name
+    if ft == "" then
+      return prefix
+        .. labels.current_buffer
+        .. ": "
+        .. label
+        .. sep
+        .. labels.no_filetype
+    end
+    return prefix
+      .. labels.current_buffer
+      .. ": "
+      .. label
+      .. sep
+      .. "ft="
+      .. ft
+      .. sep
+      .. labels.showing_available
+  end
+
+  local summary = data.state_summary(category)
+  return string.format(
+    "%s%s: %s%s%d %s%s%d %s%s%d %s",
+    prefix,
+    labels.service_states,
+    cfg.cat_label[category],
+    sep,
+    summary.enabled,
+    labels.enabled,
+    sep,
+    summary.disabled,
+    labels.disabled,
+    sep,
+    summary.total,
+    labels.total
   )
-  return #prefix
 end
 
-local function render_ordered_category(lines, category, win_width, icon_disp_w)
-  local name_w = cfg.col_tool
-  for _, group in ipairs(data.build_ft_groups(category)) do
+local function build_ordered_rows(category)
+  local labels = cfg.labels
+  local rows = {}
+  for _, group in ipairs(data.build_ft_groups(category, active_ft())) do
     local is_expanded = is_ft_expanded(category, group.ft)
     local expand_icon = is_expanded and cfg.icons.expanded
       or cfg.icons.collapsed
@@ -182,28 +241,28 @@ local function render_ordered_category(lines, category, win_width, icon_disp_w)
       "%s (%d %s)",
       group.ft,
       #group.names,
-      #group.names == 1 and "tool" or "tools"
+      #group.names == 1 and labels.tool_singular or labels.tool_plural
     )
-    local prefix = string.rep(" ", cfg.pad_flat)
-      .. expand_icon
-      .. " "
-      .. string.rep(" ", icon_disp_w + 2)
-      .. ui_utils.rpad(ui_utils.trunc(label, name_w), name_w)
-      .. "  "
-      .. ui_utils.rpad("", cfg.col_package)
-      .. "  "
-    local status_byte =
-      append_status_line(lines, win_width, prefix, "global order")
-    _state.ui.line_map[#lines] = {
-      name = group.ft,
-      kind = "ft_group",
-      ft = group.ft,
-      order_names = group.names,
-      meta = nil,
-      icon_byte = cfg.pad_flat,
-      status_byte = status_byte,
-      status_hl = "Comment",
-    }
+    table.insert(rows, {
+      cells = {
+        tree = expand_icon,
+        icon = "",
+        name = label,
+        package = "",
+        status = labels.global_order,
+      },
+      icon_cell = "icon",
+      entry = {
+        name = group.ft,
+        kind = "ft_group",
+        ft = group.ft,
+        order_names = group.names,
+        meta = nil,
+        icon_byte = 0,
+        status_byte = 0,
+        status_hl = "Comment",
+      },
+    })
 
     if is_expanded then
       for idx, name in ipairs(group.names) do
@@ -213,33 +272,115 @@ local function render_ordered_category(lines, category, win_width, icon_disp_w)
           local icon = is_enabled and cfg.icons.enabled or cfg.icons.disabled
           local display_name = string.format("%d. %s", idx, name)
           local status_text, status_hl = data.entry_status(category, name, meta)
-          local icon_gap =
-            string.rep(" ", icon_disp_w - vim.fn.strdisplaywidth(icon) + 2)
-          local row_prefix = string.rep(" ", cfg.pad_flat + 2)
-            .. icon
-            .. icon_gap
-            .. ui_utils.rpad(ui_utils.trunc(display_name, name_w), name_w)
-            .. "  "
-            .. ui_utils.rpad(
-              ui_utils.trunc(package_label(meta), cfg.col_package),
-              cfg.col_package
-            )
-            .. "  "
-          local row_status_byte =
-            append_status_line(lines, win_width, row_prefix, status_text)
-          _state.ui.line_map[#lines] = {
-            name = name,
-            kind = "service",
-            ft = group.ft,
-            order_names = group.names,
-            meta = meta,
-            icon_byte = cfg.pad_flat + 2,
-            status_byte = row_status_byte,
-            status_hl = status_hl,
-          }
+          table.insert(rows, {
+            cells = {
+              tree = "",
+              icon = icon,
+              name = display_name,
+              package = package_label(meta),
+              status = status_text,
+            },
+            icon_cell = "icon",
+            entry = {
+              name = name,
+              kind = "service",
+              ft = group.ft,
+              order_names = group.names,
+              meta = meta,
+              icon_byte = 0,
+              status_byte = 0,
+              status_hl = status_hl,
+            },
+          })
         end
       end
     end
+  end
+  return rows
+end
+
+local function build_service_rows(category)
+  local labels = cfg.labels
+  local rows = {}
+  for _, service_entry in ipairs(data.service_entries(category, active_ft())) do
+    local name = service_entry.name
+    local meta = service_entry.meta
+    local is_enabled = state_mod.is_enabled(category, name)
+    local icon = is_enabled and cfg.icons.enabled or cfg.icons.disabled
+    local is_expanded = _state.ui.expanded[core.service_key(category, name)]
+      == true
+    local expand_icon = is_expanded and cfg.icons.expanded
+      or cfg.icons.collapsed
+    local name_w = (category == "lsp" or category == "dap") and cfg.col_name
+      or cfg.col_tool
+    local display_name = ui_utils.trunc(name, name_w)
+    local status_text, status_hl = data.entry_status(category, name, meta)
+
+    table.insert(rows, {
+      cells = {
+        tree = expand_icon,
+        icon = icon,
+        name = display_name,
+        package = package_label(meta),
+        status = status_text,
+      },
+      icon_cell = "icon",
+      entry = {
+        name = name,
+        kind = "service",
+        meta = meta,
+        icon_byte = 0,
+        status_byte = 0,
+        status_hl = status_hl,
+      },
+    })
+
+    if is_expanded then
+      for _, row in ipairs(ft_order_rows(category, name, meta)) do
+        local detail
+        if row.idx then
+          detail = string.format(
+            "%s %-" .. labels.detail_ft_width .. "s %s %d/%d",
+            labels.detail_ft_prefix,
+            row.ft,
+            labels.detail_order,
+            row.idx,
+            row.total
+          )
+        else
+          detail = labels.detail_ft_prefix .. " " .. row.ft
+        end
+        table.insert(rows, {
+          cells = {
+            tree = "",
+            icon = "",
+            name = detail,
+            package = "",
+            status = "",
+          },
+          icon_cell = "name",
+          entry = {
+            name = name,
+            kind = "detail",
+            ft = row.ft,
+            order_names = row.names,
+            meta = meta,
+            icon_byte = 0,
+            status_byte = 0,
+            status_hl = "Comment",
+          },
+        })
+      end
+    end
+  end
+  return rows
+end
+
+---@param lines string[]
+---@param win_width integer
+local function add_margin(lines, win_width)
+  for _ = 1, cfg.layout.section_margin do
+    table.insert(lines, ui_utils.fill_line("", win_width))
   end
 end
 
@@ -254,84 +395,60 @@ function M.render()
   local icon_disp_w = vim.fn.strdisplaywidth(cfg.icons.enabled)
   local wcfg = M.make_win_cfg()
   local win_width = wcfg.width
-  local sep = string.rep("─", win_width - 4)
+  local sep = string.rep(
+    cfg.layout.separator_char,
+    win_width - cfg.layout.separator_inset
+  )
 
   local tabline, tab_ranges, hint_byte, hint = build_tabline(win_width)
-  local col_hdr = build_col_header(category, icon_disp_w)
+  local columns = build_columns(category, icon_disp_w)
+  local rows = core.is_ordered_category(category)
+      and build_ordered_rows(category)
+    or build_service_rows(category)
 
-  local lines = {
-    ui_utils.fill_line("", win_width),
-    ui_utils.fill_line(tabline, win_width),
-    ui_utils.fill_line("  " .. sep, win_width),
-    ui_utils.fill_line(col_hdr, win_width),
-  }
+  local lines = {}
+  local tabline_lnum, sep_lnum, scope_lnum, header_lnum
+
+  add_margin(lines, win_width)
+  table.insert(lines, ui_utils.fill_line(tabline, win_width))
+  tabline_lnum = #lines
+  add_margin(lines, win_width)
+  table.insert(
+    lines,
+    ui_utils.fill_line(cfg.layout.line_prefix .. sep, win_width)
+  )
+  sep_lnum = #lines
+  add_margin(lines, win_width)
+  table.insert(lines, ui_utils.fill_line(scope_line(category), win_width))
+  scope_lnum = #lines
+  add_margin(lines, win_width)
+
   _state.ui.line_map = {}
 
-  if core.is_ordered_category(category) then
-    render_ordered_category(lines, category, win_width, icon_disp_w)
+  if #rows == 0 then
+    local message = _state.ui.scope == "buffer"
+        and cfg.labels.no_current_services
+      or cfg.labels.no_category_services
+    table.insert(
+      lines,
+      table_view.empty_line(message, win_width, cfg.table.empty_prefix)
+    )
   else
-    for _, service_entry in ipairs(service_entries(category)) do
-      local name = service_entry.name
-      local meta = service_entry.meta
-      local is_enabled = state_mod.is_enabled(category, name)
-      local icon = is_enabled and cfg.icons.enabled or cfg.icons.disabled
-      local is_expanded = _state.ui.expanded[core.service_key(category, name)]
-        == true
-      local expand_icon = is_expanded and cfg.icons.expanded
-        or cfg.icons.collapsed
-      local name_w = (category == "lsp" or category == "dap") and cfg.col_name
-        or cfg.col_tool
-      local display_name = ui_utils.trunc(name, name_w)
-      local status_text, status_hl = data.entry_status(category, name, meta)
+    local col_hdr, row_lines, row_map = table_view.render({
+      columns = columns,
+      rows = rows,
+      width = win_width,
+      indent = cfg.table.indent,
+      separator = cfg.table.separator,
+      cell_padding = cfg.table.cell_padding,
+    })
+    table.insert(lines, ui_utils.fill_line(col_hdr, win_width))
+    header_lnum = #lines
 
-      local icon_gap =
-        string.rep(" ", icon_disp_w - vim.fn.strdisplaywidth(icon) + 2)
-      local prefix = string.rep(" ", cfg.pad_flat)
-        .. expand_icon
-        .. " "
-        .. icon
-        .. icon_gap
-        .. ui_utils.rpad(display_name, name_w)
-        .. "  "
-        .. ui_utils.rpad(
-          ui_utils.trunc(package_label(meta), cfg.col_package),
-          cfg.col_package
-        )
-        .. "  "
-      local status_byte =
-        append_status_line(lines, win_width, prefix, status_text)
-      _state.ui.line_map[#lines] = {
-        name = name,
-        kind = "service",
-        meta = meta,
-        icon_byte = cfg.pad_flat + 2,
-        status_byte = status_byte,
-        status_hl = status_hl,
-      }
-
-      if is_expanded then
-        for _, row in ipairs(ft_order_rows(category, name, meta)) do
-          local detail
-          if row.idx then
-            detail =
-              string.format("ft %-18s order %d/%d", row.ft, row.idx, row.total)
-          else
-            detail = "ft " .. row.ft
-          end
-          local detail_prefix = string.rep(" ", cfg.pad_flat + 4) .. detail
-          table.insert(lines, ui_utils.fill_line(detail_prefix, win_width))
-          _state.ui.line_map[#lines] = {
-            name = name,
-            kind = "detail",
-            ft = row.ft,
-            order_names = row.names,
-            meta = meta,
-            icon_byte = cfg.pad_flat + 4,
-            status_byte = #detail_prefix,
-            status_hl = "Comment",
-          }
-        end
-      end
+    local base = #lines
+    vim.list_extend(lines, row_lines)
+    for lnum, entry in pairs(row_map) do
+      _state.ui.line_map[base + lnum] = entry
     end
   end
 
@@ -349,7 +466,7 @@ function M.render()
       _state.ui.buf,
       _state.ns,
       tab_highlight,
-      1,
+      tabline_lnum - 1,
       range[1],
       range[2]
     )
@@ -358,24 +475,39 @@ function M.render()
     _state.ui.buf,
     _state.ns,
     "Comment",
-    1,
+    tabline_lnum - 1,
     hint_byte,
     hint_byte + #hint
   )
-  ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", 3, 0, -1)
+  ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", sep_lnum - 1, 0, -1)
+  ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", scope_lnum - 1, 0, -1)
+  if header_lnum then
+    ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", header_lnum - 1, 0, -1)
+  end
 
   for lnum, entry in pairs(_state.ui.line_map) do
+    local tree_hl = entry.kind == "detail" and "Comment" or "Title"
     local icon_hl = entry.kind == "ft_group" and "Title"
       or entry.kind == "detail" and "Comment"
       or state_mod.is_enabled(category, entry.name) and "DiagnosticOk"
       or "Comment"
+    if entry.tree_byte and entry.tree_end_byte then
+      ui_utils.buf_hl(
+        _state.ui.buf,
+        _state.ns,
+        tree_hl,
+        lnum - 1,
+        entry.tree_byte,
+        entry.tree_end_byte
+      )
+    end
     ui_utils.buf_hl(
       _state.ui.buf,
       _state.ns,
       icon_hl,
       lnum - 1,
       entry.icon_byte,
-      entry.icon_byte + 3
+      entry.icon_end_byte or entry.icon_byte
     )
     ui_utils.buf_hl(
       _state.ui.buf,
@@ -383,7 +515,7 @@ function M.render()
       entry.status_hl,
       lnum - 1,
       entry.status_byte,
-      -1
+      entry.status_end_byte or entry.status_byte
     )
   end
 
@@ -422,43 +554,54 @@ function M.render_help()
   _state.ui.line_map = {}
 
   local win_width = vim.api.nvim_win_get_width(_state.ui.win)
-  local sep = string.rep("─", win_width - 4)
+  local sep = string.rep(
+    cfg.layout.separator_char,
+    win_width - cfg.layout.separator_inset
+  )
 
   local lines = {}
   local section_lnums = {}
 
   local function render_section(title)
-    table.insert(lines, ui_utils.fill_line("", win_width))
-    table.insert(lines, ui_utils.fill_line("  " .. title, win_width))
+    add_margin(lines, win_width)
+    table.insert(
+      lines,
+      ui_utils.fill_line(cfg.layout.line_prefix .. title, win_width)
+    )
     section_lnums[#lines] = true
   end
 
   local function row(key, desc)
     table.insert(
       lines,
-      ui_utils.fill_line(string.format("  %-18s %s", key, desc), win_width)
+      ui_utils.fill_line(
+        string.format(
+          "%s%-" .. cfg.help.key_width .. "s %s",
+          cfg.layout.line_prefix,
+          key,
+          desc
+        ),
+        win_width
+      )
     )
   end
 
   table.insert(lines, ui_utils.fill_line("", win_width))
-  table.insert(lines, ui_utils.fill_line("  ? Help", win_width))
-  table.insert(lines, ui_utils.fill_line("  " .. sep, win_width))
+  table.insert(
+    lines,
+    ui_utils.fill_line(cfg.layout.line_prefix .. cfg.help.title, win_width)
+  )
+  table.insert(
+    lines,
+    ui_utils.fill_line(cfg.layout.line_prefix .. sep, win_width)
+  )
 
-  render_section("Navigation")
-  row("1-4", "Switch tab  LSP / DAP / LINTER / FORMATTER")
-  row("<Tab>", "Next tab")
-  row("<S-Tab>", "Previous tab")
-
-  render_section("Actions")
-  row("<Space>", "Toggle enable / disable")
-  row("<CR> / o / za", "Expand / collapse details")
-  row("i", "Install mason package")
-  row("[ / ]", "Reorder expanded ft detail (LINTER / FORMATTER only)")
-  row("K", "Show full details (all tabs)")
-
-  render_section("General")
-  row("g?", "Toggle this help page")
-  row("q / <Esc>", "Close Service Manager")
+  for _, section in ipairs(cfg.help.sections) do
+    render_section(section.title)
+    for _, help_row in ipairs(section.rows) do
+      row(help_row[1], help_row[2])
+    end
+  end
 
   vim.bo[_state.ui.buf].modifiable = true
   vim.api.nvim_buf_set_lines(_state.ui.buf, 0, -1, false, lines)

@@ -9,6 +9,10 @@ local ui = {
   buf = nil,
   win = nil,
   category_idx = 1,
+  scope = "buffer",
+  source_buf = nil,
+  source_ft = nil,
+  source_name = nil,
   help_open = false,
   line_map = {},
   live_augroup = nil,
@@ -29,7 +33,9 @@ local function set_keymaps()
 
   map("q", M.close)
   map("<Esc>", M.close)
+  map("?", renderer.toggle_help)
   map("g?", renderer.toggle_help)
+  map("s", actions.toggle_scope)
   map("<Space>", actions.do_toggle)
   map("i", actions.do_install)
   map("<Tab>", function()
@@ -62,6 +68,11 @@ function M.open()
     vim.api.nvim_set_current_win(ui.win)
     return
   end
+
+  ui.source_buf = vim.api.nvim_get_current_buf()
+  ui.source_ft = vim.bo[ui.source_buf].filetype
+  ui.source_name = vim.api.nvim_buf_get_name(ui.source_buf)
+  ui.scope = "buffer"
 
   ui.buf = vim.api.nvim_create_buf(false, true)
   vim.bo[ui.buf].filetype = "ServiceManager"

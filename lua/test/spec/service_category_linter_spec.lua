@@ -26,7 +26,7 @@ describe("service.category.linter", function()
   end)
 
   it(
-    "reports fully wired linters as ok when there are no diagnostics",
+    "reports fully configured linters as ok when there are no diagnostics",
     function()
       local status, hl = linter.entry_status({
         name = "luacheck",
@@ -46,7 +46,7 @@ describe("service.category.linter", function()
       installed = true,
     })
 
-    assert.equals("not wired", status)
+    assert.equals("not configured", status)
     assert.equals("DiagnosticWarn", hl)
   end)
 
@@ -59,7 +59,7 @@ describe("service.category.linter", function()
       installed = true,
     })
 
-    assert.equals("partly wired 1/4", status)
+    assert.equals("partly configured 1/4", status)
     assert.equals("DiagnosticWarn", hl)
   end)
 end)
