@@ -121,18 +121,27 @@ M.activate_features = function(opts)
   local utils_lsp = require("utils.lsp")
 
   if opts.inlay_hints.enabled then
-    utils_lsp.on_supports_method("textDocument/inlayHint", function(_, buffer)
-      if
-        vim.api.nvim_buf_is_valid(buffer)
-        and vim.bo[buffer].buftype == ""
-        and not vim.tbl_contains(
-          opts.inlay_hints.exclude,
-          vim.bo[buffer].filetype
-        )
-      then
-        vim.lsp.inlay_hint.enable(true, { bufnr = buffer })
-      end
-    end)
+    utils_lsp.on_supports_method(
+      "textDocument/inlayHint",
+      function(_, buffer, event)
+        if
+          vim.api.nvim_buf_is_valid(buffer)
+          and vim.bo[buffer].buftype == ""
+          and not vim.tbl_contains(
+            opts.inlay_hints.exclude,
+            vim.bo[buffer].filetype
+          )
+        then
+          if
+            not (event and event.refresh)
+            or vim.lsp.inlay_hint.is_enabled({ bufnr = buffer })
+          then
+            vim.lsp.inlay_hint.enable(true, { bufnr = buffer })
+          end
+        end
+      end,
+      { refresh = true }
+    )
   end
 
   if opts.codelens.enabled and vim.lsp.codelens then
@@ -150,6 +159,37 @@ M.activate_features = function(opts)
       })
     end)
   end
+
+  local pending_refresh = {}
+  vim.api.nvim_create_autocmd("LspProgress", {
+    group = vim.api.nvim_create_augroup(
+      "UserLspSupportsMethodRefresh",
+      { clear = true }
+    ),
+    pattern = "end",
+    callback = function(args)
+      local client = vim.lsp.get_client_by_id(args.data.client_id)
+      if not client then
+        return
+      end
+
+      for buffer in pairs(client.attached_buffers) do
+        if vim.api.nvim_buf_is_valid(buffer) then
+          local key = client.id .. ":" .. buffer
+          if not pending_refresh[key] then
+            pending_refresh[key] = true
+            vim.defer_fn(function()
+              pending_refresh[key] = nil
+              local refreshed_client = vim.lsp.get_client_by_id(client.id)
+              if refreshed_client then
+                utils_lsp.refresh_supported_methods(refreshed_client, buffer)
+              end
+            end, 100)
+          end
+        end
+      end
+    end,
+  })
 end
 
 return M

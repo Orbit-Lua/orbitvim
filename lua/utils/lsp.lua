@@ -117,6 +117,31 @@ end
 ---@type table<string, table<vim.lsp.Client, table<number, boolean>>>
 M._supports_method = {}
 
+---@type table<string, boolean>
+M._refresh_methods = {}
+
+---@class Lsp.SupportsMethod.Event
+---@field client_id integer
+---@field buffer integer
+---@field method string
+---@field refresh? boolean
+
+---@param client vim.lsp.Client
+---@param buffer number
+---@param method string
+---@param opts? {refresh?: boolean}
+function M._emit_supports_method(client, buffer, method, opts)
+  vim.api.nvim_exec_autocmds("User", {
+    pattern = "LspSupportsMethod",
+    data = {
+      client_id = client.id,
+      buffer = buffer,
+      method = method,
+      refresh = opts and opts.refresh or nil,
+    },
+  })
+end
+
 function M.setup()
   local register_capability = vim.lsp.handlers["client/registerCapability"]
   vim.lsp.handlers["client/registerCapability"] = function(err, res, ctx)
@@ -138,7 +163,9 @@ function M.setup()
 end
 
 ---@param client vim.lsp.Client
-function M._check_methods(client, buffer)
+---@param buffer number
+---@param opts? {force?: boolean, refresh?: boolean}
+function M._check_methods(client, buffer, opts)
   -- don't trigger on invalid buffers
   if not vim.api.nvim_buf_is_valid(buffer) then
     return
@@ -152,31 +179,54 @@ function M._check_methods(client, buffer)
     return
   end
   for method, clients in pairs(M._supports_method) do
-    clients[client] = clients[client] or {}
-    if not clients[client][buffer] then
-      if client.supports_method and client:supports_method(method, buffer) then
-        clients[client][buffer] = true
-        vim.api.nvim_exec_autocmds("User", {
-          pattern = "LspSupportsMethod",
-          data = { client_id = client.id, buffer = buffer, method = method },
-        })
+    if not (opts and opts.refresh) or M._refresh_methods[method] then
+      clients[client] = clients[client] or {}
+      if (opts and opts.force) or not clients[client][buffer] then
+        if
+          client.supports_method and client:supports_method(method, buffer)
+        then
+          clients[client][buffer] = true
+          M._emit_supports_method(client, buffer, method, {
+            refresh = opts and opts.refresh or nil,
+          })
+        end
       end
     end
   end
 end
 
+---Replays refreshable callbacks registered with on_supports_method.
+---
+---Callbacks registered with { refresh = true } receive an event table with
+---refresh = true and should keep user-controlled state intact when refreshing
+---already-initialized features.
+---@param client vim.lsp.Client
+---@param buffer number
+function M.refresh_supported_methods(client, buffer)
+  M._check_methods(client, buffer, { force = true, refresh = true })
+end
+
 ---@param method string
----@param fn fun(client:vim.lsp.Client, buffer)
-function M.on_supports_method(method, fn)
+---@param fn fun(client:vim.lsp.Client, buffer, event?: Lsp.SupportsMethod.Event)
+---@param opts? {refresh?: boolean}
+function M.on_supports_method(method, fn, opts)
   M._supports_method[method] = M._supports_method[method]
     or setmetatable({}, { __mode = "k" })
+  local refreshable = opts and opts.refresh
+  if opts and opts.refresh then
+    M._refresh_methods[method] = true
+  end
+
   return vim.api.nvim_create_autocmd("User", {
     pattern = "LspSupportsMethod",
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
       local buffer = args.data.buffer ---@type number
       if client and method == args.data.method then
-        return fn(client, buffer)
+        if args.data.refresh and not refreshable then
+          return
+        end
+        return fn(client, buffer, args.data)
       end
     end,
   })

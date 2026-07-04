@@ -46,17 +46,16 @@ return {
     config = function(_, opts)
       local setup = require("plugins.lsp.setup")
 
+      utils_lsp.setup()
       utils_lsp.on_attach(function(client, buffer)
         require("plugins.lsp.keymaps").on_attach(client, buffer)
       end)
-
-      setup.register_servers(opts)
-      utils_lsp.setup()
       utils_lsp.on_dynamic_capability(require("plugins.lsp.keymaps").on_attach)
 
       setup.configure_diagnostics(opts)
       setup.install_diagnostic_filter()
       setup.activate_features(opts)
+      setup.register_servers(opts)
     end,
   },
 
