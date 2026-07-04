@@ -27,7 +27,7 @@ return {
     },
 
     -- More settings: https://microsoft.github.io/pyright/#/settings
-    -- NOTE: when [tool.pyright] is defined in pyproject.toml these defaults are overridden.
+    -- When [tool.pyright] is defined in pyproject.toml these defaults are overridden.
     pyright = {
       settings = {
         pyright = {

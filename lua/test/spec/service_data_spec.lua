@@ -2,7 +2,7 @@ describe("service.data", function()
   local data = require("service.data")
   local services = require("config.services")
 
-  -- NOTE: build_ft_groups("lsp") and build_ft_groups("dap") are intentionally
+  -- build_ft_groups("lsp") and build_ft_groups("dap") are intentionally
   -- not called here.  The state module only creates formatter_order and
   -- linter_order keys; indexing the missing lsp_order / dap_order would panic.
   -- content_lines() guards those two categories with an early return.

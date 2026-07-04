@@ -53,7 +53,7 @@ return {
         view = "cmdline_popup",
       },
 
-      -- NOTE: this will catch vim.ui.select event, use snacks ui select override solve this problem
+      -- This will catch vim.ui.select event, use snacks ui select override solve this problem
       messages = {
         enabled = true,
       },
@@ -64,7 +64,7 @@ return {
       },
 
       lsp = {
-        -- override markdown rendering so that **cmp** and other plugins use **Treesitter**
+        -- Override markdown rendering so that cmp and other plugins use treesitter
         override = {
           ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
           ["vim.lsp.util.stylize_markdown"] = true,
@@ -107,7 +107,7 @@ return {
           enabled = true,
         },
 
-        -- NOTE: turn off this because it blocks many important messages from language servers ["window/showMessage"]
+        -- Turn off this because it blocks many important messages from language servers ["window/showMessage"]
         message = {
           enabled = false,
         },

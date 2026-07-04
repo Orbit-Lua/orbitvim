@@ -1,11 +1,32 @@
--- NOTE: It also requires the correct .NET runtime based on the .NET version used in your project.
--- this dap config refer to:
+-- Also requires the correct .NET runtime based on the .NET version used in your project.
+--
+-- This dap config refer to:
 -- https://codeberg.org/mfussenegter/nvim-dap/wiki/Debug-Adapter-installation#user-content-dotnet
 
 local os_utils = require("utils.os")
 
-local function pick_dll()
-  return vim.fn.input("Path to dll: ", vim.fn.getcwd() .. "/bin/Debug/", "file")
+local function get_dll()
+  return coroutine.create(function(dap_run_co)
+    local items =
+      vim.fn.globpath(vim.fn.getcwd(), "**/bin/Debug/*.dll", false, true)
+
+    ---@type vim.ui.select.Opts
+    local opts = {
+      format_item = function(path)
+        return vim.fn.fnamemodify(path, ":t")
+      end,
+      prompt = "Select a dll to Debug",
+    }
+    local function cont(choice)
+      if choice == nil then
+        return nil
+      else
+        coroutine.resume(dap_run_co, choice)
+      end
+    end
+
+    vim.ui.select(items, opts, cont)
+  end)
 end
 
 local function get_dotnet_project_name()
@@ -97,7 +118,7 @@ return {
         type = "coreclr",
         name = "Launch .NET Core App (choose dll)",
         request = "launch",
-        program = pick_dll,
+        program = get_dll,
         cwd = vim.fn.getcwd(),
         justMyCode = false,
         stopAtEntry = false,

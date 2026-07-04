@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- NOTE: Do not add <!DOCTYPE xml> to the top of the file, otherwise language server will not work. -->
+<!-- Do not add <!DOCTYPE xml> to the top of the file, otherwise language server will not work. -->
+<!-- Do not add <!DOCTYPE xml> to the top of the file, otherwise language server will not work. -->
+<!-- Do not add <!DOCTYPE xml> to the top of the file, otherwise language server will not work. -->
 
 <!-- run this via cli -->
 <!-- dotnet publish -p:PublishProfile=FolderProfile -c Release -->

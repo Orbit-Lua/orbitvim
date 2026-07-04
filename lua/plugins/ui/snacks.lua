@@ -171,7 +171,8 @@ return {
                 win = "input",
                 height = 0.1,
                 border = borders.snacks.picker.select.input,
-                title = "Select {title}",
+                -- title = "Select {title}",
+                title = "{title}",
               },
               {
                 win = "list",

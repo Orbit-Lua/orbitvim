@@ -16,20 +16,8 @@ M.setup = function()
     -- this option only modifiable in MS-Windows, so set value here
     -- vim.o.shellslash = true
 
-    -- TODO: remove this when vim.ui.open is fixed upstream.
-    -- https://github.com/neovim/neovim/issues/39524
-    --
-    ---@diagnostic disable-next-line: duplicate-set-field
-    vim.ui.open = function(uri)
-      return vim.system(
-        { "rundll32", "url.dll,FileProtocolHandler", uri },
-        { detach = true }
-      )
-    end
-    vim.g.netrw_browsex_viewer = "rundll32 url.dll,FileProtocolHandler"
-
     -- https://github.com/nvim-treesitter/nvim-treesitter/issues/8292#issuecomment-3734228891
-    -- FIX: Compiler detection bug on Windows (treesitter)
+    -- Compiler detection bug on Windows (treesitter)
     vim.env.CC = "gcc"
   else
     vim.o.shellcmdflag = "-c"

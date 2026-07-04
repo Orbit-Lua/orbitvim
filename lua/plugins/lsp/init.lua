@@ -90,7 +90,7 @@ return {
       end,
 
       handlers = {
-        -- HACK: drop duplicated diagnostic message
+        -- Drop duplicated diagnostic message
         -- https://neovim.io/doc/user/lsp.html#lsp-handler
         ---@type lsp.Handler
         ["textDocument/publishDiagnostics"] = function(err, res, ctx)
