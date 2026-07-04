@@ -9,10 +9,12 @@ return {
           codeLens = { enable = true },
           hint = {
             enable = true,
-            arrayIndex = "Disable",
-            setType = false,
-            paramName = "Disable",
+            paramName = "Literal",
             paramType = true,
+            setType = true,
+            arrayIndex = "Auto",
+            await = true,
+            semicolon = "Disable",
           },
           runtime = { version = "LuaJIT" },
           workspace = {

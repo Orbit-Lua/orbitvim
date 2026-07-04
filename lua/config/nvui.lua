@@ -109,7 +109,7 @@ M.base46 = {
     -- Snacks picker
     SnacksPickerMatch = { link = "TelescopeMatching" },
     SnacksPickerDir = { fg = "blue" },
-    SnacksPickerPathHidden = { fg = "grey_fg" },
+    SnacksPickerPathHidden = { fg = "blue" },
     -- SnacksPickerDir = { fg = "#928374" },
     -- SnacksPickerPathHidden = { fg = "#928374" },
 
