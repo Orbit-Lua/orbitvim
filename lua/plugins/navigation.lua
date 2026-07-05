@@ -12,7 +12,7 @@ return {
   {
     "nvim-tree/nvim-tree.lua",
     dependencies = { "nvim-tree/nvim-web-devicons" },
-    ---@type NvimTreeOpts
+    ---@type nvim_tree.config
     opts = {
       filters = { dotfiles = false },
       disable_netrw = true,
@@ -20,7 +20,9 @@ return {
       sync_root_with_cwd = true,
       update_focused_file = {
         enable = true,
-        update_root = false,
+        update_root = {
+          enable = false,
+        },
       },
       view = {
         width = 40,
