@@ -1,11 +1,12 @@
 local config = require("config")
 local borders = require("config.borders")
-local ui = require("utils.ui")
+local theme = require("config.theme")
+local window = require("utils.window")
 local utils_cmp = require("utils.cmp")
 
-ui.load_base46_cache("cmp")
+theme.load_cache("cmp")
 
-vim.o.pumheight = select(2, ui.get_completion_window_size())
+vim.o.pumheight = select(2, window.get_completion_size())
 
 local cmp = require("cmp")
 local cmp_types = require("cmp.types")
@@ -26,8 +27,8 @@ local options = {
     documentation = {
       border = borders.default,
       scrollbar = true,
-      max_width = select(1, ui.get_doc_window_size()),
-      max_height = select(2, ui.get_doc_window_size()),
+      max_width = select(1, window.get_doc_size()),
+      max_height = select(2, window.get_doc_size()),
       winhighlight = "Normal:CmpDoc,FloatBorder:CmpDocBorder",
     },
   },
@@ -103,7 +104,7 @@ local options = {
     -- entry, item
     format = function(_, item)
       local icons = config.icons.kinds
-      local max_width = select(1, ui.get_completion_window_size())
+      local max_width = select(1, window.get_completion_size())
       if icons[item.kind] then
         -- with text
         -- item.kind = icons[item.kind] .. item.kind

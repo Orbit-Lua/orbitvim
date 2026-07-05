@@ -1,9 +1,10 @@
-local ui = require("utils.ui")
+local harpoon_utils = require("utils.harpoon")
 local fs = require("utils.fs")
+local theme = require("config.theme")
 local icons = require("config").icons
 
-ui.load_base46_cache("telescope")
-ui.load_base46_cache("nvimtree")
+theme.load_cache("telescope")
+theme.load_cache("nvimtree")
 
 ---@type LazySpec[]
 return {
@@ -185,7 +186,7 @@ return {
               col = pos[2],
               short_path = fs.pretty_path(
                 value,
-                { length = ui.harpoon.short_path_length, only_cwd = true }
+                { length = harpoon_utils.short_path_length, only_cwd = true }
               ),
             },
           }
@@ -193,7 +194,7 @@ return {
 
         display = function(list_item)
           local path = list_item.context.short_path or ""
-          return ui.harpoon.format_display(path)
+          return harpoon_utils.format_display(path)
         end,
       },
     },
@@ -204,7 +205,7 @@ return {
       harpoon:setup(opts)
 
       -- this will set cursor to current file
-      harpoon:extend(ui.harpoon.highlight_current_file())
+      harpoon:extend(harpoon_utils.highlight_current_file())
 
       vim.keymap.set("n", "<leader>ba", function()
         harpoon:list():add()

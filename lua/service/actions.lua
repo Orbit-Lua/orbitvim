@@ -6,7 +6,7 @@ local data = require("service.data")
 local mason = require("service.mason")
 local state_mod = require("service.state")
 local borders = require("config.borders")
-local ui_utils = require("utils.ui")
+local highlights = require("utils.hl")
 local logger = require("utils.logger")
 local category_handlers = require("service.category")
 
@@ -134,12 +134,12 @@ function M.show_tooltip_at_cursor()
   vim.api.nvim_buf_set_lines(tooltip_buf, 0, -1, false, tooltip_lines)
 
   local name_hl = is_entry_enabled and "DiagnosticOk" or "Comment"
-  ui_utils.buf_hl(tooltip_buf, _state.tooltip_ns, name_hl, 0, 1, 4)
+  highlights.buf_hl(tooltip_buf, _state.tooltip_ns, name_hl, 0, 1, 4)
 
   for i, line in ipairs(tooltip_lines) do
     if line:match("^   status:") then
       local prefix_len = #"   status: "
-      ui_utils.buf_hl(
+      highlights.buf_hl(
         tooltip_buf,
         _state.tooltip_ns,
         status_hl,
@@ -148,7 +148,7 @@ function M.show_tooltip_at_cursor()
         -1
       )
     elseif line:match("^   E  ") then
-      ui_utils.buf_hl(
+      highlights.buf_hl(
         tooltip_buf,
         _state.tooltip_ns,
         "DiagnosticError",
@@ -157,7 +157,7 @@ function M.show_tooltip_at_cursor()
         4
       )
     elseif line:match("^   W  ") then
-      ui_utils.buf_hl(
+      highlights.buf_hl(
         tooltip_buf,
         _state.tooltip_ns,
         "DiagnosticWarn",

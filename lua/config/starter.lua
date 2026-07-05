@@ -1,25 +1,27 @@
 local M = {}
 
-function M.setup()
-  local utils = require("utils")
+local fs = require("utils.fs")
+local highlights = require("utils.hl")
+local shell = require("utils.shell")
+local startup = require("config.startup")
+local theme = require("config.theme")
 
-  utils.ui.close_lazy_view()
-  utils.ui.load_options()
+function M.setup()
+  startup.close_lazy_view()
+  startup.load_options()
 
   require("config.events")
   require("config.autocmds")
   require("config.filetypes")
 
-  for _, cmd_file in
-    ipairs(utils.fs.scandir(utils.fs.config_path .. "/lua/cmds", "file"))
-  do
+  for _, cmd_file in ipairs(fs.scandir(fs.config_path .. "/lua/cmds", "file")) do
     require("cmds." .. vim.fn.fnamemodify(cmd_file, ":r"))
   end
 
-  utils.ui.load_base46_cache("defaults")
-  utils.ui.load_base46_cache("statusline")
-  utils.shell.setup()
-  utils.hl.setup()
+  theme.load_cache("defaults")
+  theme.load_cache("statusline")
+  shell.setup()
+  highlights.setup()
 
   vim.schedule(function()
     require("config.keymaps")

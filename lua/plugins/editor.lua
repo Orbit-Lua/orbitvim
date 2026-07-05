@@ -1,7 +1,7 @@
-local ui = require("utils.ui")
+local theme = require("config.theme")
 
-ui.load_base46_cache("syntax")
-ui.load_base46_cache("treesitter")
+theme.load_cache("syntax")
+theme.load_cache("treesitter")
 
 ---@type LazySpec[]
 return {
@@ -100,7 +100,7 @@ return {
       scope = { char = "│", highlight = "IblScopeChar" },
     },
     config = function(_, opts)
-      ui.load_base46_cache("blankline")
+      theme.load_cache("blankline")
 
       local hooks = require("ibl.hooks")
       hooks.register(
@@ -109,7 +109,7 @@ return {
       )
       require("ibl").setup(opts)
 
-      ui.load_base46_cache("blankline")
+      theme.load_cache("blankline")
     end,
   },
 

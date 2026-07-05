@@ -1,6 +1,6 @@
 local M = {}
 
-local ui_utils = require("utils.ui")
+local str = require("utils.str")
 
 ---@class Service.Table.Column
 ---@field key string
@@ -73,8 +73,8 @@ end
 local function fit_cell(value, width, cell_padding)
   local pad = padding_for_width(width, cell_padding)
   local inner_w = math.max(1, width - (pad * 2))
-  local fitted = ui_utils.trunc(value or "", inner_w)
-  local text = ui_utils.rpad(fitted, inner_w)
+  local fitted = str.trunc(value or "", inner_w)
+  local text = str.rpad(fitted, inner_w)
   return string.rep(" ", pad) .. text .. string.rep(" ", pad),
     pad,
     pad + #fitted
@@ -134,7 +134,7 @@ function M.render(opts)
     cell_padding,
     header_cells
   )
-  header = ui_utils.fill_line(header, opts.width)
+  header = str.fill_line(header, opts.width)
 
   local lines = {}
   local line_map = {}
@@ -147,7 +147,7 @@ function M.render(opts)
       cell_padding,
       row.cells
     )
-    table.insert(lines, ui_utils.fill_line(line, opts.width))
+    table.insert(lines, str.fill_line(line, opts.width))
 
     if row.entry then
       local entry = vim.tbl_extend("force", {}, row.entry)
@@ -181,7 +181,7 @@ end
 ---@param prefix? string
 ---@return string
 function M.empty_line(text, width, prefix)
-  return ui_utils.fill_line((prefix or "  ") .. text, width)
+  return str.fill_line((prefix or "  ") .. text, width)
 end
 
 return M

@@ -1,8 +1,36 @@
 local LazyUtil = require("lazy.core.util")
 local M = {}
 
+local modules = {
+  lsp = "utils.lsp",
+  ft = "utils.ft",
+  shell = "utils.shell",
+  os = "utils.os",
+  config = "config",
+  fs = "utils.fs",
+  cmp = "utils.cmp",
+  buffer = "utils.buffer",
+  hl = "utils.hl",
+  term = "utils.term",
+  ui = "utils.ui",
+  str = "utils.str",
+  table = "utils.table",
+  logger = "utils.logger",
+  window = "utils.window",
+  icons = "utils.icons",
+  tree = "utils.tree",
+  harpoon = "utils.harpoon",
+}
+
 setmetatable(M, {
   __index = function(_, k)
+    local module = modules[k]
+    if module then
+      local value = require(module)
+      rawset(M, k, value)
+      return value
+    end
+
     if LazyUtil[k] then
       return LazyUtil[k]
     end
@@ -10,21 +38,6 @@ setmetatable(M, {
     return nil
   end,
 })
-
-M.lsp = require("utils.lsp")
-M.ft = require("utils.ft")
-M.shell = require("utils.shell")
-M.os = require("utils.os")
-M.config = require("config")
-M.fs = require("utils.fs")
-M.cmp = require("utils.cmp")
-M.buffer = require("utils.buffer")
-M.hl = require("utils.hl")
-M.term = require("utils.term")
-M.ui = require("utils.ui")
-M.str = require("utils.str")
-M.table = require("utils.table")
-M.logger = require("utils.logger")
 
 M.CREATE_UNDO = vim.api.nvim_replace_termcodes("<c-G>u", true, true, true)
 function M.create_undo()

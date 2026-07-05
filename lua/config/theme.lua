@@ -61,6 +61,15 @@ function M.reload(name)
   pcall(require, "volt.highlights")
 end
 
+function M.load_cache(name)
+  local ok, err = pcall(function()
+    dofile(vim.g.base46_cache .. name)
+  end)
+  if not ok then
+    vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
 function M.set(name, opts)
   opts = opts or {}
 

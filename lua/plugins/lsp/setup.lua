@@ -3,8 +3,7 @@ local M = {}
 ---Registers all configured LSP servers with vim.lsp.
 ---@param opts Lsp.Config.Spec
 M.register_servers = function(opts)
-  local ui = require("utils.ui")
-  ui.load_base46_cache("lsp")
+  require("config.theme").load_cache("lsp")
 
   local configs = require("config")
   local state_mod = require("service.state")

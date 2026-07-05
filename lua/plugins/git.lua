@@ -1,7 +1,7 @@
 local configs = require("config")
-local ui = require("utils.ui")
+local theme = require("config.theme")
 
-ui.load_base46_cache("git")
+theme.load_cache("git")
 
 ---@type LazySpec[]
 return {

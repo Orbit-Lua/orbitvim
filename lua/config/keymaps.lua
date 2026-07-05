@@ -1,6 +1,6 @@
 local map = vim.keymap.set
 local fs = require("utils.fs")
-local ui = require("utils.ui")
+local term = require("utils.term")
 local utils_cmp = require("utils.cmp")
 
 map({ "i", "n", "s" }, "<esc>", function()
@@ -52,18 +52,18 @@ map("n", "<leader>v", function()
   require("utils.term").new({ pos = "vsp" })
 end, { desc = "terminal new vertical term" })
 map({ "n", "t" }, "<M-v>", function()
-  if ui.check_toggle_term() then
-    require("utils.term").toggle({ pos = "vsp", id = "vtoggleTerm" })
+  if term.can_toggle() then
+    term.toggle({ pos = "vsp", id = "vtoggleTerm" })
   end
 end, { desc = "terminal toggleable vertical term" })
 map({ "n", "t" }, "<M-h>", function()
-  if ui.check_toggle_term() then
-    require("utils.term").toggle({ pos = "sp", id = "htoggleTerm" })
+  if term.can_toggle() then
+    term.toggle({ pos = "sp", id = "htoggleTerm" })
   end
 end, { desc = "terminal toggleable horizontal term" })
 map({ "n", "t" }, "<M-i>", function()
-  if ui.check_toggle_term() then
-    require("utils.term").toggle({ pos = "float", id = "floatTerm" })
+  if term.can_toggle() then
+    term.toggle({ pos = "float", id = "floatTerm" })
   end
 end, { desc = "terminal toggle floating term" })
 

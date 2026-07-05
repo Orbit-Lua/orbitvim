@@ -112,4 +112,15 @@ function M.toggle(opts)
   end
 end
 
+---@return boolean true when toggling a managed terminal is safe
+function M.can_toggle()
+  local current_ft = vim.bo.filetype
+
+  if current_ft:match("Term_") or not require("utils.window").is_floating() then
+    return true
+  end
+
+  return false
+end
+
 return M

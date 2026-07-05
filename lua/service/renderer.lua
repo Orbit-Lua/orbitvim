@@ -6,7 +6,8 @@ local data = require("service.data")
 local services = require("config.services")
 local borders = require("config.borders")
 local state_mod = require("service.state")
-local ui_utils = require("utils.ui")
+local highlights = require("utils.hl")
+local str = require("utils.str")
 local order = require("service.order")
 local table_view = require("service.table")
 
@@ -313,7 +314,7 @@ local function build_service_rows(category)
       or cfg.icons.collapsed
     local name_w = (category == "lsp" or category == "dap") and cfg.col_name
       or cfg.col_tool
-    local display_name = ui_utils.trunc(name, name_w)
+    local display_name = str.trunc(name, name_w)
     local status_text, status_hl = data.entry_status(category, name, meta)
 
     table.insert(rows, {
@@ -380,7 +381,7 @@ end
 ---@param win_width integer
 local function add_margin(lines, win_width)
   for _ = 1, cfg.layout.section_margin do
-    table.insert(lines, ui_utils.fill_line("", win_width))
+    table.insert(lines, str.fill_line("", win_width))
   end
 end
 
@@ -410,16 +411,13 @@ function M.render()
   local tabline_lnum, sep_lnum, scope_lnum, header_lnum
 
   add_margin(lines, win_width)
-  table.insert(lines, ui_utils.fill_line(tabline, win_width))
+  table.insert(lines, str.fill_line(tabline, win_width))
   tabline_lnum = #lines
   add_margin(lines, win_width)
-  table.insert(
-    lines,
-    ui_utils.fill_line(cfg.layout.line_prefix .. sep, win_width)
-  )
+  table.insert(lines, str.fill_line(cfg.layout.line_prefix .. sep, win_width))
   sep_lnum = #lines
   add_margin(lines, win_width)
-  table.insert(lines, ui_utils.fill_line(scope_line(category), win_width))
+  table.insert(lines, str.fill_line(scope_line(category), win_width))
   scope_lnum = #lines
   add_margin(lines, win_width)
 
@@ -442,7 +440,7 @@ function M.render()
       separator = cfg.table.separator,
       cell_padding = cfg.table.cell_padding,
     })
-    table.insert(lines, ui_utils.fill_line(col_hdr, win_width))
+    table.insert(lines, str.fill_line(col_hdr, win_width))
     header_lnum = #lines
 
     local base = #lines
@@ -462,7 +460,7 @@ function M.render()
     local tab_highlight = (i == _state.ui.category_idx)
         and "DiagnosticVirtualTextInfo"
       or "TabLine"
-    ui_utils.buf_hl(
+    highlights.buf_hl(
       _state.ui.buf,
       _state.ns,
       tab_highlight,
@@ -471,7 +469,7 @@ function M.render()
       range[2]
     )
   end
-  ui_utils.buf_hl(
+  highlights.buf_hl(
     _state.ui.buf,
     _state.ns,
     "Comment",
@@ -479,10 +477,17 @@ function M.render()
     hint_byte,
     hint_byte + #hint
   )
-  ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", sep_lnum - 1, 0, -1)
-  ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", scope_lnum - 1, 0, -1)
+  highlights.buf_hl(_state.ui.buf, _state.ns, "Comment", sep_lnum - 1, 0, -1)
+  highlights.buf_hl(_state.ui.buf, _state.ns, "Comment", scope_lnum - 1, 0, -1)
   if header_lnum then
-    ui_utils.buf_hl(_state.ui.buf, _state.ns, "Comment", header_lnum - 1, 0, -1)
+    highlights.buf_hl(
+      _state.ui.buf,
+      _state.ns,
+      "Comment",
+      header_lnum - 1,
+      0,
+      -1
+    )
   end
 
   for lnum, entry in pairs(_state.ui.line_map) do
@@ -492,7 +497,7 @@ function M.render()
       or state_mod.is_enabled(category, entry.name) and "DiagnosticOk"
       or "Comment"
     if entry.tree_byte and entry.tree_end_byte then
-      ui_utils.buf_hl(
+      highlights.buf_hl(
         _state.ui.buf,
         _state.ns,
         tree_hl,
@@ -501,7 +506,7 @@ function M.render()
         entry.tree_end_byte
       )
     end
-    ui_utils.buf_hl(
+    highlights.buf_hl(
       _state.ui.buf,
       _state.ns,
       icon_hl,
@@ -509,7 +514,7 @@ function M.render()
       entry.icon_byte,
       entry.icon_end_byte or entry.icon_byte
     )
-    ui_utils.buf_hl(
+    highlights.buf_hl(
       _state.ui.buf,
       _state.ns,
       entry.status_hl,
@@ -566,7 +571,7 @@ function M.render_help()
     add_margin(lines, win_width)
     table.insert(
       lines,
-      ui_utils.fill_line(cfg.layout.line_prefix .. title, win_width)
+      str.fill_line(cfg.layout.line_prefix .. title, win_width)
     )
     section_lnums[#lines] = true
   end
@@ -574,7 +579,7 @@ function M.render_help()
   local function row(key, desc)
     table.insert(
       lines,
-      ui_utils.fill_line(
+      str.fill_line(
         string.format(
           "%s%-" .. cfg.help.key_width .. "s %s",
           cfg.layout.line_prefix,
@@ -586,15 +591,12 @@ function M.render_help()
     )
   end
 
-  table.insert(lines, ui_utils.fill_line("", win_width))
+  table.insert(lines, str.fill_line("", win_width))
   table.insert(
     lines,
-    ui_utils.fill_line(cfg.layout.line_prefix .. cfg.help.title, win_width)
+    str.fill_line(cfg.layout.line_prefix .. cfg.help.title, win_width)
   )
-  table.insert(
-    lines,
-    ui_utils.fill_line(cfg.layout.line_prefix .. sep, win_width)
-  )
+  table.insert(lines, str.fill_line(cfg.layout.line_prefix .. sep, win_width))
 
   for _, section in ipairs(cfg.help.sections) do
     render_section(section.title)
@@ -610,7 +612,7 @@ function M.render_help()
   vim.api.nvim_buf_clear_namespace(_state.ui.buf, _state.ns, 0, -1)
 
   for lnum in pairs(section_lnums) do
-    ui_utils.buf_hl(_state.ui.buf, _state.ns, "Title", lnum - 1, 0, -1)
+    highlights.buf_hl(_state.ui.buf, _state.ns, "Title", lnum - 1, 0, -1)
   end
 end
 

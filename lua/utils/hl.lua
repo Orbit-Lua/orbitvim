@@ -53,6 +53,28 @@ M.hl_groups = {
   active_context = "%#active_context#",
 }
 
+---Set an extmark highlight on a buffer range.
+---Pass end_col = -1 to highlight to end of line.
+---@param buf integer
+---@param ns_id integer
+---@param hl_group string
+---@param row integer 0-indexed row
+---@param start_col integer byte column
+---@param end_col integer byte column, or -1 for end of line
+M.buf_hl = function(buf, ns_id, hl_group, row, start_col, end_col)
+  if end_col == -1 then
+    local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1] or ""
+    end_col = #line
+  end
+  if end_col <= start_col then
+    return
+  end
+  vim.api.nvim_buf_set_extmark(buf, ns_id, row, start_col, {
+    end_col = end_col,
+    hl_group = hl_group,
+  })
+end
+
 ---Applies diagnostic highlight overrides using the current theme palette.
 M.setup_diagnostic = function()
   ---@type Base30Table

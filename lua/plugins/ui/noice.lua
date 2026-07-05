@@ -1,5 +1,5 @@
-local ui = require("utils.ui")
 local borders = require("config.borders")
+local window = require("utils.window")
 
 -- config: https://github.com/folke/noice.nvim?tab=readme-ov-file#%EF%B8%8F-configuration
 ---@type LazySpec[]
@@ -78,8 +78,8 @@ return {
           opts = {
             border = borders.noice.lsp,
             size = {
-              max_width = select(1, ui.get_doc_window_size()),
-              max_height = select(2, ui.get_doc_window_size()),
+              max_width = select(1, window.get_doc_size()),
+              max_height = select(2, window.get_doc_size()),
             },
           },
         },
@@ -97,8 +97,8 @@ return {
             focusable = false,
             border = borders.noice.lsp,
             size = {
-              max_width = select(1, ui.get_doc_window_size()),
-              max_height = select(2, ui.get_doc_window_size()),
+              max_width = select(1, window.get_doc_size()),
+              max_height = select(2, window.get_doc_size()),
             },
           },
         },
