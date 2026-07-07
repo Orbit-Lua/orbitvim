@@ -3,6 +3,7 @@ local M = {}
 local cfg = require("service.config")
 local renderer = require("service.renderer")
 local actions = require("service.actions")
+local cursor = require("service.cursor")
 
 ---@type Service.UI
 local ui = {
@@ -98,14 +99,7 @@ function M.open()
   })
 
   renderer.render()
-
-  local first
-  for lnum in pairs(ui.line_map) do
-    first = first and math.min(first, lnum) or lnum
-  end
-  if first then
-    vim.api.nvim_win_set_cursor(ui.win, { first, 0 })
-  end
+  cursor.focus_first(ui)
 end
 
 ---@return nil

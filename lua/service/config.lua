@@ -60,6 +60,25 @@
 ---@class Service.Config.Tooltip
 ---@field max_w integer   max display-column width for each tooltip message line
 ---@field max_messages integer   max number of diagnostic messages shown before "+ N more"
+---@field enabled_icon string
+---@field disabled_icon string
+---@field installed_icon string
+---@field missing_icon string
+---@field separator_line string
+---@field close_keys string[]
+---@field disabled_keys string[]
+---@field zindex integer
+
+---@class Service.Config.LiveUpdateEvent
+---@field event string|string[]
+---@field pattern string?
+---@field category ServiceCategory?
+
+---@class Service.Config.LiveUpdate
+---@field augroup string
+---@field debounce_ms integer
+---@field render_events Service.Config.LiveUpdateEvent[]
+---@field debounced_render_events Service.Config.LiveUpdateEvent[]
 
 ---@class Service.Config.Icons
 ---@field enabled string
@@ -155,6 +174,7 @@
 ---@field service_categories ServiceCategory[]
 ---@field cat_label table<ServiceCategory, string>
 ---@field tooltip Service.Config.Tooltip
+---@field live_update Service.Config.LiveUpdate
 ---@field icons Service.Config.Icons
 ---@field window Service.Config.Window
 ---@field layout Service.Config.Layout
@@ -187,6 +207,26 @@ local cfg = {
   tooltip = {
     max_w = 70,
     max_messages = 8,
+    enabled_icon = "●",
+    disabled_icon = "○",
+    installed_icon = "✓",
+    missing_icon = "✗",
+    separator_line = "────────────────────────────",
+    close_keys = { "q", "<Esc>" },
+    disabled_keys = { "K" },
+    zindex = 100,
+  },
+  live_update = {
+    augroup = "ServiceManagerLive",
+    debounce_ms = 500,
+    render_events = {
+      { event = { "LspAttach", "LspDetach" } },
+      { event = "VimResized" },
+    },
+    debounced_render_events = {
+      { event = "DiagnosticChanged", category = "linter" },
+      { event = "User", pattern = "NvimLintRunPost", category = "linter" },
+    },
   },
   icons = {
     enabled = "",
