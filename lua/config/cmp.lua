@@ -19,13 +19,13 @@ local is_ghost_text_enabled = false
 local options = {
   window = {
     completion = {
-      border = borders.default,
+      border = borders.cmp.window.completion,
       scrollbar = true,
       col_offset = -1,
       winhighlight = "Normal:CmpPmenu,CursorLine:CmpSel,Search:None,FloatBorder:CmpBorder",
     },
     documentation = {
-      border = borders.default,
+      border = borders.cmp.window.documentation,
       scrollbar = true,
       max_width = select(1, window.get_doc_size()),
       max_height = select(2, window.get_doc_size()),

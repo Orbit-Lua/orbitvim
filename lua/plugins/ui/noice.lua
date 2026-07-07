@@ -76,7 +76,7 @@ return {
           silent = true,
           ---@type NoiceViewOptions
           opts = {
-            border = borders.noice.lsp,
+            border = borders.lsp.hover,
             size = {
               max_width = select(1, window.get_doc_size()),
               max_height = select(2, window.get_doc_size()),
@@ -95,7 +95,7 @@ return {
           ---@type NoiceViewOptions
           opts = {
             focusable = false,
-            border = borders.noice.lsp,
+            border = borders.lsp.signature_help,
             size = {
               max_width = select(1, window.get_doc_size()),
               max_height = select(2, window.get_doc_size()),

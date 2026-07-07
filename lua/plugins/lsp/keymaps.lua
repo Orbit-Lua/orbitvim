@@ -40,7 +40,7 @@ function M.get()
         return vim.lsp.buf.hover({
           focus = true,
           silent = true,
-          border = borders.default,
+          border = borders.lsp.hover,
           max_width = select(1, window.get_doc_size()),
           max_height = select(2, window.get_doc_size()),
         })
@@ -55,7 +55,7 @@ function M.get()
           silent = true,
           max_width = select(1, window.get_doc_size()),
           max_height = select(2, window.get_doc_size()),
-          border = borders.default,
+          border = borders.lsp.signature_help,
         })
       end,
       desc = "signature help",
@@ -69,7 +69,7 @@ function M.get()
           silent = true,
           max_width = select(1, window.get_doc_size()),
           max_height = select(2, window.get_doc_size()),
-          border = borders.default,
+          border = borders.lsp.signature_help,
         })
       end,
       mode = "i",
