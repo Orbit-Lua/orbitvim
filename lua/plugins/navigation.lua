@@ -2,6 +2,7 @@ local harpoon_utils = require("utils.harpoon")
 local fs = require("utils.fs")
 local theme = require("config.theme")
 local icons = require("config").icons
+local borders = require("config.borders")
 
 theme.load_cache("telescope")
 theme.load_cache("nvimtree")
@@ -9,13 +10,43 @@ theme.load_cache("nvimtree")
 ---@type LazySpec[]
 return {
   {
-    lazy = false,
     "stevearc/oil.nvim",
-    ---@module 'oil'
+    lazy = false,
+    keys = {
+      {
+        "-",
+        function()
+          require("oil").toggle_float(nil, { preview = {} })
+        end,
+        desc = "oil toggle floating",
+      },
+    },
+
     ---@type oil.SetupOpts
-    opts = {},
-    -- Optional dependencies
-    dependencies = { "nvim-mini/mini.icons" },
+    opts = {
+      default_file_explorer = false,
+      delete_to_trash = true,
+      keymaps = {
+        -- ["g."] = false,
+        ["<C-h>"] = false,
+        ["<C-l>"] = false,
+        ["<C-p>"] = false,
+        ["-"] = false,
+        ["`"] = false,
+        ["s"] = { "<cmd>write<CR>", mode = "n", desc = "sync/apply changes" },
+        ["R"] = "actions.refresh",
+        ["H"] = "actions.toggle_hidden",
+        ["."] = "actions.cd",
+        ["<BS>"] = "actions.parent",
+        [";"] = { ":", mode = "n", desc = "command mode" },
+      },
+      float = {
+        max_width = 0.9,
+        max_height = 0.9,
+        border = borders.default,
+        preview_split = "right",
+      },
+    },
   },
 
   -- doc: https://github.com/nvim-tree/nvim-tree.lua
