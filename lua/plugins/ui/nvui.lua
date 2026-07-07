@@ -17,6 +17,7 @@ return {
 
   {
     "nvim-mini/mini.icons",
+    event = "VeryLazy",
     opts = {},
     config = function(_, opts)
       local mini_icons = require("mini.icons")
