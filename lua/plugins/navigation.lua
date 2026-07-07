@@ -8,10 +8,20 @@ theme.load_cache("nvimtree")
 
 ---@type LazySpec[]
 return {
+  {
+    lazy = false,
+    "stevearc/oil.nvim",
+    ---@module 'oil'
+    ---@type oil.SetupOpts
+    opts = {},
+    -- Optional dependencies
+    dependencies = { "nvim-mini/mini.icons" },
+  },
+
   -- doc: https://github.com/nvim-tree/nvim-tree.lua
   {
     "nvim-tree/nvim-tree.lua",
-    dependencies = { "nvim-tree/nvim-web-devicons" },
+    dependencies = { "nvim-mini/mini.icons" },
     ---@type nvim_tree.config
     opts = {
       filters = { dotfiles = false },
