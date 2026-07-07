@@ -8,6 +8,8 @@ describe("service.config", function()
   it("uses explicit enabled and disabled service icons", function()
     assert.equals("", cfg.icons.enabled)
     assert.equals("", cfg.icons.disabled)
+    assert.equals("", cfg.icons.warning)
+    assert.equals("", cfg.icons.error)
   end)
 
   it("uses explicit expand and collapse arrows", function()

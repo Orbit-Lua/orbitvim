@@ -2,8 +2,28 @@ local M = {}
 
 local order = require("service.order")
 
+local function command_not_found(message)
+  return type(message) == "string" and message:match("^Command '.+' not found$")
+end
+
 local function is_configured_for_ft(conform, ft, name)
   return vim.tbl_contains(conform.formatters_by_ft[ft] or {}, name)
+end
+
+local function executable_status(conform, name)
+  if type(conform.get_formatter_info) ~= "function" then
+    return nil, nil
+  end
+
+  local ok, info = pcall(conform.get_formatter_info, name)
+  if not ok or type(info) ~= "table" then
+    return nil, nil
+  end
+
+  if info.available == false and command_not_found(info.available_msg) then
+    return "no binary", "DiagnosticError"
+  end
+  return nil, nil
 end
 
 ---@param opts Service.ApplyRuntimeOpts
@@ -63,13 +83,20 @@ function M.entry_status(opts)
     end
   end
 
-  if configured == total then
-    return "configured", "DiagnosticOk"
-  elseif configured > 0 then
+  if configured == 0 then
+    return "not configured", "DiagnosticWarn"
+  end
+
+  local executable_text, executable_hl = executable_status(conform, opts.name)
+  if executable_text then
+    return executable_text, executable_hl
+  end
+
+  if configured < total then
     return string.format("partly configured %d/%d", configured, total),
       "DiagnosticWarn"
   end
-  return "not configured", "DiagnosticWarn"
+  return "configured", "DiagnosticOk"
 end
 
 return M

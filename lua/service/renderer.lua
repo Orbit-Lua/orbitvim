@@ -157,6 +157,31 @@ local function package_label(meta)
   return meta.mason or cfg.labels.external
 end
 
+local function service_icon(is_enabled, status_hl)
+  if not is_enabled then
+    return cfg.icons.disabled, "ServiceMuted"
+  end
+  if status_hl == "DiagnosticError" then
+    return cfg.icons.error, "DiagnosticError"
+  elseif status_hl == "DiagnosticWarn" then
+    return cfg.icons.warning, "DiagnosticWarn"
+  end
+  return cfg.icons.enabled, "DiagnosticOk"
+end
+
+local function service_icon_width()
+  local width = 0
+  for _, icon in ipairs({
+    cfg.icons.enabled,
+    cfg.icons.disabled,
+    cfg.icons.warning,
+    cfg.icons.error,
+  }) do
+    width = math.max(width, vim.fn.strdisplaywidth(icon))
+  end
+  return width
+end
+
 local function ft_order_rows(category, name, meta)
   local rows = {}
   if category ~= "formatter" and category ~= "linter" then
@@ -270,9 +295,9 @@ local function build_ordered_rows(category)
         local meta = services[category][name]
         if meta then
           local is_enabled = state_mod.is_enabled(category, name)
-          local icon = is_enabled and cfg.icons.enabled or cfg.icons.disabled
           local display_name = string.format("%d. %s", idx, name)
           local status_text, status_hl = data.entry_status(category, name, meta)
+          local icon, icon_hl = service_icon(is_enabled, status_hl)
           table.insert(rows, {
             cells = {
               tree = "",
@@ -289,6 +314,7 @@ local function build_ordered_rows(category)
               order_names = group.names,
               meta = meta,
               icon_byte = 0,
+              icon_hl = icon_hl,
               status_byte = 0,
               status_hl = status_hl,
             },
@@ -307,7 +333,6 @@ local function build_service_rows(category)
     local name = service_entry.name
     local meta = service_entry.meta
     local is_enabled = state_mod.is_enabled(category, name)
-    local icon = is_enabled and cfg.icons.enabled or cfg.icons.disabled
     local is_expanded = _state.ui.expanded[core.service_key(category, name)]
       == true
     local expand_icon = is_expanded and cfg.icons.expanded
@@ -316,6 +341,7 @@ local function build_service_rows(category)
       or cfg.col_tool
     local display_name = str.trunc(name, name_w)
     local status_text, status_hl = data.entry_status(category, name, meta)
+    local icon, icon_hl = service_icon(is_enabled, status_hl)
 
     table.insert(rows, {
       cells = {
@@ -331,6 +357,7 @@ local function build_service_rows(category)
         kind = "service",
         meta = meta,
         icon_byte = 0,
+        icon_hl = icon_hl,
         status_byte = 0,
         status_hl = status_hl,
       },
@@ -393,7 +420,7 @@ function M.render()
   _state.ui.help_open = false
 
   local category = cfg.service_categories[_state.ui.category_idx]
-  local icon_disp_w = vim.fn.strdisplaywidth(cfg.icons.enabled)
+  local icon_disp_w = service_icon_width()
   local wcfg = M.make_win_cfg()
   local win_width = wcfg.width
   local sep = string.rep(
@@ -494,6 +521,7 @@ function M.render()
     local tree_hl = entry.kind == "detail" and "Comment" or "Title"
     local icon_hl = entry.kind == "ft_group" and "Title"
       or entry.kind == "detail" and "Comment"
+      or entry.icon_hl
       or state_mod.is_enabled(category, entry.name) and "DiagnosticOk"
       or "Comment"
     if entry.tree_byte and entry.tree_end_byte then

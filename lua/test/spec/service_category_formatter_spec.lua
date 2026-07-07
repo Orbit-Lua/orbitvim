@@ -77,4 +77,44 @@ describe("service.category.formatter", function()
     assert.equals("configured", status)
     assert.equals("DiagnosticOk", hl)
   end)
+
+  it("reports configured formatters with a missing executable", function()
+    conform.formatters_by_ft.lua = { "stylua" }
+    conform.get_formatter_info = function(name)
+      return {
+        name = name,
+        available = false,
+        available_msg = "Command '__orbitvim_missing_formatter_bin__' not found",
+      }
+    end
+
+    local status, hl = formatter.entry_status({
+      name = "stylua",
+      meta = services.formatter.stylua,
+      installed = true,
+    })
+
+    assert.equals("no binary", status)
+    assert.equals("DiagnosticError", hl)
+  end)
+
+  it("does not treat formatter conditions as missing executables", function()
+    conform.formatters_by_ft.lua = { "stylua" }
+    conform.get_formatter_info = function(name)
+      return {
+        name = name,
+        available = false,
+        available_msg = "Condition failed",
+      }
+    end
+
+    local status, hl = formatter.entry_status({
+      name = "stylua",
+      meta = services.formatter.stylua,
+      installed = true,
+    })
+
+    assert.equals("configured", status)
+    assert.equals("DiagnosticOk", hl)
+  end)
 end)

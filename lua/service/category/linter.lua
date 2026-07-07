@@ -3,6 +3,7 @@ local M = {}
 local state_mod = require("service.state")
 local logger = require("utils.logger")
 local order = require("service.order")
+local health = require("service.health")
 
 local function is_configured_for_ft(lint, ft, name)
   return vim.tbl_contains(lint.linters_by_ft[ft] or {}, name)
@@ -31,6 +32,24 @@ local function wiring_status(name, meta)
   elseif configured < total then
     return string.format("partly configured %d/%d", configured, total),
       "DiagnosticWarn"
+  end
+  return nil, nil
+end
+
+local function executable_status(name)
+  local lint_ok, lint = pcall(require, "lint")
+  if not lint_ok or type(lint.linters) ~= "table" then
+    return nil, nil
+  end
+
+  local linter = lint.linters[name]
+  if not linter then
+    return nil, nil
+  end
+
+  local err = health.executable_error(linter)
+  if err then
+    return "no binary", "DiagnosticError"
   end
   return nil, nil
 end
@@ -147,6 +166,11 @@ function M.entry_status(opts)
   local wire_text, wire_hl = wiring_status(name, meta)
   if wire_text then
     return wire_text, wire_hl
+  end
+
+  local executable_text, executable_hl = executable_status(name)
+  if executable_text then
+    return executable_text, executable_hl
   end
 
   local run_errors = logger.get_entries("linter", name)

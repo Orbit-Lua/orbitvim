@@ -9,7 +9,10 @@ describe("service.category.linter", function()
     package.loaded["utils.logger"] = nil
     package.loaded["service.state"] = nil
 
-    package.loaded.lint = { linters_by_ft = { lua = { "luacheck" } } }
+    package.loaded.lint = {
+      linters_by_ft = { lua = { "luacheck" } },
+      linters = { luacheck = { cmd = vim.v.progpath } },
+    }
     logger = require("utils.logger")
     logger.clear_channel("linter")
     state = require("service.state")
@@ -38,6 +41,19 @@ describe("service.category.linter", function()
       assert.equals("DiagnosticOk", hl)
     end
   )
+
+  it("reports configured linters with a missing executable", function()
+    package.loaded.lint.linters.luacheck.cmd = "__orbitvim_missing_linter_bin__"
+
+    local status, hl = linter.entry_status({
+      name = "luacheck",
+      meta = services.linter.luacheck,
+      installed = true,
+    })
+
+    assert.equals("no binary", status)
+    assert.equals("DiagnosticError", hl)
+  end)
 
   it("reports linters missing from runtime filetype config", function()
     local status, hl = linter.entry_status({

@@ -16,6 +16,7 @@
 ---@field tree_end_byte integer?
 ---@field icon_byte integer
 ---@field icon_end_byte integer?
+---@field icon_hl string?
 ---@field status_byte integer
 ---@field status_end_byte integer?
 ---@field status_hl string
@@ -63,6 +64,8 @@
 ---@class Service.Config.Icons
 ---@field enabled string
 ---@field disabled string
+---@field warning string
+---@field error string
 ---@field expanded string
 ---@field collapsed string
 
@@ -188,6 +191,8 @@ local cfg = {
   icons = {
     enabled = "",
     disabled = "",
+    warning = "",
+    error = "",
     expanded = "",
     collapsed = "",
   },

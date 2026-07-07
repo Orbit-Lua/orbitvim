@@ -1,5 +1,7 @@
 local M = {}
 
+local health = require("service.health")
+
 local function merge_linters(lint, linters)
   for linter_name, linter in pairs(linters) do
     if
@@ -114,18 +116,11 @@ local function build_runner(lint)
     -- Pre-flight executable check for each resolved linter.
     for _, linter_name in ipairs(linter_names) do
       local linter = lint.linters[linter_name]
-      if type(linter) == "table" and linter.cmd then
-        local cmd = type(linter.cmd) == "function" and linter.cmd()
-          or linter.cmd
-        if vim.fn.executable(cmd) ~= 1 then
-          logger.write(
-            "linter",
-            "ERROR",
-            linter_name,
-            "binary not found: " .. cmd,
-            { kind = "binary_not_found" }
-          )
-        end
+      local err = health.executable_error(linter)
+      if err then
+        logger.write("linter", "ERROR", linter_name, err, {
+          kind = "binary_not_found",
+        })
       end
     end
 
