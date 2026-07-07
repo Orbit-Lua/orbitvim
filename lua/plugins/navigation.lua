@@ -11,7 +11,8 @@ theme.load_cache("nvimtree")
 return {
   {
     "stevearc/oil.nvim",
-    lazy = false,
+    event = "VeryLazy",
+    cmd = "Oil",
     keys = {
       {
         "-",
@@ -52,7 +53,6 @@ return {
   -- doc: https://github.com/nvim-tree/nvim-tree.lua
   {
     "nvim-tree/nvim-tree.lua",
-    dependencies = { "nvim-mini/mini.icons" },
     ---@type nvim_tree.config
     opts = {
       filters = { dotfiles = false },
@@ -140,7 +140,11 @@ return {
   -- default keymaps: https://github.com/nvim-telescope/telescope.nvim?tab=readme-ov-file#default-mappings
   {
     "nvim-telescope/telescope.nvim",
-    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    version = "*",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+    },
     cmd = "Telescope",
     opts = function()
       local actions = require("telescope.actions")
