@@ -1,5 +1,6 @@
----@type LazySpec[]
 local borders = require("config.borders")
+
+---@type LazySpec[]
 return {
   {
     -- ref: https://github.com/folke/trouble.nvim/blob/main/docs/examples.md

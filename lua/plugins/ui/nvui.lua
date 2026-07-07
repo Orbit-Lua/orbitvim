@@ -47,6 +47,7 @@ return {
 
   {
     "nvim-mini/mini.icons",
+    lazy = false,
     opts = {},
     config = function(_, opts)
       local mini_icons = require("mini.icons")
@@ -59,6 +60,16 @@ return {
         callback = ensure_icon_hl_fallbacks,
       })
       _G.MiniIcons.mock_nvim_web_devicons()
+    end,
+  },
+
+  {
+    "nvim-tree/nvim-web-devicons",
+    lazy = false,
+    cond = false,
+    opts = function()
+      require("config.theme").load_cache("devicons")
+      return { override = require("nvchad.icons.devicons") }
     end,
   },
 }
