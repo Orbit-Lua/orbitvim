@@ -11,6 +11,7 @@ theme.load_cache("nvimtree")
 return {
   {
     "stevearc/oil.nvim",
+    dependencies = { "nvim-mini/mini.icons" },
     event = "VeryLazy",
     cmd = "Oil",
     keys = {
@@ -53,6 +54,7 @@ return {
   -- doc: https://github.com/nvim-tree/nvim-tree.lua
   {
     "nvim-tree/nvim-tree.lua",
+    dependencies = { "nvim-mini/mini.icons" },
     ---@type nvim_tree.config
     opts = {
       filters = { dotfiles = false },

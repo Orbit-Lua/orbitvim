@@ -28,6 +28,7 @@ M.base46 = {
     NvimTreeOpenedFolderName = { fg = "green", bold = true },
     TreesitterContext = { link = "CursorLine" },
     LspInlayHint = { fg = "#808080", bg = "one_bg", italic = true },
+    DevIconDefault = { fg = "white" },
 
     -- ------------------------------------------------------------------------- --
     -- ■ Telescope                                                               --
