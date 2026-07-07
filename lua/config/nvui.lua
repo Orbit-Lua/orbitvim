@@ -127,10 +127,18 @@ M.base46 = {
     -- SnacksPickerPreviewBorder = { fg = "blue", bg = "darker_black" },
     -- SnacksPickerListBorder = { fg = "blue", bg = "darker_black" },
   },
+
+  integrations = {},
+  excluded = {},
+  ---@diagnostic disable-next-line
+  changed_themes = {},
+  transparency = false,
 }
 
 M.nvdash = {
   load_on_startup = false,
+  header = {},
+  buttons = {},
 }
 
 M.term = {
@@ -142,6 +150,10 @@ M.term = {
     height = 0.8,
     border = borders.default,
   },
+  startinsert = true,
+  base46_colors = true,
+  winopts = { number = false, relativenumber = false },
+  sizes = { sp = 0.3, vsp = 0.2, ["bo sp"] = 0.3, ["bo vsp"] = 0.2 },
 }
 
 -- use noice signature so disable nvchad signature
@@ -151,24 +163,51 @@ M.lsp = {
 
 M.ui = {
   statusline = {
+    enabled = true,
     theme = "lucid",
     separator_style = "round",
     show_lsp_msg = false,
+    order = nil,
+    modules = nil,
+    truncation_length = 3,
   },
 
   tabufline = {
+    enabled = true,
     lazyload = false,
+    treeOffsetFt = "NvimTree",
+    modules = nil,
+    bufwidth = 21,
+
     ---@type  ('"treeOffset"' | '"buffers"' | '"tabs"' | '"btns"')[]
     order = { "treeOffset", "buffers" },
   },
 
   cmp = {
+    icons_left = false,
     style = "default",
+    abbr_maxwidth = 60,
+    format_colors = { lsp = true, icon = "󱓻" },
   },
+
+  telescope = { style = "borderless" },
+}
+
+M.cheatsheet = {
+  theme = "grid",
+  excluded_groups = { "terminal (t)", "autopairs", "Nvim", "Opens" },
 }
 
 M.mason = {
+  skip = {},
   pkgs = config.packages.mason_ensure_installed,
+}
+
+M.colorify = {
+  enabled = true,
+  mode = "virtual",
+  virt_text = "󱓻 ",
+  highlight = { hex = true, lspvars = true },
 }
 
 return M
