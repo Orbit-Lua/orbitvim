@@ -4,7 +4,6 @@ local theme = require("config.theme")
 local icons = require("config").icons
 local borders = require("config.borders")
 
-theme.load_cache("telescope")
 theme.load_cache("nvimtree")
 
 ---@type LazySpec[]
@@ -137,65 +136,6 @@ return {
     end,
   },
 
-  -- default keymaps: https://github.com/nvim-telescope/telescope.nvim?tab=readme-ov-file#default-mappings
-  {
-    "nvim-telescope/telescope.nvim",
-    version = "*",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-    },
-    cmd = "Telescope",
-    opts = function()
-      local actions = require("telescope.actions")
-      return {
-        defaults = {
-          prompt_prefix = " ",
-          selection_caret = " ",
-          entry_prefix = " ",
-          sorting_strategy = "ascending",
-          wrap_results = false,
-          path_display = {
-            shorten = { len = 8, exclude = { 1, -1 } },
-          },
-
-          mappings = {
-            n = {
-              ["q"] = actions.close,
-              ["<C-j>"] = actions.move_selection_next,
-              ["<C-k>"] = actions.move_selection_previous,
-            },
-            i = {
-              ["<C-j>"] = actions.move_selection_next,
-              ["<C-k>"] = actions.move_selection_previous,
-            },
-          },
-
-          layout_strategy = "horizontal",
-          layout_config = {
-            horizontal = {
-              prompt_position = "bottom",
-              preview_width = 0.5,
-            },
-            width = 0.87,
-            height = 0.80,
-          },
-        },
-
-        extensions = { "terms", "noice" },
-      }
-    end,
-    config = function(_, opts)
-      local telescope = require("telescope")
-
-      telescope.setup(opts)
-
-      for _, v in ipairs(opts.extensions) do
-        telescope.load_extension(v)
-      end
-    end,
-  },
-
   {
     "Orbit-Lua/harpoon",
     -- "ThePrimeagen/harpoon",
@@ -206,7 +146,7 @@ return {
       { "<leader>ba", desc = "add buffer to harpoon" },
     },
     branch = "harpoon2",
-    dependencies = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
+    dependencies = { "nvim-lua/plenary.nvim" },
     ---@type HarpoonPartialConfig
     opts = {
       -- https://github.com/ThePrimeagen/harpoon/blob/harpoon2/lua/harpoon/config.lua
@@ -266,9 +206,6 @@ return {
       vim.keymap.set("n", "<M-S-n>", function()
         harpoon:list():next()
       end, { desc = "harpoon next item" })
-
-      -- https://github.com/ThePrimeagen/harpoon/issues/491
-      -- currently, telescope is broken on windows so using simple menu
 
       vim.keymap.set("n", "<C-e>", function()
         harpoon.ui:toggle_quick_menu(harpoon:list())

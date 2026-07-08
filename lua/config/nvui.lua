@@ -31,27 +31,6 @@ M.base46 = {
     DevIconDefault = { fg = "white" },
 
     -- ------------------------------------------------------------------------- --
-    -- ■ Telescope                                                               --
-    -- ------------------------------------------------------------------------- --
-    TelescopeMatching = {
-      fg = "green",
-      bold = true,
-      bg = "NONE",
-    },
-
-    TelescopeNormal = { link = "SnacksPickerList" },
-    TelescopePromptNormal = { link = "SnacksPickerInput" },
-    TelescopeSelection = { link = "SnacksPickerListCursorline" },
-
-    TelescopePromptTitle = { link = "SnacksPickerInputTitle" },
-    TelescopePromptPrefix = { link = "SnacksPickerPrompt" },
-    TelescopePreviewTitle = { link = "SnacksPickerPreviewTitle" },
-
-    TelescopeBorder = { link = "SnacksPickerBorder" },
-    TelescopePromptBorder = { link = "SnacksPickerInputBorder" },
-    TelescopeResultsTitle = { link = "SnacksPickerPreviewTitle" },
-
-    -- ------------------------------------------------------------------------- --
     -- ■ Window                                                                  --
     -- ------------------------------------------------------------------------- --
     NormalFloat = {
@@ -109,25 +88,18 @@ M.base46 = {
     -- SnacksInputTitle = { fg = "green" },
 
     -- Snacks picker
-    SnacksPickerMatch = { link = "TelescopeMatching" },
+    SnacksPickerMatch = {
+      fg = "green",
+      bold = true,
+      bg = "NONE",
+    },
     SnacksPickerDir = { fg = "blue" },
     SnacksPickerPathHidden = { fg = "blue" },
-    -- SnacksPickerDir = { fg = "#928374" },
-    -- SnacksPickerPathHidden = { fg = "#928374" },
 
-    --
-    -- SnacksPickerInput = { link = "TelescopePromptNormal" },
-    -- SnacksPickerList = { link = "TelescopeNormal" },
-    -- SnacksPickerPreview = { link = "TelescopeNormal" },
-    --
-    -- SnacksPickerPrompt = { link = "TelescopePromptPrefix" },
-    -- SnacksPickerInputTitle = { link = "TelescopePromptTitle" },
-    -- SnacksPickerPreviewTitle = { link = "TelescopePreviewTitle" },
-    --
-    -- SnacksPickerBorder = { fg = "blue", bg = "black2" },
-    -- SnacksPickerInputBorder = { fg = "blue", bg = "black2" },
-    -- SnacksPickerPreviewBorder = { fg = "blue", bg = "darker_black" },
-    -- SnacksPickerListBorder = { fg = "blue", bg = "darker_black" },
+    -- SnacksPickerBorder = { fg = "blue" },
+    -- SnacksPickerInputBorder = { fg = "blue" },
+    -- SnacksPickerPreviewBorder = { fg = "blue" },
+    -- SnacksPickerListBorder = { fg = "blue" },
   },
 
   integrations = {},

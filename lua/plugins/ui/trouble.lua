@@ -81,7 +81,24 @@ return {
     lazy = false,
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
-      { "<leader>tt", "<cmd>TodoTelescope<cr>", desc = "open todo telescope" },
+      {
+        "<leader>st",
+        function()
+          ---@diagnostic disable: undefined-field
+          require("snacks").picker.todo_comments()
+        end,
+        desc = "Todo",
+      },
+      {
+        "<leader>sT",
+        function()
+          ---@diagnostic disable: undefined-field
+          require("snacks").picker.todo_comments({
+            keywords = { "TODO", "FIX", "FIXME", "WORKAROUND" },
+          })
+        end,
+        desc = "Todo/Fix/Fixme/Workaround",
+      },
     },
 
     ---@module "todo-comments"
