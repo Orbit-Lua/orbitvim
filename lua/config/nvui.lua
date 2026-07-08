@@ -28,6 +28,8 @@ M.base46 = {
     NvimTreeOpenedFolderName = { fg = "green", bold = true },
     TreesitterContext = { link = "CursorLine" },
     LspInlayHint = { fg = "#808080", bg = "one_bg", italic = true },
+
+    -- icon hl fallback
     DevIconDefault = { fg = "white" },
 
     -- ------------------------------------------------------------------------- --
@@ -67,6 +69,9 @@ M.base46 = {
     CmpGhostText = { link = "Comment", default = true },
     DapBreakpointColor = { fg = "red" },
     ServiceMuted = { fg = "grey" },
+
+    -- default icon hl
+    MiniIconsGrey = { link = "DevIconDefault" },
 
     -- ------------------------------------------------------------------------- --
     -- ■ Noice.nvim                                                              --
