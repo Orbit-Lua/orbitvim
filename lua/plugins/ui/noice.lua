@@ -114,8 +114,8 @@ return {
         popup = {
           win_options = {
             winhighlight = {
-              Normal = "CmpPmenu",
-              FloatBorder = "CmpBorder",
+              Normal = "BlinkCmpMenu",
+              FloatBorder = "BlinkCmpMenuBorder",
             },
           },
         },
