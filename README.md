@@ -23,7 +23,7 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 - DAP support for Python and .NET
 - Treesitter parsers and editor helpers for common languages
 - Navigation with `nvim-tree`, Snacks, and Harpoon
-- Completion with `nvim-cmp`, LuaSnip, lazydev, and optional Copilot integration
+- Completion with `blink.cmp`, LuaSnip, lazydev, and optional Copilot integration
 - Markdown preview, diagnostics UI, Noice notifications, Trouble, which-key, and
   Git signs
 

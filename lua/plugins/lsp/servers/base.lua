@@ -26,13 +26,9 @@ local borders = require("config.borders")
 ---@param opts? lsp.ClientCapabilities
 local make_client_capabilities = function(opts)
   local capabilities = vim.lsp.protocol.make_client_capabilities()
-  local cmp_ok, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
-  if cmp_ok then
-    capabilities = vim.tbl_deep_extend(
-      "force",
-      capabilities,
-      cmp_nvim_lsp.default_capabilities()
-    )
+  local blink_ok, blink = pcall(require, "blink.cmp")
+  if blink_ok then
+    capabilities = blink.get_lsp_capabilities(capabilities)
   end
   local defaults_ok, default_lsp = pcall(require, "config.lsp.capabilities")
   if defaults_ok then

@@ -3,8 +3,9 @@ local os = require("utils.os")
 ---@type LazySpec[]
 return {
   {
-    "hrsh7th/nvim-cmp",
-    event = { "InsertEnter", "LspAttach" },
+    "saghen/blink.cmp",
+    event = { "InsertEnter", "CmdlineEnter", "LspAttach" },
+    version = "1.*",
     dependencies = {
       {
         -- doc:
@@ -38,19 +39,7 @@ return {
         },
         config = function(_, opts)
           require("nvim-autopairs").setup(opts)
-          local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-          require("cmp").event:on(
-            "confirm_done",
-            cmp_autopairs.on_confirm_done()
-          )
         end,
-      },
-
-      {
-        "saadparwaiz1/cmp_luasnip",
-        "hrsh7th/cmp-nvim-lsp",
-        "hrsh7th/cmp-buffer",
-        "hrsh7th/cmp-path",
       },
 
       {
@@ -72,7 +61,7 @@ return {
             { path = "snacks.nvim", words = { "snacks", "snacks.nvim" } },
             { path = "noice.nvim", words = { "noice", "noice.nvim" } },
             { path = "comet.nvim", words = { "Comet", "comet.nvim" } },
-            { path = "nvim-cmp/lua/cmp/types", words = { "nvim%-cmp" } },
+            { path = "blink.cmp/lua/blink/cmp", words = { "blink%.cmp" } },
             { path = "wezterm-types", mods = { "wezterm", "module.wezterm" } },
           },
         },
@@ -80,9 +69,10 @@ return {
     },
 
     opts = function()
-      return require("config.cmp")
+      return require("config.blink")
     end,
 
     main = "utils.cmp",
+    opts_extend = { "sources.default" },
   },
 }

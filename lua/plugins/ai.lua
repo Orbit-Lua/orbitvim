@@ -31,7 +31,7 @@ local specs = {
         auto_trigger = true,
         hide_during_completion = vim.g.ai_cmp,
         keymap = {
-          accept = false, -- handled by nvim-cmp / blink.cmp
+          accept = false, -- handled by blink.cmp
           next = "<M-]>",
           prev = "<M-[>",
         },
@@ -81,38 +81,26 @@ local specs = {
 -- refer to: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/plugins/extras/ai/copilot.lua
 if vim.g.ai_cmp then
   table.insert(specs, {
-    -- copilot cmp source
-    "hrsh7th/nvim-cmp",
+    -- copilot blink.cmp source
+    "saghen/blink.cmp",
     optional = true,
-    dependencies = { -- this will only be evaluated if nvim-cmp is enabled
-      {
-        "zbirenbaum/copilot-cmp",
-        opts = {},
-        config = function(_, opts)
-          local copilot_cmp = require("copilot_cmp")
-          copilot_cmp.setup(opts)
-          -- attach cmp source whenever copilot attaches
-          -- fixes lazy-loading issues with the copilot cmp source
-          require("snacks").util.lsp.on({ name = "copilot" }, function()
-            copilot_cmp._on_insert_enter({})
-          end)
-        end,
-        specs = {
-          {
-            "hrsh7th/nvim-cmp",
-            optional = true,
-            ---@param opts cmp.ConfigSchema
-            opts = function(_, opts)
-              table.insert(opts.sources, 1, {
-                name = "copilot",
-                group_index = 1,
-                priority = 100,
-              })
-            end,
-          },
-        },
-      },
+    dependencies = {
+      "giuxtaposition/blink-cmp-copilot",
     },
+    ---@param opts blink.cmp.Config
+    opts = function(_, opts)
+      opts.sources = opts.sources or {}
+      opts.sources.default = opts.sources.default or {}
+      opts.sources.providers = opts.sources.providers or {}
+
+      table.insert(opts.sources.default, 1, "copilot")
+      opts.sources.providers.copilot = {
+        name = "copilot",
+        module = "blink-cmp-copilot",
+        score_offset = 100,
+        async = true,
+      }
+    end,
   })
 end
 
