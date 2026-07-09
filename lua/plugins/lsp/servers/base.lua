@@ -23,21 +23,6 @@
 local configs = require("config")
 local borders = require("config.borders")
 
----@param opts? lsp.ClientCapabilities
-local make_client_capabilities = function(opts)
-  local capabilities = vim.lsp.protocol.make_client_capabilities()
-  local blink_ok, blink = pcall(require, "blink.cmp")
-  if blink_ok then
-    capabilities = blink.get_lsp_capabilities(capabilities)
-  end
-  local defaults_ok, default_lsp = pcall(require, "config.lsp.capabilities")
-  if defaults_ok then
-    capabilities =
-      vim.tbl_deep_extend("force", capabilities, default_lsp.capabilities)
-  end
-  return vim.tbl_deep_extend("force", capabilities, opts or {})
-end
-
 ---@type Lsp.Config.Spec
 return {
   diagnostics = {
@@ -84,7 +69,7 @@ return {
     end
   end,
 
-  capabilities = make_client_capabilities({
+  capabilities = require("config.lsp.capabilities").get_lsp_capabilities({
     textDocument = {
       diagnostic = {
         dynamicRegistration = true,
@@ -93,7 +78,7 @@ return {
     window = {
       workDoneProgress = true,
     },
-  }),
+  }, true),
 
   disable_default_settings = {
     roslyn = { "on_init" },

@@ -34,7 +34,7 @@ return {
 
   {
     "neovim/nvim-lspconfig",
-    event = { "BufEnter", "BufReadPre" },
+    event = { "VeryLazy" },
 
     opts = function()
       return require("plugins.lsp.config")
