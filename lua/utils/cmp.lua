@@ -1,6 +1,22 @@
 ---@class Core.util.cmp
 local M = {}
 
+local function list_contains(list, value)
+  for _, item in ipairs(list) do
+    if item == value then
+      return true
+    end
+  end
+  return false
+end
+
+local function get_kind_icon(kind)
+  local config = package.loaded.config
+  if type(config) == "table" and config.icons and config.icons.kinds then
+    return config.icons.kinds[kind]
+  end
+end
+
 ---@alias Core.util.cmp.Action fun():boolean?
 ---@type table<string, Core.util.cmp.Action>
 M.actions = {
@@ -140,8 +156,91 @@ function M.expand(snippet)
   end
 end
 
+---@param opts blink.cmp.Config|{sources?: {compat?: string[]}}
+local function setup_compat_sources(opts)
+  opts.sources = opts.sources or {}
+  opts.sources.default = opts.sources.default or {}
+  opts.sources.providers = opts.sources.providers or {}
+
+  for _, source in ipairs(opts.sources.compat or {}) do
+    opts.sources.providers[source] = vim.tbl_deep_extend(
+      "force",
+      { name = source, module = "blink.compat.source" },
+      opts.sources.providers[source] or {}
+    )
+
+    if
+      type(opts.sources.default) == "table"
+      and not list_contains(opts.sources.default, source)
+    then
+      table.insert(opts.sources.default, source)
+    end
+  end
+
+  opts.sources.compat = nil
+end
+
+---@param opts blink.cmp.Config
+local function setup_tab_mapping(opts)
+  opts.keymap = opts.keymap or {}
+  if opts.keymap["<Tab>"] then
+    return
+  end
+
+  local tab_actions = {
+    M.map({ "snippet_forward", "ai_nes", "ai_accept" }),
+    "fallback",
+  }
+
+  if opts.keymap.preset == "super-tab" then
+    local ok, presets = pcall(require, "blink.cmp.keymap.presets")
+    local super_tab = ok and presets.get("super-tab")["<Tab>"]
+    if type(super_tab) == "table" and super_tab[1] then
+      table.insert(tab_actions, 1, super_tab[1])
+    end
+  end
+
+  opts.keymap["<Tab>"] = tab_actions
+end
+
+---@param opts blink.cmp.Config
+local function setup_provider_kinds(opts)
+  local providers = vim.tbl_get(opts, "sources", "providers") or {}
+  for _, provider in pairs(providers) do
+    ---@cast provider blink.cmp.SourceProviderConfig|{kind?: string}
+    local kind = provider.kind
+    if kind then
+      local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
+      local kind_idx = CompletionItemKind[kind]
+
+      if not kind_idx then
+        kind_idx = #CompletionItemKind + 1
+        CompletionItemKind[kind_idx] = kind
+        CompletionItemKind[kind] = kind_idx
+      end
+
+      local transform_items = provider.transform_items
+      provider.transform_items = function(ctx, items)
+        items = transform_items and transform_items(ctx, items) or items
+        for _, item in ipairs(items) do
+          item.kind = kind_idx
+          item.kind_name = kind
+          item.kind_icon = get_kind_icon(kind) or item.kind_icon or nil
+        end
+        return items
+      end
+
+      provider.kind = nil
+    end
+  end
+end
+
 ---@param opts blink.cmp.Config
 function M.setup(opts)
+  setup_compat_sources(opts)
+  setup_tab_mapping(opts)
+  setup_provider_kinds(opts)
+
   require("blink.cmp").setup(opts)
 end
 

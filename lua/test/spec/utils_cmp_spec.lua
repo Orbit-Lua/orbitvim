@@ -165,4 +165,110 @@ describe("utils.cmp", function()
       assert.is_true(type(cmp_utils.actions.snippet_stop) == "function")
     end)
   end)
+
+  describe("setup", function()
+    local loaded_blink
+    local loaded_types
+    local loaded_presets
+    local setup_opts
+
+    before_each(function()
+      loaded_blink = package.loaded["blink.cmp"]
+      loaded_types = package.loaded["blink.cmp.types"]
+      loaded_presets = package.loaded["blink.cmp.keymap.presets"]
+      setup_opts = nil
+
+      package.loaded["blink.cmp"] = {
+        setup = function(opts)
+          setup_opts = opts
+        end,
+      }
+
+      package.loaded["blink.cmp.types"] = {
+        CompletionItemKind = { "Text", Text = 1 },
+      }
+
+      package.loaded["blink.cmp.keymap.presets"] = nil
+    end)
+
+    after_each(function()
+      package.loaded["blink.cmp"] = loaded_blink
+      package.loaded["blink.cmp.types"] = loaded_types
+      package.loaded["blink.cmp.keymap.presets"] = loaded_presets
+    end)
+
+    it(
+      "registers blink.compat sources and strips the custom compat option",
+      function()
+        local opts = {
+          keymap = { ["<Tab>"] = { "fallback" } },
+          sources = {
+            compat = { "cmp_git" },
+            default = { "lsp" },
+            providers = {
+              cmp_git = { score_offset = 10 },
+            },
+          },
+        }
+
+        cmp_utils.setup(opts)
+
+        assert.same(opts, setup_opts)
+        assert.is_nil(opts.sources.compat)
+        assert.same({ "lsp", "cmp_git" }, opts.sources.default)
+        assert.equals("cmp_git", opts.sources.providers.cmp_git.name)
+        assert.equals(
+          "blink.compat.source",
+          opts.sources.providers.cmp_git.module
+        )
+        assert.equals(10, opts.sources.providers.cmp_git.score_offset)
+      end
+    )
+
+    it("adds a Tab mapping when the config does not define one", function()
+      local opts = {
+        keymap = { preset = "enter" },
+        sources = { default = {}, providers = {} },
+      }
+
+      cmp_utils.setup(opts)
+
+      assert.is_true(type(opts.keymap["<Tab>"][1]) == "function")
+      assert.equals("fallback", opts.keymap["<Tab>"][2])
+    end)
+
+    it(
+      "converts custom provider kinds before blink validates providers",
+      function()
+        local opts = {
+          keymap = { ["<Tab>"] = { "fallback" } },
+          sources = {
+            default = {},
+            providers = {
+              copilot = {
+                kind = "Copilot",
+                transform_items = function(_, items)
+                  items[1].label = "changed"
+                  return items
+                end,
+              },
+            },
+          },
+        }
+
+        cmp_utils.setup(opts)
+
+        local provider = opts.sources.providers.copilot
+        local kinds = package.loaded["blink.cmp.types"].CompletionItemKind
+        local items = provider.transform_items({}, { { label = "original" } })
+
+        assert.is_nil(provider.kind)
+        assert.equals(2, kinds.Copilot)
+        assert.equals("Copilot", kinds[2])
+        assert.equals("changed", items[1].label)
+        assert.equals(2, items[1].kind)
+        assert.equals("Copilot", items[1].kind_name)
+      end
+    )
+  end)
 end)
