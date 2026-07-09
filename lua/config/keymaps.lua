@@ -1,7 +1,21 @@
 local map = vim.keymap.set
+local k = vim.keycode
 local fs = require("utils.fs")
 local term = require("utils.term")
 local utils_cmp = require("utils.cmp")
+
+---@param direction 'down' | 'up'
+local function move_visual(direction)
+  vim.api.nvim_feedkeys(k("<esc>"), "x", false)
+
+  if direction == "down" then
+    vim.cmd("'<,'>move '>+1")
+  else
+    vim.cmd("'<,'>move '<-2")
+  end
+
+  vim.cmd("normal! gv-gv")
+end
 
 map({ "i", "n", "s" }, "<esc>", function()
   vim.cmd("noh")
@@ -68,23 +82,18 @@ map({ "n", "t" }, "<M-i>", function()
 end, { desc = "terminal toggle floating term" })
 
 -------------------- common --------------------
+
 map("n", ";", ":", { desc = "cmd enter command mode" })
 map("n", "<", "<<", { desc = "indent backward easily" })
 map("n", ">", ">>", { desc = "indent forward easily" })
 map("x", "<", "<gv", { desc = "indent backward and stay in visual mode" })
 map("x", ">", ">gv", { desc = "indent forward and stay in visual mode" })
-map(
-  "x",
-  "J",
-  ":move '>+1<CR>gv-gv",
-  { desc = "move selected block down and stay in visual mode" }
-)
-map(
-  "x",
-  "K",
-  ":move '<-2<CR>gv-gv",
-  { desc = "move selected block up and stay in visual mode" }
-)
+map("x", "J", function()
+  move_visual("down")
+end, { desc = "move selected block down and stay in visual mode" })
+map("x", "K", function()
+  move_visual("up")
+end, { desc = "move selected block up and stay in visual mode" })
 map("x", "p", "P", { desc = "paste without yanking replaced text" })
 map("i", "jk", "<ESC>")
 map("n", "Q", "q", { desc = "record macro" })

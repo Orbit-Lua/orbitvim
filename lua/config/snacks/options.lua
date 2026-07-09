@@ -116,6 +116,14 @@ return {
         keys = {
           ["<C-u>"] = { "preview_scroll_up", mode = { "i", "n" } },
           ["<C-d>"] = { "preview_scroll_down", mode = { "i", "n" } },
+          ["<C-l>"] = { "focus_preview", mode = { "i", "n" } },
+          ["<C-h>"] = { "focus_input", mode = { "i", "n" } },
+        },
+      },
+      preview = {
+        keys = {
+          ["<C-l>"] = { "focus_preview", mode = { "i", "n" } },
+          ["<C-h>"] = { "focus_input", mode = { "i", "n" } },
         },
       },
     },

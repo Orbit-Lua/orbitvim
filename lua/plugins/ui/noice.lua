@@ -1,5 +1,6 @@
 local borders = require("config.borders")
 local window = require("utils.window")
+local config = require("config")
 
 -- config: https://github.com/folke/noice.nvim?tab=readme-ov-file#%EF%B8%8F-configuration
 ---@type LazySpec[]
@@ -12,37 +13,20 @@ return {
       routes = {
         {
           filter = {
-            event = "notify",
-            any = {
-              { find = "signature help" },
-            },
-          },
-          opts = { skip = true },
-        },
-
-        {
-          filter = {
             event = "msg_show",
-            any = {
-              { find = "%d+L, %d+B" },
-              { find = "; after #%d+" },
-              { find = "; before #%d+" },
-              { find = "%d fewer lines" },
-              { find = "%d more lines" },
-              { find = "%d lines yanked" },
-              { find = "Error INVALID_SERVER_MESSAGE: nil" },
-              { find = "snacks/util/init.lua:207: Invalid window id" },
-            },
+            any = vim.tbl_map(function(msg)
+              return { find = msg }
+            end, config.message_ignored.msg_show),
           },
-          opts = { skip = true },
+          opts = { skip = false },
         },
 
         {
           filter = {
             kind = "progress",
-            any = {
-              { find = "Searching in files" },
-            },
+            any = vim.tbl_map(function(msg)
+              return { find = msg }
+            end, config.message_ignored.progress),
           },
           opts = { skip = true },
         },
