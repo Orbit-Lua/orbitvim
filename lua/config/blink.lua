@@ -94,6 +94,7 @@ local function draw_documentation(opts)
     return
   end
 
+  -- FIXME: deprecated
   vim.lsp.util.stylize_markdown(opts.window:get_buf(), lines, {
     max_width = opts.window.config.max_width,
   })
@@ -168,12 +169,15 @@ options = {
         },
         components = {
           label = {
+            ---@diagnostic disable-next-line: assign-type-mismatch
             width = { fill = true, max = completion_width_part(4, 7) },
           },
           label_description = {
+            ---@diagnostic disable-next-line: assign-type-mismatch
             width = { max = completion_width_part(2, 7) },
           },
           source_name = {
+            ---@diagnostic disable-next-line: assign-type-mismatch
             width = { max = completion_width_part(1, 7) },
           },
         },

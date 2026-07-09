@@ -107,10 +107,15 @@ M.base46 = {
     -- SnacksPickerListBorder = { fg = "blue" },
   },
 
-  integrations = {},
+  integrations = {
+    "todo",
+  },
+
   excluded = {},
-  ---@diagnostic disable-next-line
+
+  ---@diagnostic disable-next-line: missing-fields
   changed_themes = {},
+
   transparency = false,
 }
 
