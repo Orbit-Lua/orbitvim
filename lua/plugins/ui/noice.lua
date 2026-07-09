@@ -10,19 +10,23 @@ return {
     event = "VeryLazy",
     opts = {
       ---@type NoiceRouteConfig[]
+      --- refer to: https://github.com/folke/noice.nvim/blob/main/lua/noice/config/routes.lua
       routes = {
         {
+          view = "notify",
           filter = {
             event = "msg_show",
             any = vim.tbl_map(function(msg)
               return { find = msg }
             end, config.message_ignored.msg_show),
           },
-          opts = { skip = false },
+          opts = { skip = true },
         },
 
         {
+          view = "mini",
           filter = {
+            event = "lsp",
             kind = "progress",
             any = vim.tbl_map(function(msg)
               return { find = msg }
