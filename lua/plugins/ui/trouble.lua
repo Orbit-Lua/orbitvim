@@ -111,5 +111,10 @@ return {
         },
       },
     },
+
+    config = function(_, opts)
+      require("config.theme").load_cache("todo")
+      require("todo-comments").setup(opts)
+    end,
   },
 }

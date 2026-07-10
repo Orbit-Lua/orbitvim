@@ -6,49 +6,6 @@ local window = require("utils.window")
 
 theme.load_cache("blink")
 
-local options
-
-local function completion_width_part(numerator, denominator)
-  return function()
-    local width = select(1, window.get_completion_size())
-    return math.floor(width * numerator / denominator)
-  end
-end
-
-local function sync_window_sizes()
-  local _, completion_height = window.get_completion_size()
-  local documentation_width, documentation_height = window.get_doc_size()
-
-  vim.o.pumheight = completion_height
-
-  if options then
-    options.completion.menu.max_height = completion_height
-    options.completion.documentation.window.max_width = documentation_width
-    options.completion.documentation.window.max_height = documentation_height
-  end
-
-  local blink_config = package.loaded["blink.cmp.config"]
-  if type(blink_config) == "table" then
-    blink_config.completion.menu.max_height = completion_height
-    blink_config.completion.documentation.window.max_width = documentation_width
-    blink_config.completion.documentation.window.max_height =
-      documentation_height
-  end
-
-  local menu = package.loaded["blink.cmp.completion.windows.menu"]
-  if type(menu) == "table" and menu.win and menu.win.config then
-    menu.win.config.max_height = completion_height
-    menu.update_position()
-  end
-
-  local docs = package.loaded["blink.cmp.completion.windows.documentation"]
-  if type(docs) == "table" and docs.win and docs.win.config then
-    docs.win.config.max_width = documentation_width
-    docs.win.config.max_height = documentation_height
-    docs.update_position()
-  end
-end
-
 local function get_detail(item)
   local detail = item.detail
   if type(detail) == "table" then
@@ -100,8 +57,10 @@ local function draw_documentation(opts)
   })
 end
 
+local initial_sizes = window.get_completion_float_sizes()
+
 ---@type blink.cmp.Config
-options = {
+return {
   snippets = {
     preset = "luasnip",
   },
@@ -158,7 +117,7 @@ options = {
     },
     menu = {
       border = borders.cmp.window.completion,
-      max_height = select(2, window.get_completion_size()),
+      max_height = initial_sizes.completion.height,
       winhighlight = "Normal:BlinkCmpMenu,CursorLine:BlinkCmpMenuSelection,Search:None,FloatBorder:BlinkCmpMenuBorder",
       draw = {
         treesitter = { "lsp" },
@@ -170,15 +129,15 @@ options = {
         components = {
           label = {
             ---@diagnostic disable-next-line: assign-type-mismatch
-            width = { fill = true, max = completion_width_part(4, 7) },
+            width = { fill = true, max = window.completion_width_part(4, 7) },
           },
           label_description = {
             ---@diagnostic disable-next-line: assign-type-mismatch
-            width = { max = completion_width_part(2, 7) },
+            width = { max = window.completion_width_part(2, 7) },
           },
           source_name = {
             ---@diagnostic disable-next-line: assign-type-mismatch
-            width = { max = completion_width_part(1, 7) },
+            width = { max = window.completion_width_part(1, 7) },
           },
         },
       },
@@ -189,8 +148,8 @@ options = {
       draw = draw_documentation,
       window = {
         border = borders.cmp.window.documentation,
-        max_width = select(1, window.get_doc_size()),
-        max_height = select(2, window.get_doc_size()),
+        max_width = initial_sizes.documentation.width,
+        max_height = initial_sizes.documentation.height,
         winhighlight = "Normal:BlinkCmpDoc,FloatBorder:BlinkCmpDocBorder,EndOfBuffer:BlinkCmpDoc",
       },
     },
@@ -241,12 +200,3 @@ options = {
     implementation = "prefer_rust_with_warning",
   },
 }
-
-sync_window_sizes()
-
-vim.api.nvim_create_autocmd({ "VimResized", "WinResized" }, {
-  group = vim.api.nvim_create_augroup("OrbitVimBlinkResize", { clear = true }),
-  callback = sync_window_sizes,
-})
-
-return options

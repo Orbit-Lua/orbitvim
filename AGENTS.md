@@ -86,6 +86,10 @@ which is created by the normal plugin install flow.
   extra in `lua/config/packages.lua`.
 - Put formatter behavior in `lua/config/formatter/init.lua`.
 - Put linter behavior in `lua/config/linter/init.lua`.
+- Keep `lua/config/` modules focused on declaring options and user-facing
+  configuration. Move calculations, autocmd/event registration, runtime mutation,
+  and plugin setup glue into the owning utility, plugin setup, or domain module
+  instead.
 - Put shared behavior in an existing `lua/utils/` module when one matches the
   domain.
 - For Service Manager behavior, update `lua/service/` and add focused tests in
@@ -150,6 +154,8 @@ Add or update focused tests for:
   quote preference.
 - Follow `.editorconfig`: UTF-8, final newline, trimmed trailing whitespace.
 - Keep Lua modules small and aligned with the existing feature areas.
+- Keep option modules clean and declarative; avoid mixing option tables with
+  unrelated calculations, event wiring, or runtime side effects.
 - Prefer structured Lua tables and Neovim APIs over ad hoc string handling.
 - Prefer existing helpers in `lua/utils/` before creating new modules.
 - Keep plugin specs grouped by feature area under `lua/plugins/`.

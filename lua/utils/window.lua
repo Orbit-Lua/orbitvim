@@ -50,4 +50,28 @@ M.get_doc_size = function()
   return max_width, max_height
 end
 
+---@return { completion: { width: integer, height: integer }, documentation: { width: integer, height: integer } }
+M.get_completion_float_sizes = function()
+  local completion_width, completion_height = M.get_completion_size()
+  local documentation_width, documentation_height = M.get_doc_size()
+
+  return {
+    completion = { width = completion_width, height = completion_height },
+    documentation = {
+      width = documentation_width,
+      height = documentation_height,
+    },
+  }
+end
+
+---@param numerator integer
+---@param denominator integer
+---@return fun(): integer
+M.completion_width_part = function(numerator, denominator)
+  return function()
+    local width = select(1, M.get_completion_size())
+    return math.floor(width * numerator / denominator)
+  end
+end
+
 return M
