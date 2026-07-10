@@ -20,6 +20,8 @@ function M.setup()
 
   theme.load_cache("defaults")
   theme.load_cache("statusline")
+  theme.load_cache("todo")
+
   shell.setup()
   highlights.setup()
 
