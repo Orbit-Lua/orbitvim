@@ -2,11 +2,11 @@
 
 local fs = require("utils.fs")
 local os_utils = require("utils.os")
+local sqlfluff = require("utils.sqlfluff")
 
 return {
   default_format_opts = {
     timeout_ms = 5000,
-    async = true, -- not recommended to change
     quiet = false, -- not recommended to change
     lsp_format = "fallback", -- not recommended to change
   },
@@ -31,22 +31,12 @@ return {
     },
     ["sqlfluff"] = {
       command = "sqlfluff",
-      args = function()
-        for _, file in ipairs(fs.sqlfluff_pattern) do
-          local path = fs.get_root() .. "/" .. file
-          if vim.uv.fs_stat(path) ~= nil then
-            return { "format", "-" }
-          end
-        end
-
-        local config_path = fs.config_path
-          .. "/lua/config/db/template/sqlfluff.cfg"
-        return { "format", "--config", config_path, "-" }
+      args = function(_, ctx)
+        return sqlfluff.format_args(ctx.filename)
       end,
       stdin = true,
-      -- cwd = util.root_file(fs.sqlfluff_pattern),
       cwd = function(_, ctx)
-        return fs.get_root(ctx.dirname)
+        return sqlfluff.cwd(ctx.filename)
       end,
       require_cwd = true,
     },

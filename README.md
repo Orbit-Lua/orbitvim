@@ -107,6 +107,24 @@ Service Manager keys:
 | `g?` | Toggle help |
 | `q`, `<Esc>` | Close |
 
+### SQL dialects
+
+SQLFluff defaults to T-SQL and uses a DataGrip-like layout profile when a
+project does not provide its own SQLFluff configuration. Select another dialect
+for one file with a first-line SQLFluff directive:
+
+```sql
+-- sqlfluff:dialect:postgres
+
+SELECT payload::JSONB
+FROM events;
+```
+
+Project-local `.sqlfluff`, `pyproject.toml`, `setup.cfg`, `tox.ini`, and
+`pep8.ini` files take precedence over OrbitVim's fallback profile. Put ignored
+paths in a project-root `.sqlfluffignore`; a starter template is available at
+`lua/config/db/template/.sqlfluffignore`.
+
 ## Project Layout
 
 ```text

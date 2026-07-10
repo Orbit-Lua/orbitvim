@@ -3,6 +3,11 @@ local M = {}
 M.packages = require("config.packages")
 
 M.icons = {
+  formatter = {
+    error = "✖",
+    success = "✔",
+  },
+
   mason = {
     package_pending = " ",
     package_installed = " ",

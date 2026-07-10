@@ -1,5 +1,6 @@
 local fs = require("utils.fs")
 local os_util = require("utils.os")
+local sqlfluff_util = require("utils.sqlfluff")
 
 ---@class LinterExtend
 ---@field condition? boolean
@@ -55,21 +56,13 @@ return {
       },
     },
 
-    sqlfluff = {
-      cmd = "sqlfluff",
-      args = (function()
-        for _, file in ipairs(fs.sqlfluff_pattern) do
-          local path = fs.get_root() .. "/" .. file
-          if vim.uv.fs_stat(path) ~= nil then
-            return { "lint", "--format=json" }
-          end
-        end
-
-        local config_path = fs.config_path
-          .. "/lua/config/db/template/sqlfluff.cfg"
-        return { "lint", "--format=json", "--config", config_path }
-      end)(),
-    },
+    sqlfluff = function()
+      local linter = vim.deepcopy(require("lint.linters.sqlfluff"))
+      local filename = vim.api.nvim_buf_get_name(0)
+      linter.args = sqlfluff_util.lint_args(filename)
+      linter.cwd = sqlfluff_util.cwd(filename)
+      return linter
+    end,
 
     ["markdownlint-cli2"] = {
       cmd = "markdownlint-cli2",

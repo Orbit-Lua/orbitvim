@@ -140,10 +140,10 @@ M.root_pattern = {
 
 M.sqlfluff_pattern = {
   ".sqlfluff",
-  -- "pep8.ini",
-  -- "pyproject.toml",
+  "pep8.ini",
+  "pyproject.toml",
   "setup.cfg",
-  -- "tox.ini",
+  "tox.ini",
 }
 
 ---@param startpath string
