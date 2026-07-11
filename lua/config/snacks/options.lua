@@ -27,7 +27,15 @@ return {
     enabled = true,
     icon = " ",
   },
-  lazygit = {},
+  lazygit = {
+    ---@diagnostic disable-next-line: missing-fields
+    theme = {
+      activeBorderColor = {
+        fg = "SnacksLazygitActiveBorder",
+        bold = true,
+      },
+    },
+  },
   quickfile = { enabled = true },
   scope = { enabled = true },
   scroll = { enabled = true },

@@ -41,21 +41,6 @@ M.base46 = {
     },
     FloatBorder = { fg = "blue" },
     FloatTitle = { fg = "blue", bg = "black" },
-
-    CmpPmenu = {
-      bg = "black",
-    },
-    CmpBorder = {
-      fg = "grey",
-      bg = "NONE",
-    },
-    CmpDoc = {
-      bg = "black",
-    },
-    CmpDocBorder = {
-      fg = "grey",
-      bg = "NONE",
-    },
   },
 
   -- Merged into the "defaults" integration ONLY.
@@ -88,6 +73,8 @@ M.base46 = {
     -- ------------------------------------------------------------------------- --
     -- ■ Snacks.nvim                                                             --
     -- ------------------------------------------------------------------------- --
+    SnacksLazygitActiveBorder = { fg = "purple", bold = true },
+
     -- Snacks input
     -- SnacksInputPrompt = { fg = "purple" },
     -- SnacksInputBorder = { fg = "green" },

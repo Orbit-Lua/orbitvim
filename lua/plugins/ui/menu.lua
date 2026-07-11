@@ -234,6 +234,15 @@ local function open_menu()
   require("menu").open(items, { mouse = true })
 end
 
+local context_menu_keys = vim.tbl_map(function(lhs)
+  return {
+    lhs,
+    open_menu,
+    mode = { "n", "v" },
+    desc = "open context menu",
+  }
+end, { "<RightMouse>", "<2-RightMouse>", "<3-RightMouse>", "<4-RightMouse>" })
+
 ---@type LazySpec[]
 return {
   {
@@ -241,13 +250,6 @@ return {
     dependencies = {
       "Orbit-Lua/volt",
     },
-    keys = {
-      {
-        "<RightMouse>",
-        open_menu,
-        mode = { "n", "v" },
-        desc = "open context menu",
-      },
-    },
+    keys = context_menu_keys,
   },
 }
