@@ -27,12 +27,10 @@ Primary technologies:
 - `lua/config/options.lua`, `lua/config/keymaps.lua`, `lua/config/autocmds.lua`,
   `lua/config/events.lua`, and `lua/config/filetypes.lua` contain user-facing
   editor behavior.
-- `lua/nvconfig.lua` merges defaults with `lua/config/nvui.lua` for Nv UI and
-  `nv-base46`.
-- `lua/config/nvui.lua` owns theme, highlights, Mason package config,
-  statusline, tabline, and terminal UI settings.
-- `lua/config/theme.lua` implements the local base46 theme picker and persists
-  theme changes into `lua/config/nvui.lua`.
+- `lua/chadrc.lua` owns Nv UI/base46 user overrides, including the theme,
+  highlights, Mason packages, statusline, tabline, and terminal UI settings.
+  Nv UI's `nvconfig` module merges these overrides with its defaults.
+- `lua/config/theme.lua` loads generated base46 highlight caches.
 - `lua/config/services.lua` is the source of truth for managed LSP, DAP,
   formatter, and linter services.
 - `lua/config/packages.lua` derives Mason packages, LSP server names, and

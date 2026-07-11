@@ -108,10 +108,10 @@ end, { desc = "floating diagnostic" })
 
 -------------------- theme --------------------
 map("n", "<leader>ut", function()
-  require("config.theme").open()
+  require("nvchad.themes").open()
 end, { desc = "theme picker" })
 map("n", "<leader>ur", function()
-  require("config.theme").reload(require("nvconfig").base46.theme)
+  require("nvchad.utils").reload()
   vim.notify(
     "theme reloaded, please restart neovim",
     vim.log.levels.INFO,

@@ -63,11 +63,9 @@ autocmd("VimEnter", {
 
 autocmd("BufWritePost", {
   group = augroup("ReloadNvUiConfig", { clear = true }),
-  pattern = vim.fs.normalize(
-    vim.fn.stdpath("config") .. "/lua/config/nvui.lua"
-  ),
+  pattern = vim.fs.normalize(vim.fn.stdpath("config") .. "/lua/chadrc.lua"),
   callback = function()
-    package.loaded["config.nvui"] = nil
+    package.loaded.chadrc = nil
     package.loaded.nvconfig = nil
     package.loaded.base46 = nil
 
@@ -78,5 +76,5 @@ autocmd("BufWritePost", {
       vim.notify("[theme] " .. tostring(err), vim.log.levels.WARN)
     end
   end,
-  desc = "Reload Nv UI/base46 settings when config.nvui changes",
+  desc = "Reload Nv UI/base46 settings when chadrc changes",
 })

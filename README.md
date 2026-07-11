@@ -80,7 +80,7 @@ Common mappings:
 | Mapping | Action |
 | --- | --- |
 | `<leader>sm` | Open Service Manager |
-| `<leader>th` | Open theme picker and persist the selected base46 theme |
+| `<leader>ut` | Open nv-ui's theme picker and persist the selected theme |
 | `<leader>fm` | Format current buffer |
 | `<leader>fd` | Open diagnostics float |
 | `<C-n>` | Toggle file tree |
@@ -174,9 +174,9 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   formatter, and linter services.
 - `lua/config/packages.lua` derives Mason package lists, LSP server lists, and
   Treesitter parser lists.
-- `lua/config/nvui.lua` owns Nv UI/base46 settings, highlights, Mason package
-  config, statusline, tabline, and terminal settings.
-- `lua/config/theme.lua` updates the selected theme in `lua/config/nvui.lua`.
+- `lua/chadrc.lua` owns Nv UI/base46 settings, highlights, Mason package config,
+  statusline, tabline, terminal settings, and the theme persisted by nv-ui's
+  built-in picker.
 - Service Manager state is stored in Neovim's data directory as `service.json`
   unless `vim.g.service_state_path` is overridden.
 

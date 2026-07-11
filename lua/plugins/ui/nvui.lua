@@ -9,6 +9,9 @@ return {
 
   {
     "Orbit-Lua/nv-ui",
+    dependencies = {
+      "Orbit-Lua/volt",
+    },
     lazy = false,
     config = function()
       require("nvchad")

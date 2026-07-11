@@ -7,6 +7,7 @@ local borders = require("config.borders")
 local M = {}
 
 M.base46 = {
+  -- Keep this literal here so nv-ui's built-in theme picker can persist changes.
   theme = "tokyonight",
   theme_toggle = { "tokyonight", "vscode_light" },
 
