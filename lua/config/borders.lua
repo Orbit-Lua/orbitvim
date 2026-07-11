@@ -6,14 +6,14 @@ M.default = "rounded"
 
 -- Box-drawing border with CmpBorder highlight (LSP diagnostic float).
 M.lsp_diagnostic = {
-  { "┌", "CmpBorder" },
-  { "─", "CmpBorder" },
-  { "┐", "CmpBorder" },
-  { "│", "CmpBorder" },
-  { "┘", "CmpBorder" },
-  { "─", "CmpBorder" },
-  { "└", "CmpBorder" },
-  { "│", "CmpBorder" },
+  { "┌", "BlinkCmpMenuBorder" },
+  { "─", "BlinkCmpMenuBorder" },
+  { "┐", "BlinkCmpMenuBorder" },
+  { "│", "BlinkCmpMenuBorder" },
+  { "┘", "BlinkCmpMenuBorder" },
+  { "─", "BlinkCmpMenuBorder" },
+  { "└", "BlinkCmpMenuBorder" },
+  { "│", "BlinkCmpMenuBorder" },
 }
 
 -- Noice uses nui.nvim { style = "..." } format for popup views.

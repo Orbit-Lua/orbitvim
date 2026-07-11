@@ -49,7 +49,6 @@ return {
     },
 
     float = {
-      ---@diagnostic disable-next-line
       border = borders.lsp_diagnostic,
     },
   },

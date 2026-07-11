@@ -18,6 +18,15 @@ local function move_visual(direction)
 end
 
 map({ "i", "n", "s" }, "<esc>", function()
+  local menu_state = package.loaded["menu.state"]
+
+  if menu_state and #menu_state.bufids > 0 then
+    vim.schedule(function()
+      require("menu.utils").delete_old_menus()
+    end)
+    return ""
+  end
+
   vim.cmd("noh")
   utils_cmp.actions.snippet_stop()
   return "<esc>"
