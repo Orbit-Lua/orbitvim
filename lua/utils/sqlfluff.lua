@@ -3,6 +3,13 @@ local M = {}
 local fs = require("utils.fs")
 
 M.fallback_config = fs.config_path .. "/lua/config/db/template/sqlfluff.cfg"
+M.config_files = {
+  ".sqlfluff",
+  "pep8.ini",
+  "pyproject.toml",
+  "setup.cfg",
+  "tox.ini",
+}
 
 ---@param filename? string
 ---@return string
@@ -16,7 +23,7 @@ end
 ---@param filename? string
 ---@return string?
 function M.find_config(filename)
-  local candidates = vim.fs.find(fs.sqlfluff_pattern, {
+  local candidates = vim.fs.find(M.config_files, {
     path = file_dir(filename),
     upward = true,
     type = "file",

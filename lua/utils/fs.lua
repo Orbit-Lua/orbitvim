@@ -138,14 +138,6 @@ M.root_pattern = {
   ".vscode",
 }
 
-M.sqlfluff_pattern = {
-  ".sqlfluff",
-  "pep8.ini",
-  "pyproject.toml",
-  "setup.cfg",
-  "tox.ini",
-}
-
 ---@param startpath string
 ---@param markers string[]
 ---@return string?

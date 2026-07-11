@@ -76,7 +76,6 @@ describe("utils.sqlfluff", function()
   end)
 
   it("recognizes every supported SQLFluff config filename", function()
-    local fs = require("utils.fs")
     for _, name in ipairs({
       ".sqlfluff",
       "pep8.ini",
@@ -84,7 +83,7 @@ describe("utils.sqlfluff", function()
       "setup.cfg",
       "tox.ini",
     }) do
-      assert.is_true(vim.tbl_contains(fs.sqlfluff_pattern, name), name)
+      assert.is_true(vim.tbl_contains(sqlfluff.config_files, name), name)
     end
   end)
 

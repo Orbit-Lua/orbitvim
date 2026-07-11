@@ -113,16 +113,6 @@ describe("utils.fs", function()
     end)
   end)
 
-  describe("sqlfluff_pattern", function()
-    it("is a table", function()
-      assert.is_true(type(fs.sqlfluff_pattern) == "table")
-    end)
-
-    it("contains .sqlfluff", function()
-      assert.is_true(vim.tbl_contains(fs.sqlfluff_pattern, ".sqlfluff"))
-    end)
-  end)
-
   describe("path constants", function()
     it("config_path is a non-empty string", function()
       assert.is_true(type(fs.config_path) == "string")
