@@ -15,6 +15,9 @@ return {
     event = { "BufReadPost", "BufNewFile" },
     cmd = { "TSInstall", "TSBufEnable", "TSBufDisable", "TSModuleInfo" },
     build = { ":TSUpdate" },
+    init = function()
+      require("utils.treesitter").setup()
+    end,
 
     ---@module "nvim-treesitter"
     ---@type TSConfig
