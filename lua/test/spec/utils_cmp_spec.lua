@@ -245,8 +245,8 @@ describe("utils.cmp", function()
           sources = {
             default = {},
             providers = {
-              copilot = {
-                kind = "Copilot",
+              minuet = {
+                kind = "Minuet",
                 transform_items = function(_, items)
                   items[1].label = "changed"
                   return items
@@ -258,16 +258,16 @@ describe("utils.cmp", function()
 
         cmp_utils.setup(opts)
 
-        local provider = opts.sources.providers.copilot
+        local provider = opts.sources.providers.minuet
         local kinds = package.loaded["blink.cmp.types"].CompletionItemKind
         local items = provider.transform_items({}, { { label = "original" } })
 
         assert.is_nil(provider.kind)
-        assert.equals(2, kinds.Copilot)
-        assert.equals("Copilot", kinds[2])
+        assert.equals(2, kinds.Minuet)
+        assert.equals("Minuet", kinds[2])
         assert.equals("changed", items[1].label)
         assert.equals(2, items[1].kind)
-        assert.equals("Copilot", items[1].kind_name)
+        assert.equals("Minuet", items[1].kind_name)
       end
     )
   end)

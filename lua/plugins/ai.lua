@@ -3,67 +3,53 @@ local utils_cmp = require("utils.cmp")
 
 ---@type LazySpec[]
 local specs = {
-
   {
-    "zbirenbaum/copilot.lua",
-    dependencies = {
-      {
-        -- https://github.com/copilotlsp-nvim/copilot-lsp/blob/main/README.md
-        -- for nes (next edit suggestions) support
-        "copilotlsp-nvim/copilot-lsp",
-        init = function()
-          vim.g.copilot_nes_debounce = 500
-        end,
-        opts = {
-          nes = {
-            move_count_threshold = 10,
-          },
-        },
-      },
-    },
-
-    cmd = "Copilot",
-    build = ":Copilot auth",
+    "milanglacier/minuet-ai.nvim",
     event = { "BufReadPost", "BufNewFile" },
+    cmd = "Minuet",
     opts = {
-      suggestion = {
-        enabled = not vim.g.ai_cmp,
-        auto_trigger = true,
-        hide_during_completion = vim.g.ai_cmp,
+      provider = "openai_fim_compatible",
+      n_completions = 1,
+      context_window = 4096,
+      request_timeout = 3,
+      throttle = 800,
+      debounce = 300,
+      virtualtext = {
+        auto_trigger_ft = vim.g.ai_cmp and {} or { "*" },
         keymap = {
-          accept = false, -- handled by blink.cmp
           next = "<M-]>",
           prev = "<M-[>",
         },
       },
-      panel = { enabled = false },
-      filetypes = {
-        markdown = true,
-        help = true,
-      },
-      copilot_model = vim.g.copilot_model,
-
-      -- https://github.com/zbirenbaum/copilot.lua#nes-next-edit-suggestion
-      nes = {
-        enabled = false,
-        auto_trigger = true,
-        keymap = {
-          accept_and_goto = "<leader>p",
-          accept = false,
-          dismiss = "<esc>",
+      provider_options = {
+        openai_fim_compatible = {
+          api_key = function()
+            return "ollama"
+          end,
+          name = "Ollama",
+          end_point = "http://127.0.0.1:11434/v1/completions",
+          model = "qwen2.5-coder:7b-base-q6_K",
+          optional = {
+            max_tokens = 64,
+            temperature = 0,
+            top_p = 0.9,
+          },
         },
       },
+      enable_predicates = {
+        function()
+          return vim.bo.buftype == "" and vim.bo.modifiable
+        end,
+      },
     },
-  },
+    config = function(_, opts)
+      require("minuet").setup(opts)
 
-  -- add ai_accept action
-  {
-    "zbirenbaum/copilot.lua",
-    opts = function()
       utils_cmp.actions.ai_accept = function()
-        if require("copilot.suggestion").is_visible() then
+        local action = require("minuet.virtualtext").action
+        if action.is_visible() then
           utils.create_undo()
-          require("copilot.suggestion").accept()
+          action.accept()
           return true
         end
       end
@@ -78,28 +64,32 @@ local specs = {
   },
 }
 
--- refer to: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/plugins/extras/ai/copilot.lua
 if vim.g.ai_cmp then
   table.insert(specs, {
-    -- copilot blink.cmp source
     "saghen/blink.cmp",
     optional = true,
     dependencies = {
-      "giuxtaposition/blink-cmp-copilot",
+      "milanglacier/minuet-ai.nvim",
     },
     ---@param opts blink.cmp.Config
     opts = function(_, opts)
+      opts.keymap = opts.keymap or {}
       opts.sources = opts.sources or {}
       opts.sources.default = opts.sources.default or {}
       opts.sources.providers = opts.sources.providers or {}
+      opts.completion = opts.completion or {}
+      opts.completion.trigger = opts.completion.trigger or {}
 
-      table.insert(opts.sources.default, 1, "copilot")
-      opts.sources.providers.copilot = {
-        name = "copilot",
-        module = "blink-cmp-copilot",
+      table.insert(opts.sources.default, 1, "minuet")
+      opts.sources.providers.minuet = {
+        name = "Minuet",
+        module = "minuet.blink",
         score_offset = 100,
         async = true,
+        timeout_ms = 3000,
       }
+      opts.completion.trigger.prefetch_on_insert = false
+      opts.keymap["<M-y>"] = require("minuet").make_blink_map()
     end,
   })
 end

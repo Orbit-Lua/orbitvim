@@ -21,9 +21,6 @@ return {
       shell = "pwsh",
     },
 
-    -- copilot.lua only works with its own copilot lsp server
-    copilot = { enabled = false },
-
     -- config ref: https://github.com/eclipse-lemminx/lemminx/blob/main/docs/Configuration.md
     lemminx = {
       settings = {

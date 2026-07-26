@@ -23,7 +23,7 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 - DAP support for Python and .NET
 - Treesitter parsers and editor helpers for common languages
 - Navigation with `nvim-tree`, Snacks, and Harpoon
-- Completion with `blink.cmp`, LuaSnip, lazydev, and optional Copilot integration
+- Completion with `blink.cmp`, LuaSnip, lazydev, and local Minuet AI suggestions
 - Markdown preview, diagnostics UI, Noice notifications, Trouble, which-key, and
   Git signs
 
@@ -37,6 +37,8 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 - A C compiler and runtime tools required by Neovim plugins on your platform
 - Optional language runtimes for the stacks you use: Node.js, Python, .NET, Go,
   Deno, PowerShell, Docker tools, and SQL tooling
+- For local AI completion: Ollama serving
+  `qwen2.5-coder:7b-base-q6_K` at `127.0.0.1:11434`
 
 > [!NOTE]
 > The configuration prepends Mason's `bin` directory to `PATH` during startup,

@@ -13,6 +13,3 @@ o.autoread = true
 
 g.snacks_animate = false
 g.ai_cmp = false
-
--- https://docs.github.com/en/copilot/concepts/completions/code-suggestions
-g.copilot_model = "gpt-41-copilot"
