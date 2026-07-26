@@ -19,6 +19,7 @@ describe("config", function()
     it("exposes the remaining local Nv UI settings", function()
       assert.is_not_nil(chadrc.base46.integrations)
       assert.is_not_nil(chadrc.colorify)
+      assert.is_function(chadrc.ui.statusline.ai.is_available)
     end)
   end)
 

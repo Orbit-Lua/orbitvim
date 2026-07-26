@@ -19,7 +19,7 @@
   "noice.nvim": { "branch": "main", "commit": "7bfd942445fb63089b59f97ca487d605e715f155" },
   "nui.nvim": { "branch": "main", "commit": "de740991c12411b663994b2860f1a4fd0937c130" },
   "nv-base46": { "branch": "v3.0", "commit": "29fb906a950ba20288c436fe6ec3d7e934f988df" },
-  "nv-ui": { "branch": "v3.0", "commit": "6c1e9a61e370489cc0a1d5d5b42e8c6797843a03" },
+  "nv-ui": { "branch": "v3.0", "commit": "741eaae87608013326694cb64ca348bf263afaec" },
   "nvim-autopairs": { "branch": "master", "commit": "7b9923abad60b903ece7c52940e1321d39eccc79" },
   "nvim-dap": { "branch": "master", "commit": "8aba1e3805438ee6f74207e0b7385ef951bb9945" },
   "nvim-dap-ui": { "branch": "master", "commit": "cc9dd33aade7f20bae414d0cba163bc60d4d4b43" },
