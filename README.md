@@ -37,8 +37,9 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 - A C compiler and runtime tools required by Neovim plugins on your platform
 - Optional language runtimes for the stacks you use: Node.js, Python, .NET, Go,
   Deno, PowerShell, Docker tools, and SQL tooling
-- For local AI completion: Ollama serving
-  `qwen2.5-coder:7b-base-q6_K` at `127.0.0.1:11434`
+- For AI completion: Ollama serving `qwen2.5-coder:7b-base-q6_K` locally or
+  through a private Tailscale connection. See the
+  [Arch Linux setup guide](doc/ollama.md).
 
 > [!NOTE]
 > The configuration prepends Mason's `bin` directory to `PATH` during startup,
@@ -108,6 +109,29 @@ Service Manager keys:
 | `o`, `<CR>`, `za` | Expand or collapse a group |
 | `g?` | Toggle help |
 | `q`, `<Esc>` | Close |
+
+### AI completion endpoint
+
+Minuet uses the local Ollama endpoint by default. Open the endpoint picker, or
+select a host directly:
+
+```vim
+:MinuetEndpoint
+:MinuetEndpoint 100.64.0.8
+:MinuetEndpoint https://workstation.example.ts.net
+```
+
+An IP or hostname without a scheme uses
+`http://<host>:11434/v1/completions`. An HTTPS URL without a port uses port 443,
+which is suitable for Tailscale Serve. The selected endpoint and endpoint
+history are stored in Neovim's data directory as `minuet-endpoints.json`; the
+runtime Minuet configuration is updated immediately.
+
+Use `:MinuetEndpoint!` to remove a saved remote endpoint. The local
+`127.0.0.1:11434` fallback is always retained.
+
+For Ollama installation, Vulkan configuration, model setup, and private
+Tailscale access, follow the [Arch Linux Ollama guide](doc/ollama.md).
 
 ### SQL dialects
 
@@ -181,6 +205,8 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   built-in picker.
 - Service Manager state is stored in Neovim's data directory as `service.json`
   unless `vim.g.service_state_path` is overridden.
+- Minuet endpoint state is stored in Neovim's data directory as
+  `minuet-endpoints.json`; it contains endpoint URLs only, not credentials.
 
 > [!TIP]
 > When adding or removing language tooling, start in `lua/config/services.lua`

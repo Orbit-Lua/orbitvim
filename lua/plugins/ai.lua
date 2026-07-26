@@ -1,5 +1,6 @@
 local utils = require("utils")
 local utils_cmp = require("utils.cmp")
+local endpoint = require("ai.endpoint")
 
 ---@type LazySpec[]
 local specs = {
@@ -27,8 +28,9 @@ local specs = {
             return "ollama"
           end,
           name = "Ollama",
-          end_point = "http://127.0.0.1:11434/v1/completions",
+          end_point = endpoint.current(),
           model = "qwen2.5-coder:7b-base-q6_K",
+          transform = { endpoint.transform_request },
           optional = {
             max_tokens = 64,
             temperature = 0,
