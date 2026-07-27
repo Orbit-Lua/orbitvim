@@ -11,10 +11,10 @@ local specs = {
     opts = {
       provider = "openai_fim_compatible",
       n_completions = 1,
-      context_window = 4096,
+      context_window = 8192,
       request_timeout = 3,
-      throttle = 800,
-      debounce = 300,
+      throttle = 1500,
+      debounce = 500,
       virtualtext = {
         auto_trigger_ft = vim.g.ai_cmp and {} or { "*" },
         keymap = {
@@ -32,8 +32,7 @@ local specs = {
           model = "qwen2.5-coder:7b-base-q6_K",
           transform = { endpoint.transform_request },
           optional = {
-            max_tokens = 64,
-            temperature = 0,
+            max_tokens = 96,
             top_p = 0.9,
           },
         },
