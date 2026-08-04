@@ -29,6 +29,7 @@ M.lsp = {
   gopls = { mason = "gopls", ft = { "go" } },
   powershell_es = { mason = "powershell-editor-services", ft = { "ps1" } },
   lemminx = { mason = "lemminx", ft = { "xml" } },
+  yamlls = { mason = "yaml-language-server", ft = { "yaml" } },
 }
 
 -- DAP: adapter type name (as used in dap.adapters) -> { mason?, ft, note? }
@@ -85,6 +86,7 @@ M.formatter = {
     note = "uses local node_modules",
   },
   tombi = { mason = "tombi", ft = { "toml" } },
+  yaml = { mason = "yamlfmt", ft = { "yaml" } },
 }
 
 -- Canonical default formatter order per ft — mirrors config/formatter/init.lua

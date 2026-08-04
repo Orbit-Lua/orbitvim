@@ -5,6 +5,7 @@ local endpoint = require("ai.endpoint")
 ---@type LazySpec[]
 local specs = {
   {
+    cond = false,
     "milanglacier/minuet-ai.nvim",
     event = { "BufReadPost", "BufNewFile" },
     cmd = "Minuet",

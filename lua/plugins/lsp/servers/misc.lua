@@ -20,25 +20,5 @@ return {
       bundle_path = fs.mason_pkg_path .. "/powershell-editor-services",
       shell = "pwsh",
     },
-
-    -- config ref: https://github.com/eclipse-lemminx/lemminx/blob/main/docs/Configuration.md
-    lemminx = {
-      settings = {
-        xml = {
-          fileAssociations = {
-            {
-              systemId = fs.schema_paths.ms_build,
-              pattern = "**/*.csproj",
-            },
-          },
-          completion = {
-            autoCloseTags = true,
-          },
-          validation = {
-            enabled = false,
-          },
-        },
-      },
-    },
   },
 }

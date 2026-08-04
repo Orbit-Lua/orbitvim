@@ -94,9 +94,11 @@ return {
     -- markdown
     ["markdown"] = { "markdownlint-cli2", "markdown-toc" },
     ["markdown.mdx"] = { "markdownlint-cli2", "markdown-toc" },
+
+    yaml = { "yamlfmt" },
   },
 
-  format_on_save = false,
+  format_on_save = true,
 
   -- format_on_save = function()
   --   if vim.bo.filetype == "prisma" then

@@ -25,6 +25,7 @@ M.treesitter_ensure_installed = {
   "xml",
   "go",
   "regex",
+  "yaml",
 }
 
 -- Mason packages that are installed but not tracked as managed services.
