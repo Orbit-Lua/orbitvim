@@ -136,6 +136,7 @@ M.message_ignored = {
 
   progress = {
     "Searching in files",
+    "pyright",
   },
 }
 

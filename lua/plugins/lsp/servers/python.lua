@@ -6,15 +6,9 @@ local data_path = vim.fs.normalize(vim.fn.stdpath("data"))
 return {
   servers = {
     ruff = {
-      cmd_env = { RUFF_TRACE = "messages" },
       init_options = {
         settings = {
-          logLevel = "error",
-          ["line-length"] = 80,
-          exclude = { "**/__init__.py" },
-          lint = {
-            ignore = { "F403", "E402" },
-          },
+          configurationPreference = "filesystemFirst",
         },
       },
       keys = {
