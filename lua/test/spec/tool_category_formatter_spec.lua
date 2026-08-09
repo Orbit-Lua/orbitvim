@@ -1,0 +1,120 @@
+describe("tool.category.formatter", function()
+  local formatter
+  local state
+  local conform
+  local tools = require("config.tools")
+
+  before_each(function()
+    package.loaded["tool.category.formatter"] = nil
+    package.loaded["tool.order"] = nil
+    package.loaded["tool.state"] = nil
+
+    conform = { formatters_by_ft = { python = { "ruff_format" } } }
+    package.loaded.conform = conform
+
+    state = require("tool.state")
+    state.set_order("formatter", "python", { "ruff_fix", "ruff_format" })
+    state.set_enabled("formatter", "ruff_fix", true)
+    state.set_enabled("formatter", "ruff_format", true)
+
+    formatter = require("tool.category.formatter")
+  end)
+
+  after_each(function()
+    package.loaded.conform = nil
+    if tools.formatter_defaults.python then
+      state.set_order(
+        "formatter",
+        "python",
+        vim.deepcopy(tools.formatter_defaults.python)
+      )
+    end
+    state.set_enabled("formatter", "ruff_fix", true)
+    state.set_enabled("formatter", "ruff_format", true)
+  end)
+
+  it("re-enables a formatter at its saved runtime priority", function()
+    formatter.apply_runtime({
+      name = "ruff_fix",
+      meta = tools.formatter.ruff_fix,
+      is_enabled = true,
+    })
+
+    assert.same({ "ruff_fix", "ruff_format" }, conform.formatters_by_ft.python)
+  end)
+
+  it("reports partial runtime wiring across declared filetypes", function()
+    local status, hl = formatter.entry_status({
+      name = "deno_fmt",
+      meta = tools.formatter.deno_fmt,
+      installed = true,
+    })
+
+    assert.equals("not configured", status)
+    assert.equals("DiagnosticWarn", hl)
+
+    conform.formatters_by_ft.html = { "deno_fmt" }
+
+    status, hl = formatter.entry_status({
+      name = "deno_fmt",
+      meta = tools.formatter.deno_fmt,
+      installed = true,
+    })
+
+    assert.equals("partly configured 1/5", status)
+    assert.equals("DiagnosticWarn", hl)
+  end)
+
+  it("reports fully configured formatters", function()
+    conform.formatters_by_ft.lua = { "stylua" }
+
+    local status, hl = formatter.entry_status({
+      name = "stylua",
+      meta = tools.formatter.stylua,
+      installed = true,
+    })
+
+    assert.equals("configured", status)
+    assert.equals("DiagnosticOk", hl)
+  end)
+
+  it("reports configured formatters with a missing executable", function()
+    conform.formatters_by_ft.lua = { "stylua" }
+    conform.get_formatter_info = function(name)
+      return {
+        name = name,
+        available = false,
+        available_msg = "Command '__orbitvim_missing_formatter_bin__' not found",
+      }
+    end
+
+    local status, hl = formatter.entry_status({
+      name = "stylua",
+      meta = tools.formatter.stylua,
+      installed = true,
+    })
+
+    assert.equals("no binary", status)
+    assert.equals("DiagnosticError", hl)
+  end)
+
+  it("does not treat formatter conditions as missing executables", function()
+    conform.formatters_by_ft.lua = { "stylua" }
+    conform.get_formatter_info = function(name)
+      return {
+        name = name,
+        available = false,
+        available_msg = "Condition failed",
+      }
+    end
+
+    local status, hl = formatter.entry_status({
+      name = "stylua",
+      meta = tools.formatter.stylua,
+      installed = true,
+    })
+
+    assert.equals("configured", status)
+    assert.equals("DiagnosticOk", hl)
+  end)
+end)

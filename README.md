@@ -6,8 +6,8 @@
 
 OrbitVim is a modular Neovim configuration built around
 [lazy.nvim](https://github.com/folke/lazy.nvim), NvChad-style UI components,
-Mason-managed language tooling, and a custom Service Manager for LSP, DAP,
-formatter, and linter control.
+Mason-managed language tooling, and a custom Tool Manager for LSP, DAP,
+formatter, linter, Treesitter parser, and package dependency control.
 
 It is aimed at day-to-day editing across Lua, Python, C#, TypeScript,
 JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
@@ -16,9 +16,9 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 
 - Fast lazy-loaded plugin setup with `lazy.nvim`
 - Nv UI/base46 theme integration with local theme persistence
-- Managed LSP registry derived from one service configuration file
-- Service Manager UI for enabling, disabling, installing, inspecting, and
-  ordering language services
+- Managed LSP registry derived from one tool configuration file
+- Tool Manager UI for enabling, disabling, installing, inspecting, and
+  ordering language tools, parsers, and package dependencies
 - Formatting through `conform.nvim` and linting through `nvim-lint`
 - DAP support for Python and .NET
 - Treesitter parsers and editor helpers for common languages
@@ -62,7 +62,7 @@ nvim
 
 On first launch, `init.lua` bootstraps `lazy.nvim` into Neovim's data directory
 and installs configured plugins. Mason packages are derived from
-`lua/config/services.lua` and `lua/config/packages.lua`.
+`lua/config/tools.lua` and `lua/config/packages.lua`.
 
 After plugins are installed, install Treesitter parsers from inside Neovim:
 
@@ -72,17 +72,17 @@ After plugins are installed, install Treesitter parsers from inside Neovim:
 
 ## Usage
 
-Open the Service Manager:
+Open the Tool Manager:
 
 ```vim
-:ServiceManager
+:ToolManager
 ```
 
 Common mappings:
 
 | Mapping | Action |
 | --- | --- |
-| `<leader>sm` | Open Service Manager |
+| `<leader>us` | Open Tool Manager |
 | `<leader>ut` | Open nv-ui's theme picker and persist the selected theme |
 | `<leader>fm` | Format current buffer |
 | `<leader>fd` | Open diagnostics float |
@@ -96,16 +96,16 @@ Common mappings:
 | `<M-h>` | Toggle horizontal terminal |
 | `<M-v>` | Toggle vertical terminal |
 
-Service Manager keys:
+Tool Manager keys:
 
 | Key | Action |
 | --- | --- |
-| `1`-`4` | Switch service category |
+| `1`-`6` | Switch tool category |
 | `<Tab>` / `<S-Tab>` | Move between categories |
-| `<Space>` | Enable or disable service |
-| `i` | Install Mason-backed service package |
+| `<Space>` | Enable or disable supported runtime tools |
+| `i` | Install a Mason package or Treesitter parser |
 | `[` / `]` | Reorder formatter or linter priority |
-| `K` | Show service tooltip |
+| `K` | Show tool tooltip |
 | `o`, `<CR>`, `za` | Expand or collapse a group |
 | `g?` | Toggle help |
 | `q`, `<Esc>` | Close |
@@ -156,9 +156,9 @@ paths in a project-root `.sqlfluffignore`; a starter template is available at
 ```text
 .
 ├── init.lua                  # lazy.nvim bootstrap and startup entrypoint
-├── lua/config/               # editor options, keymaps, UI, services, packages
+├── lua/config/               # editor options, keymaps, UI, tools, packages
 ├── lua/plugins/              # lazy.nvim plugin specs grouped by feature area
-├── lua/service/              # Service Manager state, rendering, actions, data
+├── lua/tool/                 # Tool Manager state, adapters, UI, and data
 ├── lua/utils/                # shared helpers
 ├── lua/cmds/                 # custom commands loaded at startup
 ├── lua/test/spec/            # Plenary test specs
@@ -191,23 +191,24 @@ Run a focused Plenary spec with:
 
 ```bash
 nvim --headless --noplugin -u scripts/tests/minimal.vim \
-  -c "PlenaryBustedFile lua/test/spec/service_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
+  -c "PlenaryBustedFile lua/test/spec/tool_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
 ```
 
 ## Configuration Notes
 
-- `lua/config/services.lua` is the source of truth for managed LSP, DAP,
-  formatter, and linter services.
+- `lua/config/tools.lua` is the source of truth for managed LSP, DAP,
+  formatter, linter, parser, and dependency tools.
 - `lua/config/packages.lua` derives Mason package lists, LSP server lists, and
   Treesitter parser lists.
 - `lua/chadrc.lua` owns Nv UI/base46 settings, highlights, Mason package config,
   statusline, tabline, terminal settings, and the theme persisted by nv-ui's
   built-in picker.
-- Service Manager state is stored in Neovim's data directory as `service.json`
-  unless `vim.g.service_state_path` is overridden.
+- Tool Manager state is stored in Neovim's data directory as `tools.json`
+  unless `vim.g.tool_state_path` is overridden. Existing `service.json` state
+  is read as a migration fallback.
 - Minuet endpoint state is stored in Neovim's data directory as
   `minuet-endpoints.json`; it contains endpoint URLs only, not credentials.
 
 > [!TIP]
-> When adding or removing language tooling, start in `lua/config/services.lua`
+> When adding or removing language tooling, start in `lua/config/tools.lua`
 > and let the package derivation tests tell you what else needs to change.

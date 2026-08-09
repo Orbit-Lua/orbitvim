@@ -16,7 +16,7 @@ local modules = {
   "plugins.debugger.dotnet",
 }
 
-local state_mod = require("service.state")
+local state_mod = require("tool.state")
 
 ---@type Dap.Spec
 local spec = {

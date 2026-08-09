@@ -98,7 +98,7 @@ return {
     yaml = { "yamlfmt" },
   },
 
-  format_on_save = true,
+  format_on_save = false,
 
   -- format_on_save = function()
   --   if vim.bo.filetype == "prisma" then

@@ -6,7 +6,7 @@ M.register_servers = function(opts)
   require("config.theme").load_cache("lsp")
 
   local configs = require("config")
-  local state_mod = require("service.state")
+  local state_mod = require("tool.state")
   local default_lsp_config = {
     on_init = opts.on_init,
     capabilities = opts.capabilities,

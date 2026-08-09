@@ -17,8 +17,8 @@ return {
     },
     opts = function()
       local opts = require("config.formatter")
-      local state_mod = require("service.state")
-      local order = require("service.order")
+      local state_mod = require("tool.state")
+      local order = require("tool.order")
 
       -- Inject sqlfluff for SQL filetypes before filtering
       if state_mod.is_enabled("formatter", "sqlfluff") then

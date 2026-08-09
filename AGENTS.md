@@ -4,8 +4,8 @@
 
 OrbitVim is a modular Neovim configuration written in Lua. It bootstraps
 `lazy.nvim`, loads plugin specs from `lua/plugins/`, applies Nv UI/base46
-configuration, and exposes a custom Service Manager for LSP, DAP, formatter, and
-linter services.
+configuration, and exposes a custom Tool Manager for LSP, DAP, formatter, and
+linter tools.
 
 Primary technologies:
 
@@ -31,17 +31,17 @@ Primary technologies:
   highlights, Mason packages, statusline, tabline, and terminal UI settings.
   Nv UI's `nvconfig` module merges these overrides with its defaults.
 - `lua/config/theme.lua` loads generated base46 highlight caches.
-- `lua/config/services.lua` is the source of truth for managed LSP, DAP,
-  formatter, and linter services.
+- `lua/config/tools.lua` is the source of truth for managed LSP, DAP,
+  formatter, linter, parser, and dependency tools.
 - `lua/config/packages.lua` derives Mason packages, LSP server names, and
-  Treesitter parser lists from the service registry.
+  Treesitter parser lists from the tool registry.
 - `lua/config/formatter/init.lua` configures `conform.nvim`.
 - `lua/config/linter/init.lua` configures `nvim-lint`.
 - `lua/plugins/` contains lazy.nvim specs grouped by feature area.
 - `lua/plugins/lsp/` contains LSP registration, diagnostics, capabilities,
   keymaps, and per-language server configuration.
 - `lua/plugins/debugger/` contains DAP plugins and per-language debug config.
-- `lua/service/` implements Service Manager UI, persistent state, actions,
+- `lua/tool/` implements Tool Manager UI, persistent state, actions,
   rendering, Mason integration, run-error display, and formatter/linter ordering.
 - `lua/utils/` contains shared helpers. Reuse these before adding new helper
   modules.
@@ -79,7 +79,7 @@ which is created by the normal plugin install flow.
 ## Development Workflow
 
 - Add plugin specs under the closest feature file in `lua/plugins/`.
-- Keep language-service definitions in `lua/config/services.lua`; do not
+- Keep language-tool definitions in `lua/config/tools.lua`; do not
   duplicate Mason package lists by hand unless the package is intentionally an
   extra in `lua/config/packages.lua`.
 - Put formatter behavior in `lua/config/formatter/init.lua`.
@@ -90,7 +90,7 @@ which is created by the normal plugin install flow.
   instead.
 - Put shared behavior in an existing `lua/utils/` module when one matches the
   domain.
-- For Service Manager behavior, update `lua/service/` and add focused tests in
+- For Tool Manager behavior, update `lua/tool/` and add focused tests in
   `lua/test/spec/`.
 - For startup changes, inspect the load order in `init.lua` and
   `lua/config/starter.lua` before editing.
@@ -135,15 +135,15 @@ Run a single spec with:
 
 ```bash
 nvim --headless --noplugin -u scripts/tests/minimal.vim \
-  -c "PlenaryBustedFile lua/test/spec/service_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
+  -c "PlenaryBustedFile lua/test/spec/tool_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
 ```
 
 Add or update focused tests for:
 
 - shared utilities in `lua/utils/`
-- Service Manager state, rendering data, actions, Mason integration, and service
+- Tool Manager state, rendering data, actions, Mason integration, and tool
   ordering
-- service registry derivation in `lua/config/packages.lua`
+- tool registry derivation in `lua/config/packages.lua`
 - headless logic that can regress without opening a UI
 
 ## Code Style
@@ -160,19 +160,22 @@ Add or update focused tests for:
 - Use comments only where they clarify non-obvious behavior.
 - Avoid broad rewrites when a focused change is enough.
 
-## Service Registry Rules
+## Tool Registry Rules
 
-- `lua/config/services.lua` is canonical for managed services.
-- Each service entry should include the service name, Mason package when Mason
-  manages it, and filetypes.
+- `lua/config/tools.lua` is canonical for managed tools.
+- Runtime tool entries should include the Mason package when Mason manages
+  them and their supported filetypes.
+- Parser entries explicitly map Treesitter parser names to Neovim filetypes;
+  package entries describe non-toggleable installer dependencies.
 - DAP entries may use `mason = nil` when the adapter is external, such as Python
   `debugpy` from a virtual environment.
 - Formatter and linter defaults that require ordering belong in
   `formatter_defaults` and `linter_defaults`.
 - `lua/config/packages.lua` derives `lsp_servers` and
-  `mason_ensure_installed`; keep derivation deterministic and sorted.
-- Service Manager persisted state must tolerate missing, invalid, or stale
-  `service.json` data.
+  `mason_ensure_installed` plus Treesitter parsers; keep derivation
+  deterministic and sorted.
+- Tool Manager persisted state must tolerate missing, invalid, or stale
+  `tools.json` data.
 
 ## Build and Deployment
 
@@ -196,12 +199,12 @@ the task intentionally updates plugin versions.
 - Be careful with commands that delete files. The Windows-only `ClearShada`
   command deliberately skips `main.shada`; preserve that behavior.
 - Do not overwrite user state in Neovim data directories from tests unless a
-  test explicitly redirects paths such as `vim.g.service_state_path`.
+  test explicitly redirects paths such as `vim.g.tool_state_path`.
 
 ## Pull Request Checklist
 
 - Run `make all`.
 - Run `nvim --headless "+qall"` when startup paths changed.
 - Add or update focused tests for changed headless logic.
-- Keep docs in sync when commands, service ownership, or repository layout
+- Keep docs in sync when commands, tool ownership, or repository layout
   change.

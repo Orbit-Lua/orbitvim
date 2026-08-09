@@ -18,14 +18,14 @@ vim.api.nvim_create_autocmd("User", {
   pattern = "LazyDone",
   once = true,
   callback = function()
-    vim.api.nvim_create_user_command("ServiceManager", function()
-      require("service").open()
-    end, { desc = "Open Service Manager" })
+    vim.api.nvim_create_user_command("ToolManager", function()
+      require("tool").open()
+    end, { desc = "Open Tool Manager" })
     vim.keymap.set(
       "n",
       "<leader>us",
-      "<cmd>ServiceManager<CR>",
-      { desc = "service manager" }
+      "<cmd>ToolManager<CR>",
+      { desc = "tool manager" }
     )
   end,
 })

@@ -54,7 +54,7 @@ M.base46 = {
     active_context = { fg = "blue" },
     CmpGhostText = { link = "Comment", default = true },
     DapBreakpointColor = { fg = "red" },
-    ServiceMuted = { fg = "grey" },
+    ToolMuted = { fg = "grey" },
 
     -- default icon hl
     MiniIconsGrey = { link = "DevIconDefault" },

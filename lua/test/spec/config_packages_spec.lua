@@ -1,6 +1,6 @@
 describe("config.packages", function()
   local packages = require("config.packages")
-  local services = require("config.services")
+  local tools = require("config.tools")
 
   describe("lsp_servers", function()
     it("is a non-empty list", function()
@@ -8,8 +8,8 @@ describe("config.packages", function()
       assert.is_true(#packages.lsp_servers > 0)
     end)
 
-    it("contains every LSP server name from services.lsp", function()
-      for name in pairs(services.lsp) do
+    it("contains every LSP server name from tools.lsp", function()
+      for name in pairs(tools.lsp) do
         assert.is_true(
           vim.tbl_contains(packages.lsp_servers, name),
           name .. " missing from lsp_servers"
@@ -54,8 +54,8 @@ describe("config.packages", function()
       end
     end)
 
-    it("contains mason packages from all lsp services", function()
-      for name, meta in pairs(services.lsp) do
+    it("contains mason packages from all lsp tools", function()
+      for name, meta in pairs(tools.lsp) do
         if meta.mason then
           assert.is_true(
             vim.tbl_contains(packages.mason_ensure_installed, meta.mason),
@@ -68,8 +68,8 @@ describe("config.packages", function()
       end
     end)
 
-    it("contains mason packages from linter services", function()
-      for name, meta in pairs(services.linter) do
+    it("contains mason packages from linter tools", function()
+      for name, meta in pairs(tools.linter) do
         if meta.mason then
           assert.is_true(
             vim.tbl_contains(packages.mason_ensure_installed, meta.mason),
@@ -82,8 +82,8 @@ describe("config.packages", function()
       end
     end)
 
-    it("contains mason packages from formatter services", function()
-      for name, meta in pairs(services.formatter) do
+    it("contains mason packages from formatter tools", function()
+      for name, meta in pairs(tools.formatter) do
         if meta.mason then
           assert.is_true(
             vim.tbl_contains(packages.mason_ensure_installed, meta.mason),
@@ -96,8 +96,8 @@ describe("config.packages", function()
       end
     end)
 
-    it("contains mason packages from dap services", function()
-      for name, meta in pairs(services.dap) do
+    it("contains mason packages from dap tools", function()
+      for name, meta in pairs(tools.dap) do
         if meta.mason then
           assert.is_true(
             vim.tbl_contains(packages.mason_ensure_installed, meta.mason),
@@ -122,21 +122,22 @@ describe("config.packages", function()
       )
     end)
 
-    it(
-      "keeps fixed extras first and service-derived packages sorted",
-      function()
-        assert.equals(
-          "typescript-language-server",
-          packages.mason_ensure_installed[1]
-        )
-
-        local service_packages =
-          vim.list_slice(packages.mason_ensure_installed, 2)
-        local sorted = vim.deepcopy(service_packages)
-        table.sort(sorted)
-        assert.same(sorted, service_packages)
+    it("contains registry package dependencies", function()
+      for name, definition in pairs(tools.package) do
+        if definition.source == "mason" then
+          assert.is_true(
+            vim.tbl_contains(packages.mason_ensure_installed, name),
+            name .. " missing from mason_ensure_installed"
+          )
+        end
       end
-    )
+    end)
+
+    it("is sorted for deterministic startup output", function()
+      local sorted = vim.deepcopy(packages.mason_ensure_installed)
+      table.sort(sorted)
+      assert.same(sorted, packages.mason_ensure_installed)
+    end)
   end)
 
   describe("treesitter_ensure_installed", function()
@@ -181,6 +182,12 @@ describe("config.packages", function()
         assert.is_nil(seen[lang], "Duplicate treesitter parser: " .. lang)
         seen[lang] = true
       end
+    end)
+
+    it("is derived from the parser registry", function()
+      local expected = vim.tbl_keys(tools.parser)
+      table.sort(expected)
+      assert.same(expected, packages.treesitter_ensure_installed)
     end)
   end)
 end)

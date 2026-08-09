@@ -1,44 +1,12 @@
-local services = require("config.services")
+local tools = require("config.tools")
 
 local M = {}
 
-M.treesitter_ensure_installed = {
-  "lua",
-  "luadoc",
-  "printf",
-  "vim",
-  "vimdoc",
-  "html",
-  "css",
-  "javascript",
-  "typescript",
-  "tsx",
-  "c",
-  "cpp",
-  "python",
-  "bash",
-  "markdown",
-  "sql",
-  "prisma",
-  "comment",
-  "c_sharp",
-  "xml",
-  "go",
-  "regex",
-  "yaml",
-}
-
--- Mason packages that are installed but not tracked as managed services.
-local mason_extras = {
-  "markdownlint", -- standalone markdown linter (separate from markdownlint-cli2)
-}
-
--- Derive lsp_servers and mason_ensure_installed from the services registry so that
--- config/services.lua is the single source of truth for all managed services.
+-- Derive consumer-specific lists from the tool registry so config/tools.lua
+-- remains the single source of truth.
 M.lsp_servers = {}
-M.mason_ensure_installed = {
-  "typescript-language-server", -- for tsserver executable
-}
+M.mason_ensure_installed = {}
+M.treesitter_ensure_installed = {}
 
 local function sorted_keys(tbl)
   local keys = vim.tbl_keys(tbl or {})
@@ -54,6 +22,10 @@ local function add_mason(pkg)
   end
 end
 
+for _, name in ipairs(sorted_keys(tools.parser)) do
+  table.insert(M.treesitter_ensure_installed, name)
+end
+
 local derived_mason_packages = {}
 local function collect_mason(pkg)
   if pkg then
@@ -61,21 +33,24 @@ local function collect_mason(pkg)
   end
 end
 
-for _, name in ipairs(sorted_keys(services.lsp)) do
-  local meta = services.lsp[name]
+for _, name in ipairs(sorted_keys(tools.lsp)) do
+  local meta = tools.lsp[name]
   table.insert(M.lsp_servers, name)
   collect_mason(meta.mason)
 end
 
 for _, cat in ipairs({ "dap", "linter", "formatter" }) do
-  for _, name in ipairs(sorted_keys(services[cat])) do
-    local meta = services[cat][name]
+  for _, name in ipairs(sorted_keys(tools[cat])) do
+    local meta = tools[cat][name]
     collect_mason(meta.mason)
   end
 end
 
-for _, pkg in ipairs(mason_extras) do
-  collect_mason(pkg)
+for _, name in ipairs(sorted_keys(tools.package)) do
+  local meta = tools.package[name]
+  if meta.source == "mason" then
+    collect_mason(name)
+  end
 end
 
 for _, pkg in ipairs(sorted_keys(derived_mason_packages)) do

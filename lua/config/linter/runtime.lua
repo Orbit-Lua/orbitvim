@@ -1,6 +1,6 @@
 local M = {}
 
-local health = require("service.health")
+local health = require("tool.health")
 
 local function merge_linters(lint, linters)
   for linter_name, linter in pairs(linters) do
@@ -38,8 +38,8 @@ local function normalize_windows_output(lint)
   end
 end
 
-local function apply_service_order(linters_by_ft)
-  local order = require("service.order")
+local function apply_tool_order(linters_by_ft)
+  local order = require("tool.order")
   for filetype, linters in pairs(linters_by_ft) do
     linters_by_ft[filetype] =
       order.enabled_names_for_ft("linter", filetype, linters)
@@ -124,7 +124,7 @@ local function build_runner(lint)
       end
     end
 
-    -- Run linters and notify listeners so the Service Manager can refresh
+    -- Run linters and notify listeners so the Tool Manager can refresh
     -- run-error state. NvimLintRunPost only fires when a run actually happens
     -- to avoid spurious re-renders on buffers with no linters.
     if #linter_names > 0 then
@@ -143,7 +143,7 @@ function M.setup(opts)
 
   merge_linters(lint, opts.linters)
   normalize_windows_output(lint)
-  apply_service_order(opts.linters_by_ft)
+  apply_tool_order(opts.linters_by_ft)
 
   lint.linters_by_ft = opts.linters_by_ft
 

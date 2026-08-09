@@ -1,7 +1,7 @@
 ---@class BordersConfig
 local M = {}
 
--- Default border for standard float windows (cmp, lsp, trouble, which-key, service, term).
+-- Default border for standard float windows (cmp, lsp, trouble, which-key, tool, term).
 M.default = "rounded"
 
 -- Box-drawing border with CmpBorder highlight (LSP diagnostic float).
