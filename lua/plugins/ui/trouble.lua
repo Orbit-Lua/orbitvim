@@ -113,7 +113,7 @@ return {
     },
 
     config = function(_, opts)
-      require("config.theme").load_cache("todo")
+      require("config.theme").load_cache("lsp")
       require("todo-comments").setup(opts)
     end,
   },

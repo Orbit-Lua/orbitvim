@@ -95,9 +95,9 @@ M.base46 = {
     -- SnacksPickerListBorder = { fg = "blue" },
   },
 
-  integrations = {
-    "todo",
-  },
+  -- integrations = {
+  --   "todo",
+  -- },
 
   excluded = {},
 
