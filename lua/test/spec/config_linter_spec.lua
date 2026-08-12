@@ -30,6 +30,7 @@ describe("config.linter", function()
       assert.same(sqlfluff.lint_args(filename), linter.args)
       assert.same(sqlfluff.cwd(filename), linter.cwd)
       assert.is_true(linter.stdin)
+      assert.same("1", linter.env.PYTHONUTF8)
 
       vim.fn.delete(root, "rf")
     end

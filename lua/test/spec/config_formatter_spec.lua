@@ -77,4 +77,8 @@ describe("config.formatter", function()
     sqlfluff.format_args = original_format_args
     sqlfluff.cwd = original_cwd
   end)
+
+  it("forces UTF-8 for SQLFluff stdin", function()
+    assert.same("1", formatter.formatters.sqlfluff.env.PYTHONUTF8)
+  end)
 end)

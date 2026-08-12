@@ -61,6 +61,7 @@ return {
       local filename = vim.api.nvim_buf_get_name(0)
       linter.args = sqlfluff_util.lint_args(filename)
       linter.cwd = sqlfluff_util.cwd(filename)
+      linter.env = { PYTHONUTF8 = "1" }
       return linter
     end,
 

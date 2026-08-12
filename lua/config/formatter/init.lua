@@ -31,6 +31,7 @@ return {
     },
     ["sqlfluff"] = {
       command = "sqlfluff",
+      env = { PYTHONUTF8 = "1" },
       args = function(_, ctx)
         return sqlfluff.format_args(ctx.filename)
       end,
