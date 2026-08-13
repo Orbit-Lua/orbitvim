@@ -122,7 +122,8 @@ This runs:
 
 - `stylua lua/ --config-path=.stylua.toml`
 - `luacheck lua --globals vim`
-- `nvim --headless --noplugin -u scripts/tests/minimal.vim -c "PlenaryBustedDirectory lua/test/spec/ {minimal_init = 'scripts/tests/minimal.vim'}"`
+- Plenary/Busted tests through `scripts/tests/minimal.vim` for all specs under
+  `lua/test/spec/`
 
 For edits to `init.lua`, `lua/config/starter.lua`, Lazy bootstrap behavior,
 plugin loading, startup events, or other startup paths, also run:
@@ -145,6 +146,29 @@ Add or update focused tests for:
   ordering
 - tool registry derivation in `lua/config/packages.lua`
 - headless logic that can regress without opening a UI
+
+## Test Design
+
+- Treat the module interface as the test surface. Assert observable behavior,
+  outputs, side effects, error handling, and cross-module invariants.
+- Prefer one table-driven invariant test over separate tests for every field,
+  key, tool, icon, or filetype.
+- Do not add tests that only verify a module, table, function, or primitive
+  return type exists when a behavioral assertion already exercises it.
+- For declarative configuration, test required schema, ordering, derivation,
+  safety policy, and consumer-facing contracts. Avoid pinning cosmetic values
+  unless they are intentionally stable behavior.
+- Mock Neovim or plugin dependencies at the owning module's seam and verify the
+  resulting calls, events, or state transitions. Avoid asserting private
+  implementation state.
+- Use internal test seams only when behavior cannot be observed through the
+  public interface, and keep those seams narrow.
+- When a deeper interface test replaces shallow tests, remove the redundant
+  tests instead of layering both sets.
+- Regression tests should reproduce a real failure mode or protect a documented
+  invariant.
+- Data-only changes do not require new tests unless they alter a validated
+  schema, derivation, ordering rule, or user-visible contract.
 
 ## Code Style
 

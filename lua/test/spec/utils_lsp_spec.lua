@@ -1,251 +1,190 @@
 describe("utils.lsp", function()
-  local lsp_utils = require("utils.lsp")
+  local lsp
+  local autocmds
+  local buffers
+  local original_code_action
+  local original_get_client_by_id
+  local original_get_clients
+  local original_inlay_enable
+  local original_inlay_is_enabled
 
-  describe("get_clients", function()
-    it("returns a table", function()
-      local clients = lsp_utils.get_clients()
-      assert.is_true(type(clients) == "table")
-    end)
+  before_each(function()
+    package.loaded["utils.lsp"] = nil
+    lsp = require("utils.lsp")
+    autocmds = {}
+    buffers = {}
+    original_code_action = vim.lsp.buf.code_action
+    original_get_client_by_id = vim.lsp.get_client_by_id
+    original_get_clients = vim.lsp.get_clients
+    original_inlay_enable = vim.lsp.inlay_hint.enable
+    original_inlay_is_enabled = vim.lsp.inlay_hint.is_enabled
+  end)
 
-    it(
-      "returns an empty table in a headless session with no LSP running",
-      function()
-        assert.same({}, lsp_utils.get_clients())
+  after_each(function()
+    for _, id in ipairs(autocmds) do
+      pcall(vim.api.nvim_del_autocmd, id)
+    end
+    for _, buf in ipairs(buffers) do
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_delete(buf, { force = true })
       end
+    end
+    vim.lsp.buf.code_action = original_code_action
+    vim.lsp.get_client_by_id = original_get_client_by_id
+    vim.lsp.get_clients = original_get_clients
+    vim.lsp.inlay_hint.enable = original_inlay_enable
+    vim.lsp.inlay_hint.is_enabled = original_inlay_is_enabled
+    package.loaded["utils.lsp"] = nil
+  end)
+
+  local function track_autocmd(id)
+    table.insert(autocmds, id)
+    return id
+  end
+
+  local function listed_buffer()
+    local buf = vim.api.nvim_create_buf(true, false)
+    table.insert(buffers, buf)
+    return buf
+  end
+
+  it("filters the clients returned by Neovim", function()
+    local received
+    vim.lsp.get_clients = function(opts)
+      received = opts
+      return { { id = 1 }, { id = 2 } }
+    end
+
+    local clients = lsp.get_clients({
+      bufnr = 7,
+      filter = function(client)
+        return client.id == 2
+      end,
+    })
+
+    assert.equals(7, received.bufnr)
+    assert.same(
+      { 2 },
+      vim.tbl_map(function(client)
+        return client.id
+      end, clients)
     )
-
-    it("accepts an opts table without error", function()
-      local ok = pcall(lsp_utils.get_clients, { bufnr = 0 })
-      assert.is_true(ok)
-    end)
-
-    it("honours a custom filter function that rejects everything", function()
-      local clients = lsp_utils.get_clients({
-        filter = function(_)
-          return false
-        end,
-      })
-      assert.same({}, clients)
-    end)
   end)
 
-  describe("action proxy", function()
-    it("returns a callable for any string key", function()
-      local fn = lsp_utils.action["source.fixAll"]
-      assert.is_true(type(fn) == "function")
-    end)
+  it("turns an action name into an applying code-action request", function()
+    local received
+    vim.lsp.buf.code_action = function(opts)
+      received = opts
+    end
 
-    it("returns a distinct callable for each key", function()
-      local fn1 = lsp_utils.action["source.organizeImports"]
-      local fn2 = lsp_utils.action["source.fixAll"]
-      assert.is_true(type(fn1) == "function")
-      assert.is_true(type(fn2) == "function")
-    end)
+    lsp.action["source.fixAll"]()
+
+    assert.same({
+      apply = true,
+      context = {
+        only = { "source.fixAll" },
+        diagnostics = {},
+      },
+    }, received)
   end)
 
-  describe("_supports_method table", function()
-    it("is a table", function()
-      assert.is_true(type(lsp_utils._supports_method) == "table")
-    end)
+  it("runs named attach callbacks only for the matching client", function()
+    local client = { id = 42, name = "lua_ls" }
+    vim.lsp.get_client_by_id = function()
+      return client
+    end
+    local calls = 0
+    local buf = listed_buffer()
+    track_autocmd(lsp.on_attach(function(_, attached_buf)
+      calls = calls + 1
+      assert.equals(buf, attached_buf)
+    end, "roslyn"))
+
+    vim.api.nvim_exec_autocmds("LspAttach", {
+      buffer = buf,
+      data = { client_id = client.id },
+    })
+    client.name = "roslyn"
+    vim.api.nvim_exec_autocmds("LspAttach", {
+      buffer = buf,
+      data = { client_id = client.id },
+    })
+
+    assert.equals(1, calls)
   end)
 
-  describe("on_supports_method", function()
-    it("returns an autocmd id (number)", function()
-      local id = lsp_utils.on_supports_method(
-        "textDocument/hover_test",
-        function() end
+  it("dispatches support callbacks only for their registered method", function()
+    local client = { id = 43 }
+    vim.lsp.get_client_by_id = function()
+      return client
+    end
+    local calls = 0
+    track_autocmd(
+      lsp.on_supports_method(
+        "textDocument/hover",
+        function(received_client, buffer)
+          calls = calls + 1
+          assert.equals(client, received_client)
+          assert.equals(9, buffer)
+        end
       )
-      assert.is_true(type(id) == "number")
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
-
-    it("registers the method in _supports_method", function()
-      local method = "textDocument/test_register_"
-        .. tostring(math.random(99999))
-      local id = lsp_utils.on_supports_method(method, function() end)
-      assert.is_not_nil(lsp_utils._supports_method[method])
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
-
-    it("uses weak keys for client tracking", function()
-      local method = "textDocument/weak_keys_" .. tostring(math.random(99999))
-      local id = lsp_utils.on_supports_method(method, function() end)
-      local inner = lsp_utils._supports_method[method]
-      local mt = getmetatable(inner)
-      assert.is_not_nil(mt)
-      assert.equals("k", mt.__mode)
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
-
-    it(
-      "reuses the existing weak table on repeated calls for the same method",
-      function()
-        local method = "textDocument/reuse_" .. tostring(math.random(99999))
-        local id1 = lsp_utils.on_supports_method(method, function() end)
-        local tbl1 = lsp_utils._supports_method[method]
-        local id2 = lsp_utils.on_supports_method(method, function() end)
-        local tbl2 = lsp_utils._supports_method[method]
-        assert.equals(tbl1, tbl2)
-        pcall(vim.api.nvim_del_autocmd, id1)
-        pcall(vim.api.nvim_del_autocmd, id2)
-      end
     )
+
+    for _, method in ipairs({ "textDocument/definition", "textDocument/hover" }) do
+      vim.api.nvim_exec_autocmds("User", {
+        pattern = "LspSupportsMethod",
+        data = { client_id = client.id, buffer = 9, method = method },
+      })
+    end
+
+    assert.equals(1, calls)
   end)
 
-  describe("on_attach", function()
-    it("returns an autocmd id (number)", function()
-      local id = lsp_utils.on_attach(function() end)
-      assert.is_true(type(id) == "number")
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
+  it("replays only callbacks that opt in to capability refreshes", function()
+    local method = "textDocument/inlayHint"
+    local buf = listed_buffer()
+    local client = {
+      id = 44,
+      supports_method = function(_, checked_method, checked_buffer)
+        return checked_method == method and checked_buffer == buf
+      end,
+    }
+    vim.lsp.get_client_by_id = function()
+      return client
+    end
 
-    it("accepts an optional name parameter", function()
-      local id = lsp_utils.on_attach(function() end, "test_server")
-      assert.is_true(type(id) == "number")
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
+    local normal_calls = 0
+    local refreshable_calls = 0
+    track_autocmd(lsp.on_supports_method(method, function()
+      normal_calls = normal_calls + 1
+    end))
+    track_autocmd(lsp.on_supports_method(method, function(_, _, event)
+      refreshable_calls = refreshable_calls + 1
+      if refreshable_calls == 1 then
+        assert.is_nil(event.refresh)
+      else
+        assert.is_true(event.refresh)
+      end
+    end, { refresh = true }))
+
+    lsp._check_methods(client, buf)
+    lsp.refresh_supported_methods(client, buf)
+
+    assert.equals(1, normal_calls)
+    assert.equals(2, refreshable_calls)
   end)
 
-  describe("toggle_inlay_hints", function()
-    it("is a callable function", function()
-      assert.is_true(type(lsp_utils.toggle_inlay_hints) == "function")
-    end)
+  it("toggles inlay hints from their current state", function()
+    local enabled
+    vim.lsp.inlay_hint.is_enabled = function()
+      return true
+    end
+    vim.lsp.inlay_hint.enable = function(value)
+      enabled = value
+    end
 
-    it("runs without error when inlay hints API is available", function()
-      if vim.lsp.inlay_hint then
-        local ok = pcall(lsp_utils.toggle_inlay_hints)
-        assert.is_true(ok)
-      end
-    end)
-  end)
+    lsp.toggle_inlay_hints()
 
-  describe("refresh_supported_methods", function()
-    it("is a callable function", function()
-      assert.is_true(type(lsp_utils.refresh_supported_methods) == "function")
-    end)
-
-    it("does not replay callbacks unless they opt in to refresh", function()
-      local method = "textDocument/refresh_" .. tostring(math.random(99999))
-      local bufnr = vim.api.nvim_get_current_buf()
-      local client = {
-        id = 123456,
-        supports_method = function(_, checked_method, checked_buffer)
-          return checked_method == method and checked_buffer == bufnr
-        end,
-      }
-      local calls = 0
-      local get_client_by_id = vim.lsp.get_client_by_id
-      vim.lsp.get_client_by_id = function(id)
-        return id == client.id and client or get_client_by_id(id)
-      end
-
-      local events = {}
-      local id = lsp_utils.on_supports_method(method, function(_, buffer, event)
-        if buffer == bufnr then
-          calls = calls + 1
-          table.insert(events, event)
-        end
-      end)
-
-      lsp_utils._check_methods(client, bufnr)
-      lsp_utils._check_methods(client, bufnr)
-      lsp_utils.refresh_supported_methods(client, bufnr)
-
-      assert.equals(1, calls)
-      assert.is_nil(events[1].refresh)
-
-      vim.lsp.get_client_by_id = get_client_by_id
-      lsp_utils._supports_method[method] = nil
-      lsp_utils._refresh_methods[method] = nil
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
-
-    it("replays refreshable support-method callbacks", function()
-      local method = "textDocument/refreshable_" .. tostring(math.random(99999))
-      local bufnr = vim.api.nvim_get_current_buf()
-      local client = {
-        id = 123457,
-        supports_method = function(_, checked_method, checked_buffer)
-          return checked_method == method and checked_buffer == bufnr
-        end,
-      }
-      local calls = 0
-      local get_client_by_id = vim.lsp.get_client_by_id
-      vim.lsp.get_client_by_id = function(id)
-        return id == client.id and client or get_client_by_id(id)
-      end
-
-      local events = {}
-      local id = lsp_utils.on_supports_method(method, function(_, buffer, event)
-        if buffer == bufnr then
-          calls = calls + 1
-          table.insert(events, event)
-        end
-      end, { refresh = true })
-
-      lsp_utils._check_methods(client, bufnr)
-      lsp_utils._check_methods(client, bufnr)
-      lsp_utils.refresh_supported_methods(client, bufnr)
-
-      assert.equals(2, calls)
-      assert.is_nil(events[1].refresh)
-      assert.is_true(events[2].refresh)
-
-      vim.lsp.get_client_by_id = get_client_by_id
-      lsp_utils._supports_method[method] = nil
-      lsp_utils._refresh_methods[method] = nil
-      pcall(vim.api.nvim_del_autocmd, id)
-    end)
-
-    it(
-      "replays only refreshable callbacks when callbacks share a method",
-      function()
-        local method = "textDocument/shared_refresh_"
-          .. tostring(math.random(99999))
-        local bufnr = vim.api.nvim_get_current_buf()
-        local client = {
-          id = 123458,
-          supports_method = function(_, checked_method, checked_buffer)
-            return checked_method == method and checked_buffer == bufnr
-          end,
-        }
-        local normal_calls = 0
-        local refreshable_calls = 0
-        local get_client_by_id = vim.lsp.get_client_by_id
-        vim.lsp.get_client_by_id = function(id)
-          return id == client.id and client or get_client_by_id(id)
-        end
-
-        local normal_id = lsp_utils.on_supports_method(
-          method,
-          function(_, buffer)
-            if buffer == bufnr then
-              normal_calls = normal_calls + 1
-            end
-          end
-        )
-        local refreshable_id = lsp_utils.on_supports_method(
-          method,
-          function(_, buffer)
-            if buffer == bufnr then
-              refreshable_calls = refreshable_calls + 1
-            end
-          end,
-          { refresh = true }
-        )
-
-        lsp_utils._check_methods(client, bufnr)
-        lsp_utils.refresh_supported_methods(client, bufnr)
-
-        assert.equals(1, normal_calls)
-        assert.equals(2, refreshable_calls)
-
-        vim.lsp.get_client_by_id = get_client_by_id
-        lsp_utils._supports_method[method] = nil
-        lsp_utils._refresh_methods[method] = nil
-        pcall(vim.api.nvim_del_autocmd, normal_id)
-        pcall(vim.api.nvim_del_autocmd, refreshable_id)
-      end
-    )
+    assert.is_false(enabled)
   end)
 end)

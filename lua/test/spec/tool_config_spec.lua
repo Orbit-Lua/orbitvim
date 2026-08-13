@@ -1,50 +1,30 @@
 describe("tool.config", function()
-  local cfg = require("tool.config")
+  local config = require("tool.config")
 
-  it("defaults missing mason packages to auto-install on enable", function()
-    assert.equals("auto", cfg.missing_package_policy)
-  end)
+  it(
+    "automatically installs missing Mason packages when enabling tools",
+    function()
+      assert.equals("auto", config.missing_package_policy)
+    end
+  )
 
-  it("uses explicit enabled and disabled tool icons", function()
-    assert.equals("", cfg.icons.enabled)
-    assert.equals("", cfg.icons.disabled)
-    assert.equals("", cfg.icons.warning)
-    assert.equals("", cfg.icons.error)
-  end)
+  it("defines the category navigation order and labels", function()
+    local categories = {
+      "lsp",
+      "dap",
+      "linter",
+      "formatter",
+      "parser",
+      "package",
+    }
 
-  it("uses explicit expand and collapse arrows", function()
-    assert.equals("", cfg.icons.expanded)
-    assert.equals("", cfg.icons.collapsed)
-  end)
-
-  it("exposes tool manager table layout settings", function()
-    assert.equals(1, cfg.table.cell_padding)
-    assert.equals(2, cfg.table.indent)
-    assert.equals("  ", cfg.table.separator)
-  end)
-
-  it("exposes tool manager section and help settings", function()
-    assert.equals(1, cfg.layout.section_margin)
-    assert.equals("Tool", cfg.labels.columns.tool)
-    assert.same(
-      { "lsp", "dap", "linter", "formatter", "parser", "package" },
-      cfg.tool_categories
-    )
-    assert.is_true(#cfg.help.sections > 0)
-  end)
-
-  it("exposes tooltip display settings", function()
-    assert.equals(70, cfg.tooltip.max_w)
-    assert.equals("●", cfg.tooltip.enabled_icon)
-    assert.equals("○", cfg.tooltip.disabled_icon)
-    assert.equals(100, cfg.tooltip.zindex)
-    assert.is_true(vim.tbl_contains(cfg.tooltip.close_keys, "q"))
-  end)
-
-  it("exposes live update debounce and event settings", function()
-    assert.equals("ToolManagerLive", cfg.live_update.augroup)
-    assert.equals(500, cfg.live_update.debounce_ms)
-    assert.is_true(#cfg.live_update.render_events > 0)
-    assert.is_true(#cfg.live_update.debounced_render_events > 0)
+    assert.same(categories, config.tool_categories)
+    for _, category in ipairs(categories) do
+      assert.is_true(
+        type(config.cat_label[category]) == "string"
+          and config.cat_label[category] ~= "",
+        category .. " must have a navigation label"
+      )
+    end
   end)
 end)
