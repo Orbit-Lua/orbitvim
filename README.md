@@ -151,6 +151,30 @@ Project-local `.sqlfluff`, `pyproject.toml`, `setup.cfg`, `tox.ini`, and
 paths in a project-root `.sqlfluffignore`; a starter template is available at
 `lua/config/db/template/.sqlfluffignore`.
 
+### T-SQL snippets
+
+SQL buffers use the convention-based LuaSnip collection in
+`luasnippets/tsql.lua`; the generic SQL snippets from `friendly-snippets` are
+disabled. Type a trigger, accept it from the completion menu with `<CR>` or
+`<C-y>`, then move through placeholders with `<Tab>` and `<S-Tab>`.
+
+Representative triggers include:
+
+| Area | Triggers |
+| --- | --- |
+| Objects | `ctable`, `cview`, `cprocr`, `cprocw`, `cfunc`, `citvf`, `ctrig` |
+| Queries | `sel`, `seltop`, `selpage`, `cte`, `rowpart`, `exists`, `nexists` |
+| DML | `ins`, `inso`, `upd`, `updo`, `del`, `delo`, `upsert` |
+| Reliability | `txn`, `trycatch`, `throw`, `dynsql`, `dynident` |
+| Schema | `idx`, `idxinc`, `fk`, `checkcon`, `defaultcon`, `utccol` |
+
+The collection follows the [T-SQL conventions](doc/tsql-conventions.md),
+including explicit schemas and columns, named constraints, semicolon
+termination, UTC timestamps, `CREATE OR ALTER`, transaction ownership, and
+parameterized dynamic SQL. See the
+[complete T-SQL snippet guide](doc/tsql-snippets.md) for every trigger, safety
+notes, and maintenance instructions.
+
 ## Project Layout
 
 ```text
@@ -162,6 +186,7 @@ paths in a project-root `.sqlfluffignore`; a starter template is available at
 ├── lua/utils/                # shared helpers
 ├── lua/cmds/                 # custom commands loaded at startup
 ├── lua/test/spec/            # Plenary test specs
+├── luasnippets/              # local LuaSnip collections by snippet filetype
 └── scripts/tests/minimal.vim # headless test bootstrap
 ```
 

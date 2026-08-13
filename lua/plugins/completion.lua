@@ -26,6 +26,7 @@ return {
 
           local ls = require("luasnip")
           ls.filetype_extend("jsx", { "javascript", "javascriptreact" })
+          ls.filetype_extend("sql", { "tsql" })
 
           require("config.snippets")
         end,
