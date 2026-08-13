@@ -151,6 +151,12 @@ Project-local `.sqlfluff`, `pyproject.toml`, `setup.cfg`, `tox.ini`, and
 paths in a project-root `.sqlfluffignore`; a starter template is available at
 `lua/config/db/template/.sqlfluffignore`.
 
+T-SQL highlighting keeps `filetype=sql` and extends the generic SQL
+Tree-sitter query. A focused `syntax/tsql.vim` fallback covers parser edge cases
+such as `GO`, `TRY/CATCH`, system variables, and bracket identifiers. See the
+[T-SQL highlighting guide](doc/tsql-highlighting.md) for precedence,
+configuration, limitations, and maintenance guidance.
+
 ### T-SQL snippets
 
 SQL buffers use the convention-based LuaSnip collection in

@@ -30,8 +30,8 @@ autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
 
 autocmd("FileType", {
   pattern = "*",
-  callback = function()
-    pcall(vim.treesitter.start)
+  callback = function(args)
+    require("utils.treesitter").start(args.buf)
   end,
 })
 

@@ -2,6 +2,25 @@ local M = {}
 
 local sql_marker = "^//%s*language%s*=%s*sql%s*$"
 
+local function select_sql_syntax_dialect(buf)
+  if vim.b[buf].sql_type_override ~= nil or vim.g.sql_type_default ~= nil then
+    return
+  end
+
+  local dialect = require("config.treesitter").sql.dialect
+  vim.b[buf].sql_type_override = dialect
+end
+
+local function start_sql_syntax_fallback(buf)
+  local config = require("config.treesitter").sql
+  if config.syntax_fallback ~= true then
+    return
+  end
+
+  select_sql_syntax_dialect(buf)
+  vim.bo[buf].syntax = "ON"
+end
+
 local function is_sql_marker(node, source)
   return node ~= nil
     and node:type() == "comment"
@@ -101,6 +120,16 @@ function M.setup()
     end,
     { force = true }
   )
+end
+
+function M.start(buf)
+  buf = buf or 0
+  pcall(vim.treesitter.start, buf)
+
+  local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
+  if filetype == "sql" then
+    start_sql_syntax_fallback(buf)
+  end
 end
 
 return M
