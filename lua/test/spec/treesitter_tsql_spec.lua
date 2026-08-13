@@ -35,7 +35,9 @@ describe("T-SQL highlighting", function()
 
   before_each(function()
     config.dialect = "tsql"
+    config.markdown_fenced_fallback = true
     config.syntax_fallback = true
+    vim.g.markdown_fenced_languages = nil
     vim.g.sql_type_default = nil
   end)
 
@@ -46,6 +48,7 @@ describe("T-SQL highlighting", function()
       end
     end
     buffers = {}
+    vim.g.markdown_fenced_languages = nil
     vim.g.sql_type_default = nil
   end)
 
@@ -106,6 +109,88 @@ describe("T-SQL highlighting", function()
     treesitter.start(buf)
 
     assert.is_nil(vim.b[buf].sql_type_override)
+  end)
+
+  it("loads the T-SQL fallback inside Markdown SQL fences", function()
+    local buf = buffer({
+      "# Example",
+      "",
+      "```sql",
+      "GO 2",
+      "BEGIN TRY",
+      "  SELECT @@ROWCOUNT, @UserId FROM [dbo].[Users];",
+      "END TRY",
+      "```",
+    }, "markdown")
+
+    treesitter.start(buf)
+
+    assert.same({ "sql=tsql" }, vim.g.markdown_fenced_languages)
+    assert.equals("markdown", vim.b[buf].current_syntax)
+    assert.equals("tsqlBatchSeparator", syntax_name(buf, 4, 1))
+    assert.equals("tsqlBatchCount", syntax_name(buf, 4, 4))
+    assert.equals("tsqlKeyword", syntax_name(buf, 5, 7))
+    assert.equals("tsqlSystemVariable", syntax_name(buf, 6, 10))
+    assert.equals("tsqlVariable", syntax_name(buf, 6, 22))
+    assert.equals("tsqlBracketIdentifier", syntax_name(buf, 6, 35))
+  end)
+
+  it(
+    "restores the Markdown fallback after a later Tree-sitter start",
+    function()
+      local buf = buffer({
+        "```sql",
+        "BEGIN TRY",
+        "```",
+      }, "markdown")
+
+      treesitter.start(buf)
+      vim.treesitter.start(buf)
+
+      assert.is_true(vim.wait(100, function()
+        return vim.b[buf].current_syntax == "markdown"
+      end))
+      assert.equals("tsqlKeyword", syntax_name(buf, 2, 7))
+    end
+  )
+
+  it("preserves an explicit Markdown SQL fence dialect", function()
+    vim.g.markdown_fenced_languages = { "python", "sql", "sql=sqloracle" }
+    local buf = buffer({ "```sql", "SELECT 1;", "```" }, "markdown")
+
+    treesitter.start(buf)
+
+    assert.same({ "python", "sql=sqloracle" }, vim.g.markdown_fenced_languages)
+  end)
+
+  it("can disable the Markdown SQL fence fallback", function()
+    config.markdown_fenced_fallback = false
+    local buf = buffer({ "```sql", "TRY", "```" }, "markdown")
+
+    treesitter.start(buf)
+
+    assert.is_nil(vim.g.markdown_fenced_languages)
+    assert.is_nil(vim.b[buf].current_syntax)
+  end)
+
+  it("contains Markdown fallback matches within SQL fences", function()
+    local buf = buffer({
+      "TRY @Prose is not SQL.",
+      "",
+      "```text",
+      "TRY @TextFence",
+      "```",
+      "",
+      "```sql",
+      "BEGIN TRY",
+      "```",
+    }, "markdown")
+
+    treesitter.start(buf)
+
+    assert.is_nil(syntax_name(buf, 1, 1):match("^tsql"))
+    assert.is_nil(syntax_name(buf, 4, 1):match("^tsql"))
+    assert.equals("tsqlKeyword", syntax_name(buf, 8, 7))
   end)
 
   it("highlights parser edge cases with focused syntax groups", function()

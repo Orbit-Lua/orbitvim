@@ -153,7 +153,9 @@ paths in a project-root `.sqlfluffignore`; a starter template is available at
 
 T-SQL highlighting keeps `filetype=sql` and extends the generic SQL
 Tree-sitter query. A focused `syntax/tsql.vim` fallback covers parser edge cases
-such as `GO`, `TRY/CATCH`, system variables, and bracket identifiers. See the
+such as `GO`, `TRY/CATCH`, system variables, and bracket identifiers in SQL
+buffers and Markdown `sql` fences. The conventions document doubles as the
+highlighting regression corpus. See the
 [T-SQL highlighting guide](doc/tsql-highlighting.md) for precedence,
 configuration, limitations, and maintenance guidance.
 

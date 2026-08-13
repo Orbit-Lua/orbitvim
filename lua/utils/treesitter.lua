@@ -2,6 +2,39 @@ local M = {}
 
 local sql_marker = "^//%s*language%s*=%s*sql%s*$"
 
+local function select_markdown_sql_syntax()
+  local config = require("config.treesitter").sql
+  local mapping = "sql=" .. config.dialect
+  local languages = vim.g.markdown_fenced_languages
+  languages = type(languages) == "table" and vim.deepcopy(languages) or {}
+  local explicit_mapping = false
+
+  for _, language in ipairs(languages) do
+    if type(language) == "string" and language:match("^sql=") then
+      explicit_mapping = true
+      break
+    end
+  end
+
+  if explicit_mapping then
+    vim.g.markdown_fenced_languages = vim.tbl_filter(function(language)
+      return language ~= "sql"
+    end, languages)
+    return
+  end
+
+  for index, language in ipairs(languages) do
+    if language == "sql" then
+      languages[index] = mapping
+      vim.g.markdown_fenced_languages = languages
+      return
+    end
+  end
+
+  table.insert(languages, mapping)
+  vim.g.markdown_fenced_languages = languages
+end
+
 local function select_sql_syntax_dialect(buf)
   if vim.b[buf].sql_type_override ~= nil or vim.g.sql_type_default ~= nil then
     return
@@ -11,6 +44,14 @@ local function select_sql_syntax_dialect(buf)
   vim.b[buf].sql_type_override = dialect
 end
 
+local function load_legacy_syntax(buf, syntax)
+  vim.api.nvim_buf_call(buf, function()
+    vim.cmd("syntax clear")
+    vim.b.current_syntax = nil
+    vim.cmd.runtime({ "syntax/" .. syntax .. ".vim", bang = true })
+  end)
+end
+
 local function start_sql_syntax_fallback(buf)
   local config = require("config.treesitter").sql
   if config.syntax_fallback ~= true then
@@ -18,7 +59,20 @@ local function start_sql_syntax_fallback(buf)
   end
 
   select_sql_syntax_dialect(buf)
-  vim.bo[buf].syntax = "ON"
+  load_legacy_syntax(buf, "sql")
+end
+
+local function start_markdown_sql_syntax_fallback(buf)
+  local config = require("config.treesitter").sql
+  if
+    config.syntax_fallback ~= true
+    or config.markdown_fenced_fallback ~= true
+  then
+    return
+  end
+
+  select_markdown_sql_syntax()
+  load_legacy_syntax(buf, "markdown")
 end
 
 local function is_sql_marker(node, source)
@@ -127,9 +181,26 @@ function M.start(buf)
   pcall(vim.treesitter.start, buf)
 
   local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
+  local restore_syntax
   if filetype == "sql" then
-    start_sql_syntax_fallback(buf)
+    restore_syntax = start_sql_syntax_fallback
+  elseif filetype == "markdown" then
+    restore_syntax = start_markdown_sql_syntax_fallback
   end
+
+  if restore_syntax == nil then
+    return
+  end
+
+  restore_syntax(buf)
+  vim.schedule(function()
+    if
+      vim.api.nvim_buf_is_valid(buf)
+      and vim.api.nvim_get_option_value("filetype", { buf = buf }) == filetype
+    then
+      restore_syntax(buf)
+    end
+  end)
 end
 
 return M

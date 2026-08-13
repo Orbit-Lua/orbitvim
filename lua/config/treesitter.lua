@@ -1,6 +1,7 @@
 return {
   sql = {
     dialect = "tsql",
+    markdown_fenced_fallback = true,
     syntax_fallback = true,
   },
 

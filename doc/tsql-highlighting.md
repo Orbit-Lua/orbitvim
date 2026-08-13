@@ -9,6 +9,10 @@ uses two complementary layers:
 2. `syntax/tsql.vim` supplies a deliberately small legacy syntax fallback for
    T-SQL constructs that the generic parser reduces to unusable `ERROR` nodes.
 
+Both layers also apply to fenced `sql` blocks in Markdown. Tree-sitter injects
+the SQL parser into each fence, while Neovim's Markdown syntax includes the
+`tsql` fallback only inside the same fenced regions.
+
 This keeps Tree-sitter responsible for normal SQL structure and avoids the
 maintenance cost of a separate T-SQL grammar.
 
@@ -16,13 +20,16 @@ maintenance cost of a separate T-SQL grammar.
 
 Every `FileType` event calls `require("utils.treesitter").start(buf)`. The
 module starts Tree-sitter first. For an `sql` buffer, it then selects the
-configured legacy SQL dialect and enables Vim syntax alongside Tree-sitter.
+configured legacy SQL dialect and enables Vim syntax alongside Tree-sitter. For
+a Markdown buffer, it maps the `sql` fence label to the configured dialect and
+enables the contained fallback.
 
 The default configuration is declared in `lua/config/treesitter.lua`:
 
 ```lua
 sql = {
   dialect = "tsql",
+  markdown_fenced_fallback = true,
   syntax_fallback = true,
 }
 ```
@@ -55,6 +62,16 @@ To disable all legacy syntax fallback while retaining Tree-sitter highlighting:
 ```lua
 require("config.treesitter").sql.syntax_fallback = false
 ```
+
+To retain the fallback in SQL buffers but disable it in Markdown fences:
+
+```lua
+require("config.treesitter").sql.markdown_fenced_fallback = false
+```
+
+OrbitVim adds `sql=tsql` to `g:markdown_fenced_languages` without replacing
+other configured languages. An explicit SQL mapping such as `sql=sqloracle`
+wins and is left unchanged.
 
 ## Tree-sitter query extension
 
@@ -94,6 +111,10 @@ The syntax file also defines SQL strings and comments. These regions shield
 fallback keywords and variables from matching inside quoted text or comments;
 Tree-sitter remains the primary source of their visible highlighting.
 
+In Markdown, Neovim loads the same syntax file through a contained syntax
+cluster. Fallback matches therefore stay within fenced `sql` blocks and cannot
+leak into headings, prose, inline code, or other fenced languages.
+
 Keep fallback patterns lexical and bounded. A lexical fallback may overlap a
 query correction when the node sometimes disappears during parser error
 recovery. Do not model procedure bodies, transactions, dynamic SQL, or nested
@@ -106,8 +127,20 @@ redundant legacy rule.
 
 Focused coverage lives in `lua/test/spec/treesitter_tsql_spec.lua`. It verifies
 the query corrections, dialect precedence, opt-out behavior, syntax groups,
-and protection of strings and comments. Before committing a change, run the
-full suite and startup smoke test:
+Markdown containment, and protection of strings and comments.
+
+`lua/test/spec/treesitter_tsql_corpus_spec.lua` treats every `sql` fence in
+`doc/tsql-conventions.md` as an executable highlighting corpus. It verifies
+that every fence receives a SQL injection, every uppercase SQL/T-SQL lexeme is
+covered by either a Tree-sitter capture or a contained fallback group, and the
+document exercises every fallback category. New convention examples are
+included automatically; do not pin the test to a fixed fence count.
+
+The corpus deliberately does not require error-free parse trees. The generic
+SQL grammar may recover T-SQL constructs through `ERROR` nodes; the relevant
+contract is complete visual highlighting through the two layers.
+
+Before committing a change, run the full suite and startup smoke test:
 
 ```bash
 make all
