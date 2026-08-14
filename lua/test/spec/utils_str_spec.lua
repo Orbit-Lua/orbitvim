@@ -1,74 +1,38 @@
 describe("utils.str", function()
   local str = require("utils.str")
 
-  describe("rstrip_slash", function()
-    it("removes a single trailing slash", function()
-      assert.equals("/foo/bar", str.rstrip_slash("/foo/bar/"))
-    end)
+  it("removes only trailing slash runs", function()
+    for input, expected in pairs({
+      [""] = "",
+      ["/"] = "",
+      ["/foo/bar"] = "/foo/bar",
+      ["/foo/bar/"] = "/foo/bar",
+      ["/foo/bar///"] = "/foo/bar",
+      ["a/b/c"] = "a/b/c",
+    }) do
+      assert.equals(expected, str.rstrip_slash(input), input)
+    end
 
-    it("removes multiple consecutive trailing slashes", function()
-      assert.equals("/foo/bar", str.rstrip_slash("/foo/bar///"))
-    end)
-
-    it("leaves strings without trailing slash unchanged", function()
-      assert.equals("/foo/bar", str.rstrip_slash("/foo/bar"))
-    end)
-
-    it("handles a lone slash (root)", function()
-      assert.equals("", str.rstrip_slash("/"))
-    end)
-
-    it("handles an empty string", function()
-      assert.equals("", str.rstrip_slash(""))
-    end)
-
-    it("handles strings with internal slashes", function()
-      assert.equals("a/b/c", str.rstrip_slash("a/b/c"))
-    end)
-
-    it(
-      "returns a positive replacement count when trailing slash present",
-      function()
-        local _, count = str.rstrip_slash("/foo/")
-        assert.is_true(count > 0)
-      end
-    )
-
-    it("returns zero replacement count when no trailing slash", function()
-      local _, count = str.rstrip_slash("/foo/bar")
-      assert.equals(0, count)
-    end)
+    local _, changed = str.rstrip_slash("/foo/bar/")
+    local _, unchanged = str.rstrip_slash("/foo/bar")
+    assert.is_true(changed > 0)
+    assert.equals(0, unchanged)
   end)
 
-  describe("trunc", function()
-    it("returns the string unchanged when it fits", function()
-      assert.equals("hello", str.trunc("hello", 10))
-    end)
+  it("truncates by display width without splitting multibyte text", function()
+    assert.equals("hello", str.trunc("hello", 10))
+    assert.equals("", str.trunc("hello", 0))
 
-    it("truncates to the requested display width", function()
-      local result = str.trunc("hello world", 5)
-      assert.is_true(vim.fn.strdisplaywidth(result) <= 5)
-      assert.is_true(result:find("…") ~= nil)
-    end)
-
-    it("handles multibyte characters without producing invalid text", function()
-      local result = str.trunc("󰈚 hello", 5)
-      assert.is_true(vim.fn.strdisplaywidth(result) <= 5)
-      assert.is_true(pcall(vim.fn.strdisplaywidth, result))
-    end)
+    local result = str.trunc("󰈚 hello world", 5)
+    assert.is_true(vim.fn.strdisplaywidth(result) <= 5)
+    assert.is_truthy(result:find("…", 1, true))
+    assert.is_true(vim.fn.strchars(result) > 0)
   end)
 
-  describe("rpad", function()
-    it("pads to the requested display width", function()
-      local result = str.rpad("ab", 5)
-      assert.equals(5, vim.fn.strdisplaywidth(result))
-    end)
-  end)
-
-  describe("fill_line", function()
-    it("pads to the requested display width", function()
-      local result = str.fill_line("hi", 8)
-      assert.equals(8, vim.fn.strdisplaywidth(result))
-    end)
+  it("right-pads short text and preserves wider text", function()
+    assert.equals("ab   ", str.rpad("ab", 5))
+    assert.equals("hello", str.rpad("hello", 5))
+    assert.equals("hello world", str.rpad("hello world", 5))
+    assert.equals("hi      ", str.fill_line("hi", 8))
   end)
 end)

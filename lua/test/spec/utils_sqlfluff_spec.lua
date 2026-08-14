@@ -115,36 +115,4 @@ describe("utils.sqlfluff", function()
 
     assert.same(root, sqlfluff.cwd(filename))
   end)
-
-  it("honors T-SQL and PostgreSQL first-line dialect directives", function()
-    if vim.fn.executable("sqlfluff") ~= 1 then
-      pending("sqlfluff is not installed")
-      return
-    end
-
-    local root = temp_dir()
-    local filename = root .. "/query.sql"
-    local command = { "sqlfluff" }
-    vim.list_extend(command, sqlfluff.format_args(filename))
-
-    local tsql = vim
-      .system(command, {
-        text = true,
-        stdin = "-- sqlfluff:dialect:tsql\nselect top (1) [UserID] from dbo.[Users];\n",
-      })
-      :wait()
-    assert.same(0, tsql.code, tsql.stderr)
-    assert.is_truthy(tsql.stdout:find("SELECT TOP %(1%) %[UserID%]"))
-    assert.is_truthy(tsql.stdout:find("dbo%.%[Users%]"))
-
-    local postgres = vim
-      .system(command, {
-        text = true,
-        stdin = "-- sqlfluff:dialect:postgres\nselect payload::jsonb from events;\n",
-      })
-      :wait()
-    assert.same(0, postgres.code, postgres.stderr)
-    assert.is_truthy(postgres.stdout:find("SELECT payload::JSONB"))
-    assert.is_truthy(postgres.stdout:find("FROM events"))
-  end)
 end)

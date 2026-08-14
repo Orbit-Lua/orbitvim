@@ -1,9 +1,10 @@
 describe("config.linter", function()
+  local test = require("test.helpers")
   local original_buf
   local test_buf
 
   before_each(function()
-    vim.opt.runtimepath:append(vim.fn.stdpath("data") .. "/lazy/nvim-lint")
+    vim.opt.runtimepath:append(test.plugin_path("nvim-lint"))
     original_buf = vim.api.nvim_get_current_buf()
     test_buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_set_current_buf(test_buf)

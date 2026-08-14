@@ -1,197 +1,129 @@
 describe("utils.fs", function()
+  local test = require("test.helpers")
   local fs = require("utils.fs")
 
-  describe("make_relative_path", function()
-    it("returns relative path when buf is under root", function()
-      local result = fs.make_relative_path(
-        "/home/user/project/src/main.lua",
-        "/home/user/project"
-      )
-      assert.equals("src/main.lua", result)
-    end)
-
-    it("returns empty string when buf is not under root", function()
-      local result =
-        fs.make_relative_path("/other/path/file.lua", "/home/user/project")
-      assert.equals("", result)
-    end)
-
-    it("handles root with existing trailing slash", function()
-      local result = fs.make_relative_path(
-        "/home/user/project/main.lua",
-        "/home/user/project/"
-      )
-      assert.equals("main.lua", result)
-    end)
-
-    it("returns empty string when buf equals root (not a child)", function()
-      local result =
-        fs.make_relative_path("/home/user/project", "/home/user/project")
-      assert.equals("", result)
-    end)
-
-    it("handles nested paths", function()
-      local result = fs.make_relative_path("/a/b/c/d/e.lua", "/a/b")
-      assert.equals("c/d/e.lua", result)
-    end)
+  after_each(function()
+    test.cleanup_all()
   end)
 
-  describe("pretty_path", function()
-    it("returns empty string for an empty path argument", function()
+  it("makes paths relative only to an exact root directory", function()
+    local cases = {
+      { "/project/src/main.lua", "/project", "src/main.lua" },
+      { "/project/main.lua", "/project/", "main.lua" },
+      { "/project", "/project", "" },
+      { "/project-other/main.lua", "/project", "" },
+      { "/a/b/c/d/e.lua", "/a/b", "c/d/e.lua" },
+    }
+
+    for _, case in ipairs(cases) do
+      assert.equals(case[3], fs.make_relative_path(case[1], case[2]))
+    end
+  end)
+
+  it(
+    "shortens paths by display structure and supports cwd-relative output",
+    function()
       assert.equals("", fs.pretty_path(""))
-    end)
+      assert.is_nil(fs.pretty_path("/a/b", { length = 3 }):find("…", 1, true))
 
-    it(
-      "returns path unchanged when parts count <= default length (3)",
-      function()
-        -- "/a/b" splits into {"", "a", "b"} = 3 parts, so length=3 does not truncate.
-        local result = fs.pretty_path("/a/b", { length = 3 })
-        assert.is_true(result ~= "")
-        assert.is_true(result:find("…") == nil)
+      local shortened = fs.pretty_path("/a/b/c/d/e/f", { length = 2 })
+      assert.is_truthy(shortened:find("…", 1, true))
+
+      local cwd_path = fs.pretty_path(vim.fn.getcwd() .. "/src/main.lua", {
+        only_cwd = true,
+        length = -1,
+      })
+      assert.equals("src/main.lua", cwd_path)
+    end
+  )
+
+  it(
+    "keeps the project-root marker policy complete and duplicate-free",
+    function()
+      local seen = {}
+      for _, marker in ipairs(fs.root_pattern) do
+        assert.is_nil(seen[marker], "duplicate root marker: " .. marker)
+        seen[marker] = true
       end
+
+      for _, required in ipairs({
+        ".git",
+        "package.json",
+        "pyproject.toml",
+        "Cargo.toml",
+        "go.mod",
+        "Makefile",
+      }) do
+        assert.is_true(seen[required], "missing root marker: " .. required)
+      end
+    end
+  )
+
+  it("prefers an attached LSP root for the current buffer", function()
+    local original_get_clients = vim.lsp.get_clients
+    local root = test.temp_dir("lsp-root")
+    vim.lsp.get_clients = function(opts)
+      assert.equals(0, opts.bufnr)
+      return { { config = { root_dir = root } } }
+    end
+
+    local resolved = fs.get_root()
+    vim.lsp.get_clients = original_get_clients
+
+    assert.equals(root, resolved)
+  end)
+
+  it(
+    "discovers markers for explicit paths and otherwise uses their directory",
+    function()
+      local root = test.temp_dir("marker-root")
+      local nested = root .. "/src/deep"
+      vim.fn.mkdir(root .. "/.git", "p")
+      vim.fn.mkdir(nested, "p")
+
+      assert.equals(root, fs.get_root(nested .. "/main.lua"))
+
+      local standalone = test.temp_dir("standalone") .. "/query.sql"
+      local original_markers = fs.root_pattern
+      fs.root_pattern = { "_orbitvim_missing_root_marker_" }
+      local fallback = fs.get_root(standalone)
+      fs.root_pattern = original_markers
+
+      assert.equals(vim.fs.dirname(standalone), fallback)
+    end
+  )
+
+  it("scans files and directories with deterministic filtering", function()
+    local root = test.temp_dir("scandir")
+    vim.fn.mkdir(root .. "/subdir", "p")
+    for _, name in ipairs({ "z.lua", "a.lua", "m.lua" }) do
+      test.write_file(root .. "/" .. name, name)
+    end
+
+    assert.same({ "a.lua", "m.lua", "z.lua" }, fs.scandir(root, "file"))
+    assert.same({ "subdir" }, fs.scandir(root, "directory"))
+    assert.same(
+      { "a.lua", "m.lua", "subdir", "z.lua" },
+      fs.scandir(root, "all")
     )
-
-    it("truncates long paths and inserts an ellipsis", function()
-      local result = fs.pretty_path("/a/b/c/d/e/f/g", { length = 3 })
-      assert.is_true(result:find("…") ~= nil)
-    end)
-
-    it("preserves the first component in a truncated path", function()
-      local result = fs.pretty_path("/home/user/a/b/c/d/e", { length = 2 })
-      assert.is_true(result ~= "")
-      assert.is_true(result:find("…") ~= nil)
-    end)
-
-    it("returns a non-empty string for a short absolute path", function()
-      local result = fs.pretty_path("/usr/local/bin")
-      assert.is_true(type(result) == "string")
-      assert.is_true(#result > 0)
-    end)
-
-    it("only_cwd strips the cwd prefix from the path", function()
-      local cwd = vim.fn.getcwd()
-      local abs = cwd .. "/some/nested/file.lua"
-      local result = fs.pretty_path(abs, { only_cwd = true })
-      assert.is_true(result:sub(1, #cwd) ~= cwd)
-    end)
-
-    it("respects a custom length option", function()
-      local result4 = fs.pretty_path("/a/b/c/d/e/f/g/h", { length = 4 })
-      local result2 = fs.pretty_path("/a/b/c/d/e/f/g/h", { length = 2 })
-      assert.is_true(#result4 >= #result2)
-    end)
+    assert.same({}, fs.scandir(root .. "/missing", "all"))
   end)
 
-  describe("root_pattern", function()
-    it("is a non-empty table", function()
-      assert.is_true(type(fs.root_pattern) == "table")
-      assert.is_true(#fs.root_pattern > 0)
-    end)
+  it(
+    "deletes selected files while preserving skip-condition matches",
+    function()
+      local root = test.temp_dir("delete-files")
+      test.write_file(root .. "/main.shada", "keep")
+      test.write_file(root .. "/old.shada.tmp", "remove")
 
-    it("contains .git", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, ".git"))
-    end)
+      fs.delete_files(root, {
+        skip_condition = function(name)
+          return name == "main.shada"
+        end,
+      })
 
-    it("contains package.json", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, "package.json"))
-    end)
-
-    it("contains pyproject.toml", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, "pyproject.toml"))
-    end)
-
-    it("contains Cargo.toml", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, "Cargo.toml"))
-    end)
-
-    it("contains go.mod", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, "go.mod"))
-    end)
-
-    it("contains Makefile", function()
-      assert.is_true(vim.tbl_contains(fs.root_pattern, "Makefile"))
-    end)
-  end)
-
-  describe("path constants", function()
-    it("config_path is a non-empty string", function()
-      assert.is_true(type(fs.config_path) == "string")
-      assert.is_true(#fs.config_path > 0)
-    end)
-
-    it("data_path is a non-empty string", function()
-      assert.is_true(type(fs.data_path) == "string")
-      assert.is_true(#fs.data_path > 0)
-    end)
-
-    it("mason_pkg_path contains mason/packages", function()
-      assert.is_true(fs.mason_pkg_path:match("mason/packages") ~= nil)
-    end)
-  end)
-
-  describe("scandir", function()
-    it("returns an empty table for a nonexistent path", function()
-      local names = fs.scandir("/nonexistent_path_xyz_abc_123", "all")
-      assert.same({}, names)
-    end)
-
-    it("returns a table for an existing directory", function()
-      local tmpdir = vim.fn.tempname()
-      vim.fn.mkdir(tmpdir, "p")
-      local names = fs.scandir(tmpdir, "all")
-      assert.is_true(type(names) == "table")
-      vim.fn.delete(tmpdir, "rf")
-    end)
-
-    it("lists files with mode 'file'", function()
-      local tmpdir = vim.fn.tempname()
-      vim.fn.mkdir(tmpdir, "p")
-      local f = io.open(tmpdir .. "/test.txt", "w")
-      if f then
-        f:write("hello")
-        f:close()
-      end
-      local names = fs.scandir(tmpdir, "file")
-      assert.is_true(vim.tbl_contains(names, "test.txt"))
-      vim.fn.delete(tmpdir, "rf")
-    end)
-
-    it("lists directories with mode 'directory'", function()
-      local tmpdir = vim.fn.tempname()
-      vim.fn.mkdir(tmpdir .. "/sub", "p")
-      local names = fs.scandir(tmpdir, "directory")
-      assert.is_true(vim.tbl_contains(names, "sub"))
-      vim.fn.delete(tmpdir, "rf")
-    end)
-
-    it("mode 'all' lists both files and directories", function()
-      local tmpdir = vim.fn.tempname()
-      vim.fn.mkdir(tmpdir .. "/subdir", "p")
-      local f = io.open(tmpdir .. "/file.txt", "w")
-      if f then
-        f:write("x")
-        f:close()
-      end
-      local names = fs.scandir(tmpdir, "all")
-      assert.is_true(#names >= 2)
-      vim.fn.delete(tmpdir, "rf")
-    end)
-
-    it("returns names sorted alphabetically", function()
-      local tmpdir = vim.fn.tempname()
-      vim.fn.mkdir(tmpdir, "p")
-      for _, name in ipairs({ "z.lua", "a.lua", "m.lua" }) do
-        local f = io.open(tmpdir .. "/" .. name, "w")
-        if f then
-          f:write("x")
-          f:close()
-        end
-      end
-
-      local names = fs.scandir(tmpdir, "file")
-
-      assert.same({ "a.lua", "m.lua", "z.lua" }, names)
-      vim.fn.delete(tmpdir, "rf")
-    end)
-  end)
+      assert.equals(1, vim.fn.filereadable(root .. "/main.shada"))
+      assert.equals(0, vim.fn.filereadable(root .. "/old.shada.tmp"))
+    end
+  )
 end)

@@ -19,14 +19,21 @@ describe("tool.order", function()
     state.set_enabled("formatter", "stylua", previous_stylua_enabled)
   end)
 
-  it("applies saved order to an existing runtime list", function()
-    state.set_order("formatter", "_test_ft_order_", { "a", "b" })
+  it(
+    "applies saved order while discarding stale and duplicate entries",
+    function()
+      state.set_order(
+        "formatter",
+        "_test_ft_order_",
+        { "removed", "a", "b", "a" }
+      )
 
-    assert.same(
-      { "a", "b", "z" },
-      order.names_for_ft("formatter", "_test_ft_order_", { "b", "z", "a" })
-    )
-  end)
+      assert.same(
+        { "a", "b", "z" },
+        order.names_for_ft("formatter", "_test_ft_order_", { "b", "z", "a" })
+      )
+    end
+  )
 
   it(
     "filters disabled managed tools but preserves unknown runtime entries",

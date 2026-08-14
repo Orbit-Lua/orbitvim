@@ -1,0 +1,78 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install Neovim stable
+        run: |
+          curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+          sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+          echo "/opt/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Install StyLua
+        uses: JohnnyMorganz/stylua-action@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: 2.4.0
+          args: false
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks
+          sudo luarocks install luacheck
+          python3 -m pip install --user sqlfluff==4.2.2
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Link the configuration
+        run: |
+          mkdir -p "$HOME/.config"
+          ln -s "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
+
+      - name: Install plugins from the lockfile
+        run: |
+          mkdir -p "$HOME/.local/share/nvim/lazy"
+          git clone --filter=blob:none --branch=stable \
+            https://github.com/folke/lazy.nvim.git \
+            "$HOME/.local/share/nvim/lazy/lazy.nvim"
+          nvim --headless -u NONE \
+            --cmd "set rtp^=$GITHUB_WORKSPACE" \
+            --cmd "set rtp^=$HOME/.local/share/nvim/lazy/lazy.nvim" \
+            -c "lua require('lazy').setup({ { import = 'plugins' } }, require('config.lazy'))" \
+            -c "Lazy! sync" \
+            -c "qall"
+
+      - name: Install integration parsers
+        run: |
+          nvim --headless \
+            -c "lua require('nvim-treesitter').install({ 'c_sharp', 'markdown', 'sql' }):wait(300000)" \
+            -c "qall"
+
+      - name: Run core validation
+        run: make all
+
+      - name: Run integration tests
+        run: make test-integration
+
+      - name: Smoke-test startup
+        run: nvim --headless "+qall"

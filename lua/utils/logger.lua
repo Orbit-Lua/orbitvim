@@ -1,7 +1,8 @@
 local M = {}
 
 local _state = {
-  log_path = vim.fn.stdpath("log") .. "/nvim-config.log",
+  log_path = vim.g.orbitvim_log_path
+    or (vim.fn.stdpath("log") .. "/nvim-config.log"),
   entries = {},
   max_per_channel = 200,
 }
@@ -53,9 +54,9 @@ function M.get_entries(channel, source)
   if not source then
     return vim.deepcopy(channel_entries)
   end
-  return vim.tbl_filter(function(e)
+  return vim.deepcopy(vim.tbl_filter(function(e)
     return e.source == source
-  end, channel_entries)
+  end, channel_entries))
 end
 
 ---Removes all entries for `source` within `channel`.

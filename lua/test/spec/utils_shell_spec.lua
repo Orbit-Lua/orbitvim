@@ -29,15 +29,6 @@ describe("utils.shell", function()
     vim.env.CC = original_cc
   end)
 
-  it("exposes a setup function", function()
-    assert.is_true(type(shell.setup) == "function")
-  end)
-
-  it("setup runs without error", function()
-    local ok = pcall(shell.setup)
-    assert.is_true(ok)
-  end)
-
   it("setup is idempotent (can be called multiple times)", function()
     local ok1 = pcall(shell.setup)
     local ok2 = pcall(shell.setup)

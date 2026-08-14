@@ -46,7 +46,10 @@ Primary technologies:
 - `lua/utils/` contains shared helpers. Reuse these before adding new helper
   modules.
 - `lua/cmds/` contains custom commands loaded during startup.
-- `lua/test/spec/` contains Plenary tests.
+- `lua/test/spec/` contains hermetic core Plenary tests.
+- `lua/test/integration/` contains tests that require installed plugins,
+  Treesitter parsers, or external executables.
+- `lua/test/helpers.lua` owns shared temporary-file and plugin-path test support.
 - `scripts/tests/minimal.vim` is the headless test bootstrap.
 
 ## Setup Commands
@@ -99,8 +102,11 @@ Useful commands:
 
 ```bash
 make fmt
+make fmt-check
 make lint
 make test
+make test-integration
+make test-all
 make all
 ```
 
@@ -112,7 +118,7 @@ nvim --headless "+qall"
 
 ## Testing Instructions
 
-Run the full validation suite before finishing changes:
+Run the deterministic core validation suite before finishing changes:
 
 ```bash
 make all
@@ -120,10 +126,23 @@ make all
 
 This runs:
 
-- `stylua lua/ --config-path=.stylua.toml`
+- `stylua --check lua/ luasnippets/ --config-path=.stylua.toml`
 - `luacheck lua --globals vim`
-- Plenary/Busted tests through `scripts/tests/minimal.vim` for all specs under
-  `lua/test/spec/`
+- hermetic Plenary/Busted tests under `lua/test/spec/`
+
+`make all` is read-only: it must not format source files or modify Neovim user
+state. Use `make fmt` explicitly to rewrite formatting.
+
+Run external integration tests when changing Treesitter queries or parsers,
+LuaSnip collections, SQLFluff executable behavior, or their adapters:
+
+```bash
+make test-integration
+```
+
+Use `make test-all` to run both core and integration suites. Integration tests
+fail when required dependencies are missing; pending or silently skipped tests
+are not allowed in either suite.
 
 For edits to `init.lua`, `lua/config/starter.lua`, Lazy bootstrap behavior,
 plugin loading, startup events, or other startup paths, also run:
@@ -139,18 +158,22 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   -c "PlenaryBustedFile lua/test/spec/tool_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
 ```
 
-Add or update focused tests for:
+Production changes do not automatically require a new test. Add or update a
+test only when it protects at least one of:
 
-- shared utilities in `lua/utils/`
-- Tool Manager state, rendering data, actions, Mason integration, and tool
-  ordering
-- tool registry derivation in `lua/config/packages.lua`
-- headless logic that can regress without opening a UI
+- a reproduced regression that fails before the fix
+- persistence, safety, ordering, or a state transition
+- a documented cross-module invariant
+- a seam with Neovim, a plugin, parser, or executable whose contract can drift
+- branch-heavy headless behavior not already covered by a deeper interface test
 
 ## Test Design
 
 - Treat the module interface as the test surface. Assert observable behavior,
   outputs, side effects, error handling, and cross-module invariants.
+- Before accepting a new test, identify a plausible behavior-breaking change
+  that makes it fail. For regression work, run the test red before the fix when
+  practical.
 - Prefer one table-driven invariant test over separate tests for every field,
   key, tool, icon, or filetype.
 - Do not add tests that only verify a module, table, function, or primitive
@@ -169,6 +192,22 @@ Add or update focused tests for:
   invariant.
 - Data-only changes do not require new tests unless they alter a validated
   schema, derivation, ordering rule, or user-visible contract.
+- Prefer extending an existing domain contract over creating a new spec file.
+  Adding more than three cases or roughly 80 lines for one change requires a
+  concise explanation of why a table-driven or deeper test is insufficient.
+- Do not change expected values merely to make a failing test pass. Explain
+  whether the contract changed, the old test was wrong, or production regressed.
+- Characterization and compatibility tests must state the behavior they preserve
+  and should be retired when the old interface or migration path is removed.
+- Mocks belong at external seams. Do not expose production-only test interfaces
+  or mock private implementation helpers.
+- Core tests must not access the network, install Mason packages, update plugins,
+  depend on external executables, or use pending/skip paths.
+- Tests that write files, logs, state, buffers, windows, globals, options, or
+  `package.loaded` entries must isolate and restore those effects. Persistent
+  paths must remain below `vim.g.orbitvim_test_root`.
+- In the final report, state `Tests added`, `Tests updated`, or `No tests added`
+  and name the regression or contract being protected.
 
 ## Code Style
 
@@ -223,12 +262,15 @@ the task intentionally updates plugin versions.
 - Be careful with commands that delete files. The Windows-only `ClearShada`
   command deliberately skips `main.shada`; preserve that behavior.
 - Do not overwrite user state in Neovim data directories from tests unless a
-  test explicitly redirects paths such as `vim.g.tool_state_path`.
+  test explicitly redirects paths below `vim.g.orbitvim_test_root`.
+- Tests must not perform network requests, install packages, or update plugins.
 
 ## Pull Request Checklist
 
 - Run `make all`.
+- Run `make test-integration` when external integrations changed.
 - Run `nvim --headless "+qall"` when startup paths changed.
-- Add or update focused tests for changed headless logic.
+- Add tests only when the change passes the admission rules above; otherwise
+  report why existing contracts are sufficient.
 - Keep docs in sync when commands, tool ownership, or repository layout
   change.

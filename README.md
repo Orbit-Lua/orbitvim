@@ -193,14 +193,15 @@ notes, and maintenance instructions.
 ├── lua/tool/                 # Tool Manager state, adapters, UI, and data
 ├── lua/utils/                # shared helpers
 ├── lua/cmds/                 # custom commands loaded at startup
-├── lua/test/spec/            # Plenary test specs
+├── lua/test/spec/            # hermetic core Plenary specs
+├── lua/test/integration/     # parser, plugin, and executable integration specs
 ├── luasnippets/              # local LuaSnip collections by snippet filetype
 └── scripts/tests/minimal.vim # headless test bootstrap
 ```
 
 ## Development
 
-Run the full local check:
+Run the deterministic local check:
 
 ```bash
 make all
@@ -209,10 +210,22 @@ make all
 That runs:
 
 ```bash
-make fmt
+make fmt-check
 make lint
-make test
+make test-core
 ```
+
+`make all` is read-only and does not format files or write Neovim's real Tool
+Manager state and log. Use `make fmt` explicitly to rewrite formatting.
+
+Run tests that require installed Treesitter parsers, LuaSnip, and SQLFluff with:
+
+```bash
+make test-integration
+```
+
+Run both suites with `make test-all`. Missing integration dependencies fail the
+suite instead of silently skipping coverage.
 
 For startup-path changes, also run:
 

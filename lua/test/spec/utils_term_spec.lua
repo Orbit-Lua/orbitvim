@@ -35,4 +35,26 @@ describe("utils.term", function()
       assert.same({ "pwsh.exe", "-NoLogo" }, captured_cmd)
     end)
   end)
+
+  it("allows toggling from editor and managed terminal windows only", function()
+    local loaded_window = package.loaded["utils.window"]
+    local original_filetype = vim.bo.filetype
+    local floating = true
+    package.loaded["utils.window"] = {
+      is_floating = function()
+        return floating
+      end,
+    }
+
+    vim.bo.filetype = "lua"
+    assert.is_false(term.can_toggle())
+    floating = false
+    assert.is_true(term.can_toggle())
+    floating = true
+    vim.bo.filetype = "Term_sp"
+    assert.is_true(term.can_toggle())
+
+    vim.bo.filetype = original_filetype
+    package.loaded["utils.window"] = loaded_window
+  end)
 end)

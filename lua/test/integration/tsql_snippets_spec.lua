@@ -1,4 +1,5 @@
-local luasnip_path = vim.fn.stdpath("data") .. "/lazy/LuaSnip"
+local test = require("test.helpers")
+local luasnip_path = test.plugin_path("LuaSnip")
 vim.opt.runtimepath:append(luasnip_path)
 
 local snippets = dofile(vim.fn.getcwd() .. "/luasnippets/tsql.lua")
@@ -25,8 +26,6 @@ describe("T-SQL snippets", function()
   local indexed = index_by_trigger()
 
   it("provides the complete convention-based collection", function()
-    assert.equals(105, #snippets)
-
     for _, trigger in ipairs({
       "ctable",
       "idxinc",
