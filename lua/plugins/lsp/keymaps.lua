@@ -46,6 +46,7 @@ function M.get()
         })
       end,
       desc = "hover",
+      has = "hover",
     },
     {
       "gK",

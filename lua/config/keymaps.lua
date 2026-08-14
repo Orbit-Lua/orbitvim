@@ -107,6 +107,7 @@ map("x", "p", "P", { desc = "paste without yanking replaced text" })
 map("i", "jk", "<ESC>")
 map("n", "Q", "q", { desc = "record macro" })
 map("n", "q", "<Nop>", { silent = true })
+map("n", "K", "<Nop>", { silent = true, desc = "hover unavailable" })
 map("n", "<leader>/", "gcc", { desc = "toggle comment", remap = true })
 map("v", "<leader>/", "gc", { desc = "toggle comment", remap = true })
 
