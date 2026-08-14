@@ -32,7 +32,7 @@ syntax keyword tsqlType BIGINT BIT DATE DATETIME2 DECIMAL HIERARCHYID INT
 syntax keyword tsqlType NVARCHAR ROWVERSION SQL_VARIANT SYSNAME TINYINT
 syntax keyword tsqlType UNIQUEIDENTIFIER VARCHAR
 
-syntax match tsqlBuiltinFunction "\<\%(CAST\|CONVERT\|DENSE_RANK\|ERROR_MESSAGE\|IDENTITY\|ISNULL\|LEAD\|QUOTENAME\|SCOPE_IDENTITY\|SYSUTCDATETIME\|XACT_STATE\)\ze\s*("
+syntax match tsqlBuiltinFunction "\<\%(CAST\|CONVERT\|DENSE_RANK\|ERROR_MESSAGE\|IDENTITY\|ISNULL\|LEAD\|OPENJSON\|QUOTENAME\|SCOPE_IDENTITY\|SYSUTCDATETIME\|XACT_STATE\)\ze\s*("
 
 " GO is a client batch separator, not a T-SQL statement. Match it only when it
 " occupies a line, optionally followed by a repeat count or line comment.

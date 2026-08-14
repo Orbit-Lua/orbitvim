@@ -85,9 +85,19 @@ nodes:
 - `TOP`, which the parser currently classifies as a function invocation.
 - `NOCOUNT` and `XACT_ABORT`, which survive error recovery as object-reference
   identifiers in `SET` statements.
+- `CAST` and unqualified SQL Server built-in calls such as `OPENJSON`,
+  `SYSUTCDATETIME`, and `XACT_STATE`, which the generic query can identify only
+  as ordinary function calls.
+- local variables represented as fields and system variables represented as
+  unary expressions, correcting the generic member/operator captures.
+- SQL Server built-in types such as `HIERARCHYID`, `ROWVERSION`, `SYSNAME`, and
+  `UNIQUEIDENTIFIER` when they occur in stable column-definition or `CAST`
+  type positions.
 
 The corrective captures use a higher query priority so that they win over an
-incorrect generic capture on the same range.
+incorrect generic capture on the same range. Function and custom-type
+corrections exclude schema-qualified names so user-defined objects with the
+same name retain the generic capture.
 
 Add a construct to the query when its parser node is stable and its context can
 be matched without classifying unrelated identifiers. Inspect the syntax tree
@@ -105,6 +115,8 @@ does not expose a useful node:
 - `NOCOUNT` and `XACT_ABORT` when parser error recovery drops their otherwise
   query-highlightable identifier nodes;
 - commonly used SQL Server types not recognized by the generic grammar;
+- SQL Server built-in functions when error recovery drops their invocation
+  nodes;
 - local variables, system variables, and bracket-delimited identifiers.
 
 The syntax file also defines SQL strings and comments. These regions shield

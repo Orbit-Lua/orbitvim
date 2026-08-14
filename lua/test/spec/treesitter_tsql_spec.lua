@@ -64,6 +64,96 @@ describe("T-SQL highlighting", function()
     assert.equals("keyword", disable.DISABLE)
   end)
 
+  it("corrects stable T-SQL semantics through Tree-sitter alone", function()
+    local cases = {
+      {
+        source = "SELECT CAST(Id AS BIGINT);",
+        token = "CAST",
+        capture = "function.builtin",
+      },
+      {
+        source = "SELECT SYSUTCDATETIME();",
+        token = "SYSUTCDATETIME",
+        capture = "function.builtin",
+      },
+      {
+        source = "SELECT @UserId;",
+        token = "@USERID",
+        capture = "variable",
+      },
+      {
+        source = "SELECT @@ROWCOUNT;",
+        token = "@@ROWCOUNT",
+        capture = "variable.builtin",
+      },
+      {
+        source = "CREATE TABLE dbo.T (Id UNIQUEIDENTIFIER);",
+        token = "UNIQUEIDENTIFIER",
+        capture = "type.builtin",
+      },
+      {
+        source = "SELECT CAST(Id AS HIERARCHYID);",
+        token = "HIERARCHYID",
+        capture = "type.builtin",
+      },
+    }
+
+    for _, case in ipairs(cases) do
+      assert.equals(
+        case.capture,
+        captures(case.source)[case.token],
+        case.source
+      )
+    end
+
+    local builtins = {
+      "CONVERT",
+      "DENSE_RANK",
+      "ERROR_MESSAGE",
+      "IDENTITY",
+      "ISNULL",
+      "LEAD",
+      "OPENJSON",
+      "QUOTENAME",
+      "SCOPE_IDENTITY",
+      "SYSUTCDATETIME",
+      "XACT_STATE",
+    }
+    local functions =
+      captures("SELECT " .. table.concat(
+        vim.tbl_map(function(name)
+          return name .. "()"
+        end, builtins),
+        ", "
+      ) .. ";")
+
+    for _, name in ipairs(builtins) do
+      assert.equals("function.builtin", functions[name], name)
+    end
+
+    for _, name in ipairs({
+      "HIERARCHYID",
+      "ROWVERSION",
+      "SQL_VARIANT",
+      "SYSNAME",
+      "UNIQUEIDENTIFIER",
+    }) do
+      local types = captures("CREATE TABLE dbo.T (Value " .. name .. ");")
+      assert.equals("type.builtin", types[name], name)
+    end
+  end)
+
+  it("keeps semantic corrections within their structural context", function()
+    local qualified_function = captures("SELECT dbo.ISNULL(Value);")
+    local qualified_type =
+      captures("CREATE TABLE dbo.T (Value dbo.UNIQUEIDENTIFIER);")
+    local ordinary_field = captures("SELECT UserId FROM dbo.Users;")
+
+    assert.equals("function.call", qualified_function.ISNULL)
+    assert.equals("type", qualified_type.UNIQUEIDENTIFIER)
+    assert.equals("variable.member", ordinary_field.USERID)
+  end)
+
   it("selects the configured dialect and enables its fallback", function()
     local buf = buffer({ "BEGIN TRY", "  SELECT @@ROWCOUNT;", "END TRY" })
 
