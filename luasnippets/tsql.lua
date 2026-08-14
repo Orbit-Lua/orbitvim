@@ -1584,4 +1584,17 @@ GO
 $0
 ]]
   ),
+
+  snippet(
+    "opensym",
+    "Open symmetric key",
+    [[
+OPEN SYMMETRIC KEY ${1:SYMKEY}
+DECRYPTION BY CERTIFICATE ${2:CERT};
+
+$0
+
+CLOSE ALL SYMMETRIC KEYS
+]]
+  ),
 }

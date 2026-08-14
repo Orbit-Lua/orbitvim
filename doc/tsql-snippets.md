@@ -121,6 +121,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `denserank` | Add `DENSE_RANK` |
 | `lag` | Read the previous ordered value with `LAG` |
 | `lead` | Read the next ordered value with `LEAD` |
+| `opensym` | Query inside decrypted `SYMMETRIC KEY` |
 
 ### Data modification
 

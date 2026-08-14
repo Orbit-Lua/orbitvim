@@ -25,7 +25,7 @@ describe("T-SQL snippets", function()
   local indexed = index_by_trigger()
 
   it("provides the complete convention-based collection", function()
-    assert.equals(104, #snippets)
+    assert.equals(105, #snippets)
 
     for _, trigger in ipairs({
       "ctable",
