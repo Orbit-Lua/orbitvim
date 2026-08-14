@@ -27,13 +27,12 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
 - Markdown preview, diagnostics UI, Noice notifications, Trouble, which-key, and
   Git signs
 
-## Requirements
+## Getting Started
+
+### Requirements
 
 - Neovim 0.10 or newer
 - Git
-- Make
-- `stylua`
-- `luacheck`
 - A C compiler and runtime tools required by Neovim plugins on your platform
 - Optional language runtimes for the stacks you use: Node.js, Python, .NET, Go,
   Deno, PowerShell, Docker tools, and SQL tooling
@@ -41,12 +40,15 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
   through a private Tailscale connection. See the
   [Arch Linux setup guide](doc/ollama.md).
 
-> [!NOTE]
-> The configuration prepends Mason's `bin` directory to `PATH` during startup,
-> but repository validation commands still expect `stylua` and `luacheck` to be
-> available from the shell that runs `make`.
+For development, also install Make, `stylua`, and `luacheck`. Integration tests
+require the relevant Neovim plugins, Treesitter parsers, and external tools such
+as SQLFluff.
 
-## Installation
+> [!NOTE]
+> OrbitVim prepends Mason's `bin` directory to `PATH` during startup, but shell
+> validation still expects its development tools to be directly available.
+
+### Installation
 
 Clone the repository as your Neovim config:
 
@@ -72,13 +74,29 @@ After plugins are installed, install Treesitter parsers from inside Neovim:
 
 ## Usage
 
+### Tool Manager
+
 Open the Tool Manager:
 
 ```vim
 :ToolManager
 ```
 
-Common mappings:
+Tool Manager keys:
+
+| Key | Action |
+| --- | --- |
+| `1`-`6` | Switch tool category |
+| `<Tab>` / `<S-Tab>` | Move between categories |
+| `<Space>` | Enable or disable supported runtime tools |
+| `i` | Install a Mason package or Treesitter parser |
+| `[` / `]` | Reorder formatter or linter priority |
+| `K` | Show tool tooltip |
+| `o`, `<CR>`, `za` | Expand or collapse a group |
+| `g?` | Toggle help |
+| `q`, `<Esc>` | Close |
+
+### Editor mappings
 
 | Mapping | Action |
 | --- | --- |
@@ -96,19 +114,7 @@ Common mappings:
 | `<M-h>` | Toggle horizontal terminal |
 | `<M-v>` | Toggle vertical terminal |
 
-Tool Manager keys:
-
-| Key | Action |
-| --- | --- |
-| `1`-`6` | Switch tool category |
-| `<Tab>` / `<S-Tab>` | Move between categories |
-| `<Space>` | Enable or disable supported runtime tools |
-| `i` | Install a Mason package or Treesitter parser |
-| `[` / `]` | Reorder formatter or linter priority |
-| `K` | Show tool tooltip |
-| `o`, `<CR>`, `za` | Expand or collapse a group |
-| `g?` | Toggle help |
-| `q`, `<Esc>` | Close |
+## Workflows
 
 ### AI completion endpoint
 
@@ -183,7 +189,9 @@ parameterized dynamic SQL. See the
 [complete T-SQL snippet guide](doc/tsql-snippets.md) for every trigger, safety
 notes, and maintenance instructions.
 
-## Project Layout
+## Development
+
+### Project layout
 
 ```text
 .
@@ -199,15 +207,15 @@ notes, and maintenance instructions.
 └── scripts/tests/minimal.vim # headless test bootstrap
 ```
 
-## Development
+### Validation
 
-Run the deterministic local check:
+Run the read-only core validation:
 
 ```bash
 make all
 ```
 
-That runs:
+It runs:
 
 ```bash
 make fmt-check
@@ -240,7 +248,7 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   -c "PlenaryBustedFile lua/test/spec/tool_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
 ```
 
-## Configuration Notes
+### Configuration ownership
 
 - `lua/config/tools.lua` is the source of truth for managed LSP, DAP,
   formatter, linter, parser, and dependency tools.
