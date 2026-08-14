@@ -39,10 +39,25 @@ jobs:
       - name: Install validation tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y luarocks
+          sudo apt-get install -y luarocks unzip
           sudo luarocks install luacheck
           python3 -m pip install --user sqlfluff==4.2.2
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Tree-sitter CLI
+        env:
+          TREE_SITTER_VERSION: 0.26.11
+          TREE_SITTER_SHA256: ff1b7f9863f2faafd78dc0e66d902ee85b37f709b314b22c009f51caf233eebd
+        run: |
+          archive="$RUNNER_TEMP/tree-sitter-cli.zip"
+          install_dir="$RUNNER_TEMP/tree-sitter-cli"
+          curl --fail --location \
+            --output "$archive" \
+            "https://github.com/tree-sitter/tree-sitter/releases/download/v${TREE_SITTER_VERSION}/tree-sitter-cli-linux-x64.zip"
+          echo "${TREE_SITTER_SHA256}  ${archive}" | sha256sum --check -
+          unzip -q "$archive" -d "$install_dir"
+          sudo install -m 0755 "$install_dir/tree-sitter" /usr/local/bin/tree-sitter
+          tree-sitter --version
 
       - name: Link the configuration
         run: |
@@ -63,10 +78,7 @@ jobs:
             -c "qall"
 
       - name: Install integration parsers
-        run: |
-          nvim --headless \
-            -c "lua require('nvim-treesitter').install({ 'c_sharp', 'markdown', 'sql' }):wait(300000)" \
-            -c "qall"
+        run: nvim --headless -u init.lua -l lua/test/install_parsers.lua
 
       - name: Run core validation
         run: make all

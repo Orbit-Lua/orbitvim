@@ -40,9 +40,9 @@ JavaScript, web files, shell, Markdown, SQL, Docker, XML, Go, TOML, and Prisma.
   through a private Tailscale connection. See the
   [Arch Linux setup guide](doc/ollama.md).
 
-For development, also install Make, `stylua`, and `luacheck`. Integration tests
-require the relevant Neovim plugins, Treesitter parsers, and external tools such
-as SQLFluff.
+For development, also install Make, `stylua`, `luacheck`, and Tree-sitter CLI
+0.26.1 or newer. Integration tests require the relevant Neovim plugins,
+Treesitter parsers, and external tools such as SQLFluff.
 
 > [!NOTE]
 > OrbitVim prepends Mason's `bin` directory to `PATH` during startup, but shell
@@ -203,6 +203,7 @@ notes, and maintenance instructions.
 ├── lua/cmds/                 # custom commands loaded at startup
 ├── lua/test/spec/            # hermetic core Plenary specs
 ├── lua/test/integration/     # parser, plugin, and executable integration specs
+├── lua/test/install_parsers.lua # CI parser bootstrap and verification
 ├── luasnippets/              # local LuaSnip collections by snippet filetype
 └── scripts/tests/minimal.vim # headless test bootstrap
 ```

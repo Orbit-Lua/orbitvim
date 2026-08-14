@@ -28,7 +28,7 @@ Stylua, and Luacheck.
 | Commands | `lua/cmds/`, loaded during startup |
 | Core tests | `lua/test/spec/`, using hermetic Plenary tests |
 | Integration tests | `lua/test/integration/`, for installed plugins, parsers, and executables |
-| Test support | `lua/test/helpers.lua` and `scripts/tests/minimal.vim` |
+| Test support | `lua/test/helpers.lua`, `lua/test/install_parsers.lua`, and `scripts/tests/minimal.vim` |
 
 ## Development Rules
 
@@ -49,10 +49,10 @@ Stylua, and Luacheck.
 
 ## Commands
 
-Install `stylua`, `luacheck`, and Neovim before running development commands.
-Open Neovim once to bootstrap plugins; the test bootstrap expects
-`plenary.nvim` in Neovim's Lazy data directory. Install configured parsers with
-`:TSInstallAll` when integration tests need them.
+Install `stylua`, `luacheck`, Tree-sitter CLI 0.26.1 or newer, and Neovim before
+running development commands. Open Neovim once to bootstrap plugins; the test
+bootstrap expects `plenary.nvim` in Neovim's Lazy data directory. Install
+configured parsers with `:TSInstallAll` when integration tests need them.
 
 | Command | Purpose |
 | --- | --- |
