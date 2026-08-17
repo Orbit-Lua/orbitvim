@@ -155,44 +155,100 @@ sudo systemctl enable --now tailscaled.service
 sudo tailscale up
 ```
 
-Both the Ollama host and client must be connected to the same tailnet. MagicDNS
-and HTTPS certificates must be enabled for the tailnet. Expose the loopback
-Ollama service privately and keep the proxy across reboots:
+Both the Ollama host and client must be connected to the same tailnet. Keep
+Ollama bound to loopback and use Tailscale Serve as the only remote entry point.
+The examples use the current Serve syntax introduced in Tailscale 1.52.
+
+Choose HTTP when the tailnet cannot issue an HTTPS certificate. This publishes
+port `11434` only inside the tailnet and proxies it to Ollama's loopback
+listener:
 
 ```bash
-sudo tailscale serve --bg 11434
+sudo tailscale serve --bg --http=11434 http://127.0.0.1:11434
 tailscale serve status
 ```
 
-The status output provides an HTTPS URL such as:
+Clients can use the host's short MagicDNS name or its full tailnet name:
+
+```text
+http://workstation:11434
+http://workstation.example.ts.net:11434
+```
+
+Although the URL uses plain HTTP, traffic between tailnet devices remains
+end-to-end encrypted by WireGuard, including direct and relayed connections.
+HTTP therefore does not expose the request in transit outside the tailnet. It
+does not provide browser-visible TLS, however, and Tailscale warns that HTTP web
+services can still be susceptible to DNS rebinding. Use this option only for
+trusted tailnet clients, and restrict access with Tailscale grants or ACLs.
+
+Prefer HTTPS when MagicDNS and HTTPS certificates are enabled for the tailnet.
+Serve listens on HTTPS port `443` by default, terminates TLS, and proxies the
+request to the same HTTP loopback listener:
+
+```bash
+sudo tailscale serve --bg http://127.0.0.1:11434
+tailscale serve status
+```
+
+If HTTPS is not enabled yet, the interactive command provides a consent URL for
+enabling it. This publishes the machine and tailnet DNS names in a public
+certificate transparency ledger. If HTTPS cannot be enabled, use the explicit
+`--http=11434` command instead. The HTTPS status output includes a URL such as:
 
 ```text
 https://workstation.example.ts.net
 ```
 
-Test it manually from a device in the same tailnet:
+In both modes, `--bg` persists the Serve configuration after the terminal
+closes, across reboots, and after `tailscale down` followed by `tailscale up`.
+Disable the selected listener, or clear all Serve configuration, with:
+
+```bash
+# HTTP on port 11434
+sudo tailscale serve --http=11434 off
+
+# Default HTTPS on port 443
+sudo tailscale serve off
+
+# Every Serve listener on this host
+sudo tailscale serve reset
+```
+
+Test the selected URL from another device in the same tailnet. Ollama expects
+the upstream host header for its loopback listener, so include it in manual curl
+requests:
+
+```bash
+curl http://workstation:11434/api/tags \
+  -H 'Host: localhost:11434'
+```
+
+Or, for HTTPS:
 
 ```bash
 curl https://workstation.example.ts.net/api/tags \
   -H 'Host: localhost:11434'
 ```
 
-Ollama validates the upstream `Host` header when bound to loopback. OrbitVim
-automatically applies this header rewrite for `https://*.ts.net` completion
-endpoints; manual curl requests need the header shown above.
+OrbitVim automatically applies this header rewrite for `https://*.ts.net`
+completion endpoints; manual curl requests need the header shown above.
 
-In Neovim, select the URL without adding a port:
+For the recommended HTTPS setup, select the URL in Neovim without adding a
+port:
 
 ```vim
 :MinuetEndpoint https://workstation.example.ts.net
 ```
 
-Tailscale Serve terminates HTTPS and proxies to
-`http://127.0.0.1:11434`. Do not configure Tailscale Funnel for Ollama, and
-restrict access using Tailscale grants or ACLs when the tailnet is shared. See
-the [Tailscale Serve
-documentation](https://tailscale.com/docs/features/tailscale-serve) for HTTPS
-and access-control prerequisites.
+Do not configure Tailscale Funnel for Ollama: Funnel makes a service public,
+while Serve keeps it inside the tailnet. Tailscale access-control rules apply to
+Serve in either mode. See the official documentation for the [Serve CLI and
+HTTP/HTTPS flags](https://tailscale.com/docs/reference/tailscale-cli/serve),
+[HTTPS certificate setup](https://tailscale.com/docs/how-to/set-up-https-certificates),
+[connection encryption](https://tailscale.com/docs/reference/connection-types),
+and [tailnet security
+guidance](https://tailscale.com/docs/reference/best-practices/security).
 
 ## Troubleshooting
 
@@ -208,8 +264,9 @@ ollama ps
 
 | Symptom | Check |
 | --- | --- |
-| `Connection refused` on a Tailscale IP at port 11434 | This is expected while Ollama remains loopback-only; use the HTTPS Tailscale Serve URL. |
+| `Connection refused` on a Tailscale IP at port 11434 | Ollama is intentionally loopback-only. Configure HTTP Serve on port 11434, or use the HTTPS Serve URL on port 443. |
 | MagicDNS returns an empty `403` | The upstream Host header was rejected; OrbitVim handles it automatically, while curl needs `-H 'Host: localhost:11434'`. |
 | `ollama ps` reports CPU | Check `vulkaninfo`, `GGML_VK_VISIBLE_DEVICES`, render-device permissions, and the service journal. |
 | The first completion times out | Preload the model and use `OLLAMA_KEEP_ALIVE=-1`. |
-| Tailscale URL is unavailable after setup | Confirm MagicDNS, HTTPS, Serve status, and tailnet access-control rules. |
+| HTTP Serve is unavailable | Confirm the URL includes port `11434`, then check MagicDNS, Serve status, and tailnet access-control rules. |
+| HTTPS Serve is unavailable | Confirm MagicDNS and HTTPS certificates are enabled, then check Serve status and tailnet access-control rules. |
