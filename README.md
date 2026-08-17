@@ -131,7 +131,13 @@ An IP or hostname without a scheme uses
 `http://<host>:11434/v1/completions`. An HTTPS URL without a port uses port 443,
 which is suitable for Tailscale Serve. The selected endpoint and endpoint
 history are stored in Neovim's data directory as `minuet-endpoints.json`; the
-runtime Minuet configuration is updated immediately.
+runtime Minuet configuration is updated after the connection check succeeds.
+
+Before Minuet loads, OrbitVim checks the selected host with
+`curl <scheme>://<host>:<port>/v1/models`. Completion stays disabled when the
+check fails, and a single warning reports the connection error instead of
+allowing repeated request-error notifications. Selecting an endpoint also runs
+the check before saving and enabling it.
 
 Use `:MinuetEndpoint!` to remove a saved remote endpoint. The local
 `127.0.0.1:11434` fallback is always retained.

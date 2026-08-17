@@ -41,6 +41,10 @@ describe("AI completion endpoint", function()
       "http://127.0.0.1:11434/v1/completions",
       endpoint.normalize("http://127.0.0.1:11434/v1/completions")
     )
+    assert.equals(
+      "https://workstation.example.ts.net/v1/models",
+      endpoint.models_url("https://workstation.example.ts.net")
+    )
   end)
 
   it("rejects unsafe or unsupported endpoint forms", function()

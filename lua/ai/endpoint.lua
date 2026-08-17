@@ -162,6 +162,23 @@ function M.current()
   return M.get().current
 end
 
+function M.models_url(value)
+  local normalized, error_message = M.normalize(value)
+  if not normalized then
+    return nil, error_message
+  end
+
+  return normalized:gsub(completion_path .. "$", "/v1/models")
+end
+
+function M.host_header(value)
+  local authority = value:match("^https://([^/]+)")
+  local hostname = authority and authority:match("^([^:]+)")
+  if hostname and vim.endswith(hostname, ".ts.net") then
+    return "localhost:11434"
+  end
+end
+
 function M.list()
   return vim.deepcopy(M.get().endpoints)
 end
@@ -282,10 +299,9 @@ function M.transform_request(data)
     return data
   end
 
-  local authority = data.end_point:match("^https://([^/]+)")
-  local hostname = authority and authority:match("^([^:]+)")
-  if hostname and vim.endswith(hostname, ".ts.net") then
-    data.headers.Host = "localhost:11434"
+  local host_header = M.host_header(data.end_point)
+  if host_header then
+    data.headers.Host = host_header
   end
 
   return data

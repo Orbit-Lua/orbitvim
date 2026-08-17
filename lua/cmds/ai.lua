@@ -1,4 +1,5 @@
 local endpoint = require("ai.endpoint")
+local service = require("ai.service")
 
 local title = "Minuet"
 local add_endpoint = {}
@@ -7,48 +8,47 @@ local function notify(message, level)
   vim.notify(message, level or vim.log.levels.INFO, { title = title })
 end
 
-local function load_minuet()
-  if package.loaded.minuet and package.loaded.minuet.config then
-    return
-  end
-
-  local ok, lazy = pcall(require, "lazy")
-  if ok then
-    lazy.load({ plugins = { "minuet-ai.nvim" } })
-  end
-end
-
-local function apply(value)
-  load_minuet()
-  return endpoint.apply(value)
-end
-
 local function select_endpoint(value)
-  local normalized, error_message = endpoint.set(value)
+  local normalized, error_message = endpoint.normalize(value)
   if not normalized then
     notify(error_message, vim.log.levels.ERROR)
     return
   end
 
-  if apply(normalized) then
-    notify("Completion endpoint: " .. normalized)
-  else
-    notify("Saved endpoint; Minuet will use it when loaded: " .. normalized)
-  end
+  service.activate(normalized, {
+    before_enable = function()
+      return endpoint.set(normalized)
+    end,
+    on_complete = function(ok)
+      if ok then
+        notify("Completion endpoint: " .. normalized)
+      end
+    end,
+  })
 end
 
 local function forget_endpoint(value)
+  local normalized = endpoint.normalize(value)
+  local previous = endpoint.current()
   local current, error_message = endpoint.remove(value)
   if not current then
     notify(error_message, vim.log.levels.ERROR)
     return
   end
 
-  if apply(current) then
+  if normalized ~= previous then
     notify("Removed endpoint. Current endpoint: " .. current)
-  else
-    notify("Removed endpoint. Minuet will use this when loaded: " .. current)
+    return
   end
+
+  service.disable("completion endpoint changed")
+  service.activate(current, {
+    on_complete = function(ok)
+      if ok then
+        notify("Removed endpoint. Current endpoint: " .. current)
+      end
+    end,
+  })
 end
 
 local function prompt_for_endpoint()

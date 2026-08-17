@@ -1,14 +1,16 @@
 local utils = require("utils")
 local utils_cmp = require("utils.cmp")
 local endpoint = require("ai.endpoint")
+local service = require("ai.service")
 
 ---@type LazySpec[]
 local specs = {
   {
-    cond = false,
     "milanglacier/minuet-ai.nvim",
-    event = { "BufReadPost", "BufNewFile" },
-    cmd = "Minuet",
+    lazy = true,
+    init = function()
+      service.activate(endpoint.current())
+    end,
     opts = {
       provider = "openai_fim_compatible",
       n_completions = 1,
@@ -39,6 +41,7 @@ local specs = {
         },
       },
       enable_predicates = {
+        service.is_ready,
         function()
           return vim.bo.buftype == "" and vim.bo.modifiable
         end,
@@ -70,9 +73,6 @@ if vim.g.ai_cmp then
   table.insert(specs, {
     "saghen/blink.cmp",
     optional = true,
-    dependencies = {
-      "milanglacier/minuet-ai.nvim",
-    },
     ---@param opts blink.cmp.Config
     opts = function(_, opts)
       opts.keymap = opts.keymap or {}
@@ -85,13 +85,20 @@ if vim.g.ai_cmp then
       table.insert(opts.sources.default, 1, "minuet")
       opts.sources.providers.minuet = {
         name = "Minuet",
-        module = "minuet.blink",
+        module = "ai.blink",
+        enabled = service.is_ready,
         score_offset = 100,
         async = true,
         timeout_ms = 3000,
       }
       opts.completion.trigger.prefetch_on_insert = false
-      opts.keymap["<M-y>"] = require("minuet").make_blink_map()
+      opts.keymap["<M-y>"] = {
+        function(cmp)
+          if service.is_ready() then
+            cmp.show({ providers = { "minuet" } })
+          end
+        end,
+      }
     end,
   })
 end
