@@ -13,11 +13,17 @@ local specs = {
     end,
     opts = {
       provider = "openai_fim_compatible",
+
       n_completions = 1,
-      context_window = 8192,
+
+      context_window = 4000,
+      context_ratio = 0.8,
+
       request_timeout = 3,
-      throttle = 1500,
-      debounce = 500,
+
+      throttle = 500,
+      debounce = 200,
+
       virtualtext = {
         auto_trigger_ft = vim.g.ai_cmp and {} or { "*" },
         keymap = {
@@ -27,15 +33,20 @@ local specs = {
       },
       provider_options = {
         openai_fim_compatible = {
+          name = "Ollama",
+          end_point = endpoint.current(),
+
           api_key = function()
             return "ollama"
           end,
-          name = "Ollama",
-          end_point = endpoint.current(),
-          model = "qwen2.5-coder:7b-base-q6_K",
+
+          model = "qwen2.5-coder:14b-base-q4_K_M",
+
           transform = { endpoint.transform_request },
+
           optional = {
-            max_tokens = 96,
+            max_tokens = 128,
+            temperature = 0.1,
             top_p = 0.9,
           },
         },
