@@ -6,6 +6,8 @@ local service = require("ai.service")
 ---@type LazySpec[]
 local specs = {
   {
+    cond = false,
+
     "milanglacier/minuet-ai.nvim",
     lazy = true,
     init = function()
