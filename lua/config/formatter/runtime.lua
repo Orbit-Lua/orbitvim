@@ -21,7 +21,7 @@ function M.format(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   if vim.b[bufnr].nvim_config_formatting then
     vim.notify("This buffer is already being formatted", vim.log.levels.WARN, {
-      title = "Formatter",
+      title = "formatter",
       icon = icons.formatter.error,
     })
     return
@@ -49,7 +49,7 @@ function M.format(bufnr)
       result_message(display_name, elapsed, err, did_edit),
       err and vim.log.levels.ERROR or vim.log.levels.INFO,
       {
-        title = "Formatter",
+        title = "formatter",
         icon = err and icons.formatter.error or icons.formatter.success,
       }
     )
