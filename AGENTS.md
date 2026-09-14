@@ -45,7 +45,7 @@ Generic utility facades should not be added. Prefer owner-local helpers or direc
 
 Startup begins in `init.lua`, then `config.starter`.
 
-Lazy.nvim bootstrap must fail fast when Git clone fails. Do not silently continue with an invalid runtime path.
+The first lazy.nvim bootstrap must use the revision pinned in `lazy-lock.json` and fail fast when Git clone or checkout fails. Do not silently continue with an invalid runtime path or a floating lazy.nvim revision.
 
 Avoid new dependencies on private plugin internals. If an existing private API must be changed, verify the exact pinned revision in `lazy-lock.json` first.
 
@@ -71,7 +71,7 @@ Run a headless startup smoke test when changing startup, plugin loading, shell/p
 nvim --headless "+qall"
 ```
 
-CI validates Neovim `0.11.3` and stable. The stable lane also runs external integration/parser tests.
+CI validates Neovim `0.11.3` and stable. The stable lane also runs external integration/parser tests. Plugin installation must exercise the real `init.lua` bootstrap path; do not duplicate lazy.nvim setup through private or partial initialization in the workflow.
 
 Core tests must remain deterministic and hermetic. Avoid network access and machine-specific state in `lua/test/spec/`.
 

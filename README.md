@@ -25,7 +25,7 @@ nvim
 
 On Windows, clone it to the directory returned by `:echo stdpath('config')`.
 
-`init.lua` bootstraps lazy.nvim and fails immediately with the Git error if bootstrap cannot complete.
+`init.lua` bootstraps the exact lazy.nvim revision pinned by `lazy-lock.json` and fails immediately if Git clone or checkout cannot complete.
 
 ## Architecture
 
@@ -88,7 +88,7 @@ Focused tests can be run through Plenary using `scripts/tests/minimal.vim`. Impo
 ## Project layout
 
 ```text
-init.lua                     lazy.nvim bootstrap
+init.lua                     pinned lazy.nvim bootstrap
 lua/config/tools.lua         canonical tool registry
 lua/config/packages.lua      derived consumer configuration
 lua/config/formatter/        Conform configuration/runtime

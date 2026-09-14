@@ -85,16 +85,12 @@ jobs:
 
       - name: Install plugins from the lockfile
         run: |
-          mkdir -p "$HOME/.local/share/nvim/lazy"
-          git clone --filter=blob:none --branch=stable \
-            https://github.com/folke/lazy.nvim.git \
-            "$HOME/.local/share/nvim/lazy/lazy.nvim"
-          nvim --headless -u NONE \
-            --cmd "set rtp^=$GITHUB_WORKSPACE" \
-            --cmd "set rtp^=$HOME/.local/share/nvim/lazy/lazy.nvim" \
-            -c "lua require('lazy').setup({ { import = 'plugins' } }, require('config.lazy'))" \
-            -c "lua require('lazy').sync({ wait = true, show = false })" \
-            -c "qall"
+          nvim --headless -u init.lua "+Lazy! sync" "+qall"
+          lazy_root="$HOME/.local/share/nvim/lazy"
+          expected_lazy="$(python3 -c 'import json; print(json.load(open("lazy-lock.json"))["lazy.nvim"]["commit"])')"
+          actual_lazy="$(git -C "$lazy_root/lazy.nvim" rev-parse HEAD)"
+          test "$actual_lazy" = "$expected_lazy"
+          test -f "$lazy_root/plenary.nvim/plugin/plenary.vim"
 
       - name: Check formatting
         run: make fmt-check
@@ -107,9 +103,7 @@ jobs:
 
       - name: Run core tests
         timeout-minutes: 5
-        run: |
-          nvim --headless --noplugin -u scripts/tests/minimal.vim \
-            -c "PlenaryBustedDirectory lua/test/spec/ {minimal_init = 'scripts/tests/minimal.vim'}"
+        run: make test-core
 
       - name: Smoke-test startup
         run: nvim --headless "+qall"

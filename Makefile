@@ -32,11 +32,13 @@ test: test-core
 test-core: validate-test-suites
 	echo "===> Testing core behavior"
 	nvim --headless --noplugin -u scripts/tests/minimal.vim \
+		-c "if !exists(':PlenaryBustedDirectory') | echoerr 'plenary.nvim is not installed' | cquit 2 | endif" \
 		-c "PlenaryBustedDirectory lua/test/spec/ {minimal_init = 'scripts/tests/minimal.vim'}"
 
 test-integration: validate-test-suites
 	echo "===> Testing external integrations"
 	nvim --headless --noplugin -u scripts/tests/minimal.vim \
+		-c "if !exists(':PlenaryBustedDirectory') | echoerr 'plenary.nvim is not installed' | cquit 2 | endif" \
 		-c "PlenaryBustedDirectory lua/test/integration/ {minimal_init = 'scripts/tests/minimal.vim'}"
 
 test-all: test-core test-integration
