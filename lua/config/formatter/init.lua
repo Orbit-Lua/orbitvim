@@ -1,5 +1,3 @@
--- config for conform.nvim
-
 local fs = require("utils.fs")
 local os_utils = require("utils.os")
 local sqlfluff = require("utils.sqlfluff")
@@ -7,8 +5,8 @@ local sqlfluff = require("utils.sqlfluff")
 return {
   default_format_opts = {
     timeout_ms = 5000,
-    quiet = false, -- not recommended to change
-    lsp_format = "fallback", -- not recommended to change
+    quiet = false,
+    lsp_format = "fallback",
   },
 
   formatters = {
@@ -29,7 +27,7 @@ return {
         return #diagnostics > 0
       end,
     },
-    ["sqlfluff"] = {
+    sqlfluff = {
       command = "sqlfluff",
       env = { PYTHONUTF8 = "1" },
       args = function(_, ctx)
@@ -41,25 +39,23 @@ return {
       end,
       require_cwd = true,
     },
-    ["deno_fmt"] = {
-      args = function()
-        local file_extension = vim.fn.expand("%:e")
-
-        if file_extension ~= "" then
-          return { "fmt", "-", "--ext=" .. file_extension }
+    deno_fmt = {
+      args = function(_, ctx)
+        local extension = vim.fn.fnamemodify(ctx.filename, ":e")
+        if extension ~= "" then
+          return { "fmt", "-", "--ext=" .. extension }
         end
-
         return { "fmt", "-" }
       end,
     },
-    ["prisma_fmt"] = {
+    prisma_fmt = {
       command = function()
         local root = fs.get_root()
-        if os_utils.is_win() then
-          return root .. "/node_modules/.bin/prisma.CMD"
-        end
-
-        return root .. "/node_modules/.bin/prisma"
+        return root
+          .. (
+            os_utils.is_win() and "/node_modules/.bin/prisma.CMD"
+            or "/node_modules/.bin/prisma"
+          )
       end,
       condition = function(_, ctx)
         return vim.bo[ctx.buf].filetype == "prisma"
@@ -69,44 +65,6 @@ return {
     },
   },
 
-  formatters_by_ft = {
-    lua = { "stylua" },
-    python = { "ruff_fix", "ruff_organize_imports", "ruff_format" },
-    sh = { "shfmt" },
-
-    -- web dev
-    css = { "deno_fmt" },
-    html = { "deno_fmt" },
-
-    -- eslint_d is used for fix, not complete formatting, so deno_fmt is needed
-    typescript = { "deno_fmt", "eslint_d" },
-    javascript = { "deno_fmt", "eslint_d" },
-
-    typescriptreact = { "deno_fmt", "eslint_d" },
-    javascriptreact = { "deno_fmt", "eslint_d" },
-    jsx = { "deno_fmt", "eslint_d" },
-
-    json = { "deno_fmt" },
-    jsonc = { "deno_fmt" },
-    toml = { "tombi" },
-    prisma = { "prisma_fmt" },
-    cs = { "csharpier" },
-
-    -- markdown
-    ["markdown"] = { "markdownlint-cli2", "markdown-toc" },
-    ["markdown.mdx"] = { "markdownlint-cli2", "markdown-toc" },
-
-    yaml = { "yamlfmt" },
-  },
-
+  formatters_by_ft = require("config.packages").formatters_by_ft,
   format_on_save = false,
-
-  -- format_on_save = function()
-  --   if vim.bo.filetype == "prisma" then
-  --     return
-  --   end
-  --
-  --   -- These options will be passed to conform.format()
-  --   return { timeout_ms = 2000, lsp_fallback = true }
-  -- end,
 }

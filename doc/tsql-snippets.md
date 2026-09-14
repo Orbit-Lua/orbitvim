@@ -2,7 +2,7 @@
 
 # T-SQL snippets
 
-OrbitVim provides 104 project-local LuaSnip templates for Microsoft SQL Server.
+This configuration provides 104 project-local LuaSnip templates for Microsoft SQL Server.
 They follow the practices in the
 [T-SQL conventions](tsql-conventions.md) and replace the generic SQL collection
 from `friendly-snippets`.
@@ -238,7 +238,7 @@ $0
 Keep triggers unique and lowercase, give every placeholder a useful default,
 terminate complete T-SQL statements with semicolons, and retain `$0` as the
 final cursor position. Update the catalog and the expected collection size in
-`lua/test/spec/tsql_snippets_spec.lua`, then run:
+`lua/test/integration/tsql_snippets_spec.lua`, then run:
 
 ```bash
 make all

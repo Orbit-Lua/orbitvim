@@ -96,6 +96,7 @@ describe("utils.cmp", function()
     "repairs an invalid expansion and restores the top-level session",
     function()
       local original_utils = package.loaded.utils
+      local original_notify = vim.notify
       local original_active = vim.snippet.active
       local original_expand = vim.snippet.expand
       local original_session = vim.snippet._session
@@ -103,14 +104,9 @@ describe("utils.cmp", function()
       local expansions = {}
       local warning
 
-      package.loaded.utils = {
-        warn = function(message)
-          warning = message
-        end,
-        error = function(message)
-          error(message)
-        end,
-      }
+      vim.notify = function(message)
+        warning = message
+      end
       vim.snippet._session = top_session
       vim.snippet.active = function()
         return true
@@ -127,6 +123,7 @@ describe("utils.cmp", function()
       local restored_session = vim.snippet._session
 
       package.loaded.utils = original_utils
+      vim.notify = original_notify
       vim.snippet.active = original_active
       vim.snippet.expand = original_expand
       vim.snippet._session = original_session
@@ -181,7 +178,7 @@ describe("utils.cmp", function()
       package.loaded["blink.cmp.keymap.presets"] = loaded_presets
       require("utils.window").get_completion_float_sizes = original_float_sizes
       vim.o.pumheight = original_pumheight
-      pcall(vim.api.nvim_del_augroup_by_name, "OrbitVimBlinkResize")
+      pcall(vim.api.nvim_del_augroup_by_name, "NvimConfigBlinkResize")
     end)
 
     it(

@@ -1,12 +1,12 @@
 local tools = require("config.tools")
 
-local M = {}
-
--- Derive consumer-specific lists from the tool registry so config/tools.lua
--- remains the single source of truth.
-M.lsp_servers = {}
-M.mason_ensure_installed = {}
-M.treesitter_ensure_installed = {}
+local M = {
+  lsp_servers = {},
+  mason_ensure_installed = {},
+  treesitter_ensure_installed = {},
+  formatters_by_ft = {},
+  linters_by_ft = {},
+}
 
 local function sorted_keys(tbl)
   local keys = vim.tbl_keys(tbl or {})
@@ -14,47 +14,69 @@ local function sorted_keys(tbl)
   return keys
 end
 
-local seen = {}
-local function add_mason(pkg)
-  if pkg and not seen[pkg] then
-    seen[pkg] = true
-    table.insert(M.mason_ensure_installed, pkg)
+local function derive_by_ft(category)
+  local routed = {}
+
+  for _, name in ipairs(sorted_keys(tools[category])) do
+    local definition = tools[category][name]
+    for _, filetype in ipairs(definition.ft) do
+      routed[filetype] = routed[filetype] or {}
+      table.insert(routed[filetype], {
+        name = name,
+        order = definition.order or 100,
+      })
+    end
   end
+
+  local result = {}
+  for filetype, entries in pairs(routed) do
+    table.sort(entries, function(a, b)
+      if a.order == b.order then
+        return a.name < b.name
+      end
+      return a.order < b.order
+    end)
+
+    result[filetype] = {}
+    for _, entry in ipairs(entries) do
+      table.insert(result[filetype], entry.name)
+    end
+  end
+
+  return result
 end
 
 for _, name in ipairs(sorted_keys(tools.parser)) do
   table.insert(M.treesitter_ensure_installed, name)
 end
 
-local derived_mason_packages = {}
+local mason = {}
 local function collect_mason(pkg)
   if pkg then
-    derived_mason_packages[pkg] = true
+    mason[pkg] = true
   end
 end
 
 for _, name in ipairs(sorted_keys(tools.lsp)) do
-  local meta = tools.lsp[name]
+  local definition = tools.lsp[name]
   table.insert(M.lsp_servers, name)
-  collect_mason(meta.mason)
+  collect_mason(definition.mason)
 end
 
-for _, cat in ipairs({ "dap", "linter", "formatter" }) do
-  for _, name in ipairs(sorted_keys(tools[cat])) do
-    local meta = tools[cat][name]
-    collect_mason(meta.mason)
+for _, category in ipairs({ "dap", "linter", "formatter" }) do
+  for _, name in ipairs(sorted_keys(tools[category])) do
+    collect_mason(tools[category][name].mason)
   end
 end
 
 for _, name in ipairs(sorted_keys(tools.package)) do
-  local meta = tools.package[name]
-  if meta.source == "mason" then
+  if tools.package[name].source == "mason" then
     collect_mason(name)
   end
 end
 
-for _, pkg in ipairs(sorted_keys(derived_mason_packages)) do
-  add_mason(pkg)
-end
+M.mason_ensure_installed = sorted_keys(mason)
+M.formatters_by_ft = derive_by_ft("formatter")
+M.linters_by_ft = derive_by_ft("linter")
 
 return M

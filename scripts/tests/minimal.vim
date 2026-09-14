@@ -4,10 +4,8 @@ let s:plugin_data_path = stdpath('data')
 let s:test_root = tempname()
 call mkdir(s:test_root, 'p')
 
-let g:orbitvim_test_root = s:test_root
-let g:orbitvim_test_plugin_data_path = s:plugin_data_path
-let g:tool_state_path = s:test_root . '/tools.json'
-let g:orbitvim_log_path = s:test_root . '/nvim-config.log'
+let g:nvim_config_test_root = s:test_root
+let g:nvim_config_test_plugin_data_path = s:plugin_data_path
 
 function! s:cleanup_test_root() abort
   if isdirectory(s:test_root)
@@ -15,7 +13,7 @@ function! s:cleanup_test_root() abort
   endif
 endfunction
 
-augroup OrbitVimTestCleanup
+augroup NvimConfigTestCleanup
   autocmd!
   autocmd VimLeavePre * call <SID>cleanup_test_root()
 augroup END

@@ -3,7 +3,7 @@ local M = {}
 local cleanup_paths = {}
 
 local function test_root()
-  local root = vim.g.orbitvim_test_root
+  local root = vim.g.nvim_config_test_root
   assert(type(root) == "string" and root ~= "", "test bootstrap is not loaded")
   return root
 end
@@ -11,7 +11,7 @@ end
 ---@param name string
 ---@return string
 function M.plugin_path(name)
-  local data_path = vim.g.orbitvim_test_plugin_data_path
+  local data_path = vim.g.nvim_config_test_plugin_data_path
   assert(
     type(data_path) == "string" and data_path ~= "",
     "test plugin data path is unavailable"

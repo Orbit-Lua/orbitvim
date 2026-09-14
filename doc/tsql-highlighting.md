@@ -1,6 +1,6 @@
 # T-SQL highlighting
 
-OrbitVim extends the generic `tree-sitter-sql` highlighter for Microsoft SQL
+This configuration extends the generic `tree-sitter-sql` highlighter for Microsoft SQL
 Server while keeping the standard Neovim `sql` filetype. The implementation
 uses two complementary layers:
 
@@ -42,11 +42,11 @@ collection continue to use their existing SQL integration.
 ## Dialect precedence
 
 Neovim's SQL syntax dispatcher recognizes a buffer-local override and a global
-default. OrbitVim follows the same precedence:
+default. This configuration follows the same precedence:
 
 1. An existing `b:sql_type_override` wins.
 2. Otherwise, an existing `g:sql_type_default` wins.
-3. When neither exists, OrbitVim sets `b:sql_type_override` to the configured
+3. When neither exists, this configuration sets `b:sql_type_override` to the configured
    `sql.dialect`, which defaults to `tsql`.
 
 This means project or user configuration is not overwritten. For example, an
@@ -69,7 +69,7 @@ To retain the fallback in SQL buffers but disable it in Markdown fences:
 require("config.treesitter").sql.markdown_fenced_fallback = false
 ```
 
-OrbitVim adds `sql=tsql` to `g:markdown_fenced_languages` without replacing
+This configuration adds `sql=tsql` to `g:markdown_fenced_languages` without replacing
 other configured languages. An explicit SQL mapping such as `sql=sqloracle`
 wins and is left unchanged.
 
@@ -137,20 +137,17 @@ redundant legacy rule.
 
 ## Validation
 
-Focused coverage lives in `lua/test/spec/treesitter_tsql_spec.lua`. It verifies
-the query corrections, dialect precedence, opt-out behavior, syntax groups,
-Markdown containment, and protection of strings and comments.
+Focused coverage lives in `lua/test/integration/treesitter_tsql_spec.lua`. It
+verifies the query corrections, dialect precedence, opt-out behavior, syntax
+groups, Markdown containment, and protection of strings and comments.
 
-`lua/test/spec/treesitter_tsql_corpus_spec.lua` treats every `sql` fence in
-`doc/tsql-conventions.md` as an executable highlighting corpus. It verifies
-that every fence receives a SQL injection, every uppercase SQL/T-SQL lexeme is
-covered by either a Tree-sitter capture or a contained fallback group, and the
-document exercises every fallback category. New convention examples are
-included automatically; do not pin the test to a fixed fence count.
+`lua/test/integration/treesitter_tsql_corpus_spec.lua` treats every `sql` fence
+in the T-SQL documentation as an executable highlighting corpus. It verifies
+that every fence receives a SQL injection and that every uppercase SQL/T-SQL
+lexeme is covered by a Tree-sitter capture or contained fallback group.
 
-The corpus deliberately does not require error-free parse trees. The generic
-SQL grammar may recover T-SQL constructs through `ERROR` nodes; the relevant
-contract is complete visual highlighting through the two layers.
+Run the integration parser setup followed by `make test-integration` to execute
+these optional checks. The default `make all` command remains hermetic.
 
 Before committing a change, run the full suite and startup smoke test:
 

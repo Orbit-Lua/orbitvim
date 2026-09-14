@@ -17,7 +17,7 @@
   (#set! priority 110))
 
 ; SET options remain object references inside an error-recovery node. Keep the
-; correction limited to the options OrbitVim's T-SQL conventions generate.
+; correction limited to the options this configuration's T-SQL conventions generate.
 ((ERROR
   (keyword_set)
   (object_reference

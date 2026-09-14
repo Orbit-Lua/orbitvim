@@ -14,28 +14,45 @@ describe("utils.fs", function()
       { "/project-other/main.lua", "/project", "" },
       { "/a/b/c/d/e.lua", "/a/b", "c/d/e.lua" },
     }
-
     for _, case in ipairs(cases) do
       assert.equals(case[3], fs.make_relative_path(case[1], case[2]))
     end
   end)
 
-  it(
-    "shortens paths by display structure and supports cwd-relative output",
-    function()
-      assert.equals("", fs.pretty_path(""))
-      assert.is_nil(fs.pretty_path("/a/b", { length = 3 }):find("…", 1, true))
+  it("does not treat sibling prefixes as cwd or home descendants", function()
+    local cwd = fs.get_cwd()
+    assert.equals(
+      cwd .. "-other/main.lua",
+      fs.pretty_path(cwd .. "-other/main.lua", { only_cwd = true, length = -1 })
+    )
 
-      local shortened = fs.pretty_path("/a/b/c/d/e/f", { length = 2 })
-      assert.is_truthy(shortened:find("…", 1, true))
-
-      local cwd_path = fs.pretty_path(vim.fn.getcwd() .. "/src/main.lua", {
-        only_cwd = true,
-        length = -1,
-      })
-      assert.equals("src/main.lua", cwd_path)
+    local home = vim.uv.os_homedir()
+    if home then
+      home = vim.fs.normalize(home)
+      assert.equals(
+        home .. "-other/file",
+        fs.pretty_path(
+          home .. "-other/file",
+          { transform_home = true, length = -1 }
+        )
+      )
     end
-  )
+  end)
+
+  it("shortens paths and supports cwd-relative output", function()
+    assert.equals("", fs.pretty_path(""))
+    assert.is_nil(fs.pretty_path("/a/b", { length = 3 }):find("…", 1, true))
+    assert.is_truthy(
+      fs.pretty_path("/a/b/c/d/e/f", { length = 2 }):find("…", 1, true)
+    )
+    assert.equals(
+      "src/main.lua",
+      fs.pretty_path(
+        vim.fn.getcwd() .. "/src/main.lua",
+        { only_cwd = true, length = -1 }
+      )
+    )
+  end)
 
   it(
     "keeps the project-root marker policy complete and duplicate-free",
@@ -45,7 +62,6 @@ describe("utils.fs", function()
         assert.is_nil(seen[marker], "duplicate root marker: " .. marker)
         seen[marker] = true
       end
-
       for _, required in ipairs({
         ".git",
         "package.json",
@@ -66,10 +82,8 @@ describe("utils.fs", function()
       assert.equals(0, opts.bufnr)
       return { { config = { root_dir = root } } }
     end
-
     local resolved = fs.get_root()
     vim.lsp.get_clients = original_get_clients
-
     assert.equals(root, resolved)
   end)
 
@@ -80,15 +94,13 @@ describe("utils.fs", function()
       local nested = root .. "/src/deep"
       vim.fn.mkdir(root .. "/.git", "p")
       vim.fn.mkdir(nested, "p")
-
       assert.equals(root, fs.get_root(nested .. "/main.lua"))
 
       local standalone = test.temp_dir("standalone") .. "/query.sql"
       local original_markers = fs.root_pattern
-      fs.root_pattern = { "_orbitvim_missing_root_marker_" }
+      fs.root_pattern = { "_nvim_config_missing_root_marker_" }
       local fallback = fs.get_root(standalone)
       fs.root_pattern = original_markers
-
       assert.equals(vim.fs.dirname(standalone), fallback)
     end
   )
@@ -99,7 +111,6 @@ describe("utils.fs", function()
     for _, name in ipairs({ "z.lua", "a.lua", "m.lua" }) do
       test.write_file(root .. "/" .. name, name)
     end
-
     assert.same({ "a.lua", "m.lua", "z.lua" }, fs.scandir(root, "file"))
     assert.same({ "subdir" }, fs.scandir(root, "directory"))
     assert.same(
@@ -115,13 +126,11 @@ describe("utils.fs", function()
       local root = test.temp_dir("delete-files")
       test.write_file(root .. "/main.shada", "keep")
       test.write_file(root .. "/old.shada.tmp", "remove")
-
       fs.delete_files(root, {
         skip_condition = function(name)
           return name == "main.shada"
         end,
       })
-
       assert.equals(1, vim.fn.filereadable(root .. "/main.shada"))
       assert.equals(0, vim.fn.filereadable(root .. "/old.shada.tmp"))
     end

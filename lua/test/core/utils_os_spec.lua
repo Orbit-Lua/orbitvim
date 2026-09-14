@@ -1,0 +1,5 @@
+describe("utils.os", function()
+  it("reports whether the current platform is Windows", function()
+    assert.is_boolean(require("utils.os").is_win())
+  end)
+end)
