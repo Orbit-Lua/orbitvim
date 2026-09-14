@@ -1,5 +1,4 @@
 local fs = require("utils.fs")
-local os_util = require("utils.os")
 local sqlfluff_util = require("utils.sqlfluff")
 
 ---@class LinterExtend
@@ -16,34 +15,11 @@ local sqlfluff_util = require("utils.sqlfluff")
 ---@type Linter.Opts
 return {
   events = { "BufWritePost", "BufReadPost", "InsertLeave", "TextChanged" },
+  linters_by_ft = require("config.packages").linters_by_ft,
 
-  -- available linters: https://github.com/mfussenegger/nvim-lint?tab=readme-ov-file#available-linters
-  linters_by_ft = {
-    -- ['*'] = { 'global linter' },
-    -- ['_'] = { 'fallback linter' },
-    -- ["*"] = { "typos" },
-
-    dockerfile = { "hadolint" },
-    markdown = { "markdownlint-cli2" },
-    lua = { "luacheck" },
-
-    typescript = { "eslint_d" },
-    javascript = { "eslint_d" },
-
-    typescriptreact = { "eslint_d" },
-    javascriptreact = { "eslint_d" },
-    jsx = { "eslint_d" },
-  },
-
-  -- refer to: https://github.com/mfussenegger/nvim-lint#custom-linters
   linters = {
-    -- Mason-installed luacheck (1.1.0) crashes on Lua 5.5 because Lua 5.5 makes
-    -- for-loop variables <const>. Point directly at the luarocks-installed 1.2.0
-    -- binary (lua5.4) which is already on PATH but shadowed by Mason's bin dir.
     luacheck = {
-      cmd = os_util.is_linux()
-          and (os.getenv("HOME") or "") .. "/.luarocks/bin/luacheck"
-        or "luacheck.bat",
+      cmd = "luacheck",
       stdin = true,
       args = {
         "--globals",
@@ -76,7 +52,6 @@ return {
       ignore_exitcode = true,
       stream = "stderr",
       parser = require("lint.parser").from_errorformat(
-        -- efm
         "stdin:%l:%c %m,stdin:%l %m",
         {
           source = "markdownlint",
