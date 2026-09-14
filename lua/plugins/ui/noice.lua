@@ -13,7 +13,7 @@ return {
       --- refer to: https://github.com/folke/noice.nvim/blob/main/lua/noice/config/routes.lua
       routes = {
         {
-          view = "formatter_progress",
+          view = "mini",
           opts = {
             timeout = 5000,
           },
@@ -106,6 +106,7 @@ return {
 
         progress = {
           enabled = true,
+          view = "mini",
         },
 
         -- Turn off this because it blocks many important messages from language servers ["window/showMessage"]
@@ -124,16 +125,6 @@ return {
 
       ---@type NoiceConfigViews
       views = {
-        formatter_progress = {
-          view = "mini",
-          format = {
-            {
-              "{data.orbit_formatter_icon} ",
-              hl_group = "NoiceLspProgressSpinner",
-            },
-            { "{message}", hl_group = "NoiceLspProgressTitle" },
-          },
-        },
         popup = {
           win_options = {
             winhighlight = {
