@@ -107,33 +107,4 @@ return {
       end)
     end,
   },
-
-  {
-    "Orbit-Lua/harpoon",
-    branch = "harpoon2",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    keys = {
-      { "<C-e>", desc = "toggle harpoon quick menu" },
-      { "<M-S-p>", desc = "harpoon previous item" },
-      { "<M-S-n>", desc = "harpoon next item" },
-      { "<leader>ba", desc = "add buffer to harpoon" },
-    },
-    opts = {},
-    config = function(_, opts)
-      local harpoon = require("harpoon")
-      harpoon:setup(opts)
-      vim.keymap.set("n", "<leader>ba", function()
-        harpoon:list():add()
-      end, { desc = "add buffer to harpoon" })
-      vim.keymap.set("n", "<M-S-p>", function()
-        harpoon:list():prev()
-      end, { desc = "harpoon previous item" })
-      vim.keymap.set("n", "<M-S-n>", function()
-        harpoon:list():next()
-      end, { desc = "harpoon next item" })
-      vim.keymap.set("n", "<C-e>", function()
-        harpoon.ui:toggle_quick_menu(harpoon:list())
-      end, { desc = "toggle harpoon quick menu" })
-    end,
-  },
 }

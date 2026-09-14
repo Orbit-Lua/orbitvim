@@ -41,7 +41,7 @@ There is no persistent tool enable/disable state. Runtime routing is determinist
 
 Formatter ownership lives under `lua/config/formatter/`; linter ownership lives under `lua/config/linter/`. SQLFluff project discovery is implemented in `lua/utils/sqlfluff.lua`. T-SQL Tree-sitter behavior is implemented in `lua/utils/treesitter.lua` and the query files under `after/queries/`.
 
-The former Tool Manager and dormant Minuet/Ollama subsystem were removed. Terminal windows use Snacks' public terminal API and Harpoon uses its native list/UI behavior instead of local presentation wrappers.
+The former Tool Manager and dormant Minuet/Ollama subsystem were removed. Terminal windows use Snacks' public terminal API.
 
 ## Selected mappings
 
@@ -57,8 +57,6 @@ The former Tool Manager and dormant Minuet/Ollama subsystem were removed. Termin
 | `<M-i>` | Toggle floating terminal |
 | `<C-n>` | Toggle nvim-tree |
 | `<leader>fe` | Focus nvim-tree |
-| `<C-e>` | Toggle Harpoon menu |
-| `<leader>ba` | Add current buffer to Harpoon |
 | `<Tab>` / `<S-Tab>` | Next / previous buffer in native buffer order |
 
 ## Development

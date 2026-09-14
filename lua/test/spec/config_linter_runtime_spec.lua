@@ -5,8 +5,8 @@ describe("config.linter.runtime", function()
   before_each(function()
     original_lint = package.loaded.lint
     buffers = {
-      vim.api.nvim_create_buf(false, true),
-      vim.api.nvim_create_buf(false, true),
+      vim.api.nvim_create_buf(false, false),
+      vim.api.nvim_create_buf(false, false),
     }
     for _, bufnr in ipairs(buffers) do
       vim.bo[bufnr].filetype = "lua"
