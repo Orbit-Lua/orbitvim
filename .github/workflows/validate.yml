@@ -14,8 +14,17 @@ concurrency:
 
 jobs:
   validate:
+    name: Neovim ${{ matrix.neovim }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - neovim: v0.11.3
+            integration: false
+          - neovim: stable
+            integration: true
 
     steps:
       - name: Check out repository
@@ -23,11 +32,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Neovim stable
+      - name: Install Neovim
+        env:
+          NVIM_VERSION: ${{ matrix.neovim }}
         run: |
-          curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-          sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+          if [ "$NVIM_VERSION" = "stable" ]; then
+            url="https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz"
+          else
+            url="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-x86_64.tar.gz"
+          fi
+          curl --fail --location --output nvim.tar.gz "$url"
+          sudo tar -C /opt -xzf nvim.tar.gz
           echo "/opt/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Neovim version
+        run: nvim --version | head -n 1
 
       - name: Install StyLua
         uses: JohnnyMorganz/stylua-action@v5
@@ -40,7 +59,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y luarocks unzip
-          sudo luarocks install luacheck
+          sudo luarocks install luacheck 1.2.0-1
           python3 -m pip install --user sqlfluff==4.2.2
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -74,17 +93,32 @@ jobs:
             --cmd "set rtp^=$GITHUB_WORKSPACE" \
             --cmd "set rtp^=$HOME/.local/share/nvim/lazy/lazy.nvim" \
             -c "lua require('lazy').setup({ { import = 'plugins' } }, require('config.lazy'))" \
-            -c "Lazy! sync" \
+            -c "lua require('lazy').sync({ wait = true, show = false })" \
             -c "qall"
 
-      - name: Install integration parsers
-        run: nvim --headless -u init.lua -l lua/test/install_parsers.lua
+      - name: Check formatting
+        run: make fmt-check
 
-      - name: Run core validation
-        run: make all
+      - name: Lint Lua
+        run: make lint
 
-      - name: Run integration tests
-        run: make test-integration
+      - name: Validate test suites
+        run: make validate-test-suites
+
+      - name: Run core tests
+        timeout-minutes: 5
+        run: |
+          nvim --headless --noplugin -u scripts/tests/minimal.vim \
+            -c "PlenaryBustedDirectory lua/test/spec/ {minimal_init = 'scripts/tests/minimal.vim'}"
 
       - name: Smoke-test startup
         run: nvim --headless "+qall"
+
+      - name: Install integration parsers
+        if: ${{ matrix.integration }}
+        run: nvim --headless -u init.lua -l lua/test/install_parsers.lua
+
+      - name: Run integration tests
+        if: ${{ matrix.integration }}
+        timeout-minutes: 5
+        run: make test-integration
