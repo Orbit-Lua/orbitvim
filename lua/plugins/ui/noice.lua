@@ -13,14 +13,14 @@ return {
       --- refer to: https://github.com/folke/noice.nvim/blob/main/lua/noice/config/routes.lua
       routes = {
         {
-          view = "formatter_progress",
+          view = "mini",
           opts = {
             timeout = 5000,
           },
           filter = {
             event = "notify",
             cond = function(message)
-              return message.opts and message.opts.title == "formatter"
+              return message.opts and message.opts.orbit_formatter ~= nil
             end,
           },
         },
@@ -125,17 +125,6 @@ return {
 
       ---@type NoiceConfigViews
       views = {
-        formatter_progress = {
-          view = "mini",
-          format = {
-            {
-              "{data.icon} ",
-              hl_group = "NoiceLspProgressSpinner",
-            },
-            { "{message}", hl_group = "NoiceLspProgressTitle" },
-            { " {title} ", hl_group = "NoiceLspProgressClient" },
-          },
-        },
         popup = {
           win_options = {
             winhighlight = {
