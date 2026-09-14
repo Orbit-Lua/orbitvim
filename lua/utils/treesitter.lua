@@ -139,7 +139,7 @@ end
 
 function M.setup()
   vim.treesitter.query.add_predicate(
-    "orbitvim-sql-string-supported?",
+    "nvim-config-sql-string-supported?",
     function(match, _, source, predicate)
       local nodes = match[predicate[2]]
       return is_supported_sql_string(nodes and nodes[1], source)
@@ -148,7 +148,7 @@ function M.setup()
   )
 
   vim.treesitter.query.add_predicate(
-    "orbitvim-sql-comment-injection-enabled?",
+    "nvim-config-sql-comment-injection-enabled?",
     function(match, _, source, predicate)
       local config = require("config.treesitter").sql_injections
       local nodes = match[predicate[2]]
@@ -160,7 +160,7 @@ function M.setup()
   )
 
   vim.treesitter.query.add_predicate(
-    "orbitvim-sql-auto-injection-enabled?",
+    "nvim-config-sql-auto-injection-enabled?",
     function(match, _, source, predicate)
       local config = require("config.treesitter").sql_injections
       if config.auto ~= true then

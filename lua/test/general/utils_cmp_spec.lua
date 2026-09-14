@@ -178,7 +178,7 @@ describe("utils.cmp", function()
       package.loaded["blink.cmp.keymap.presets"] = loaded_presets
       require("utils.window").get_completion_float_sizes = original_float_sizes
       vim.o.pumheight = original_pumheight
-      pcall(vim.api.nvim_del_augroup_by_name, "OrbitVimBlinkResize")
+      pcall(vim.api.nvim_del_augroup_by_name, "NvimConfigBlinkResize")
     end)
 
     it(

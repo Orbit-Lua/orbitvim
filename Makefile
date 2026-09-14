@@ -4,9 +4,9 @@ else
     LUACHECK := luacheck
 endif
 
-.PHONY: all fmt fmt-check lint test test-core test-integration test-all validate-test-suites
+.PHONY: all fmt fmt-check lint test test-core test-general test-integration test-all validate-test-suites
 
-all: fmt-check lint test-core
+all: fmt-check lint test
 
 fmt:
 	echo "===> Formatting"
@@ -23,17 +23,24 @@ lint:
 validate-test-suites:
 	echo "===> Validating test suites"
 	nvim --headless --clean --cmd "set rtp^=." \
-		-c "lua require('test.validate_suite').check('lua/test/spec')" \
+		-c "lua require('test.validate_suite').check('lua/test/core')" \
+		-c "lua require('test.validate_suite').check('lua/test/general')" \
 		-c "lua require('test.validate_suite').check('lua/test/integration')" \
 		-c "qall"
 
-test: test-core
+test: test-core test-general
 
 test-core: validate-test-suites
 	echo "===> Testing core behavior"
 	nvim --headless --noplugin -u scripts/tests/minimal.vim \
 		-c "if !exists(':PlenaryBustedDirectory') | echoerr 'plenary.nvim is not installed' | cquit 2 | endif" \
-		-c "PlenaryBustedDirectory lua/test/spec/ {minimal_init = 'scripts/tests/minimal.vim'}"
+		-c "PlenaryBustedDirectory lua/test/core/ {minimal_init = 'scripts/tests/minimal.vim'}"
+
+test-general: validate-test-suites
+	echo "===> Testing general behavior"
+	nvim --headless --noplugin -u scripts/tests/minimal.vim \
+		-c "if !exists(':PlenaryBustedDirectory') | echoerr 'plenary.nvim is not installed' | cquit 2 | endif" \
+		-c "PlenaryBustedDirectory lua/test/general/ {minimal_init = 'scripts/tests/minimal.vim'}"
 
 test-integration: validate-test-suites
 	echo "===> Testing external integrations"
@@ -41,4 +48,4 @@ test-integration: validate-test-suites
 		-c "if !exists(':PlenaryBustedDirectory') | echoerr 'plenary.nvim is not installed' | cquit 2 | endif" \
 		-c "PlenaryBustedDirectory lua/test/integration/ {minimal_init = 'scripts/tests/minimal.vim'}"
 
-test-all: test-core test-integration
+test-all: test-core test-general test-integration

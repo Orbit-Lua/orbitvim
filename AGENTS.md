@@ -1,88 +1,70 @@
-# Repository guidance
+# AGENTS Instructions
 
-## Project model
+## Scope
 
-This repository is a personal Neovim configuration, not a general-purpose distribution. Prefer explicit declarative configuration and upstream plugin ownership over local framework layers.
+This repository is a personal Neovim configuration, not a general-purpose
+distribution. Keep changes explicit, declarative, and close to the owning
+plugin or subsystem. Minimum supported Neovim version: 0.11.3.
 
-The minimum supported Neovim version is `0.11.3`.
+## Ownership
 
-## Canonical ownership
+- lua/config/tools.lua is the single source of truth for development tools.
+- lua/config/packages.lua derives LSP, Mason, Treesitter, formatter, and
+  linter consumer data. Do not duplicate those inventories in plugin specs.
+- Neovim owns LSP activation; Mason owns supported external tool installation;
+  Conform owns formatting; nvim-lint owns linting; nvim-dap owns debugging;
+  nvim-treesitter owns parsers.
+- Keep formatter-specific code in lua/config/formatter/ and linter-specific
+  code in lua/config/linter/.
+- lua/utils/sqlfluff.lua owns SQLFluff project discovery.
+  lua/utils/treesitter.lua owns custom T-SQL runtime behavior; query extensions
+  under after/queries/ are intentional project functionality.
+- Do not add generic utility facades or parallel persisted tool/lifecycle state.
 
-`lua/config/tools.lua` is the canonical registry for development tools. Do not duplicate tool/filetype ownership in plugin specs when it can be derived.
+## Startup and dependencies
 
-`lua/config/packages.lua` derives:
+Startup begins at init.lua and continues through config.starter. The lazy.nvim
+bootstrap must use the revision pinned in lazy-lock.json and fail fast when
+clone or checkout fails. Avoid new dependencies on private plugin APIs; verify
+the pinned revision before changing an existing private API.
 
-- configured LSP server names
-- Mason installation packages
-- Treesitter parsers
-- formatter routing by filetype
-- linter routing by filetype
+Keep lazy-lock.json unchanged unless a plugin is intentionally added, removed,
+or upgraded. Do not regenerate it as incidental churn.
 
-Runtime ownership is:
+## Platform and safety
 
-- Neovim `vim.lsp.config()` / `vim.lsp.enable()` for LSP activation
-- Mason for supported external tool installation/status
-- Conform for formatter routing/execution
-- nvim-lint for linter routing/execution
-- nvim-dap for debugger adapters/configurations
-- nvim-treesitter for parsers
+- Preserve Windows support and select shell executables with
+  vim.fn.executable() capability checks.
+- Preserve the Windows ClearShada safeguard in lua/cmds/system.lua.
+- Do not broaden shada deletion behavior without a focused regression test.
+- Preserve unrelated dirty-worktree changes. Do not use destructive Git recovery
+  commands unless explicitly requested.
+- Do not print or commit secrets, machine-specific state, or generated plugin data.
 
-Do not reintroduce persisted tool enable/disable state, formatter/linter ordering state, or a parallel Tool Manager lifecycle unless there is a new requirement that cannot be represented declaratively.
+## Tests and validation
 
-## Module ownership
+Run make all for behavioral changes. It checks formatting, Luacheck, suite
+validation, and the hermetic core and general tests.
 
-Keep formatter-specific code under `lua/config/formatter/` and linter-specific code under `lua/config/linter/`.
-
-`lua/utils/sqlfluff.lua` owns SQLFluff project config/cwd/argument discovery.
-
-`lua/utils/treesitter.lua` owns the custom T-SQL Tree-sitter runtime behavior. The SQL/C# query extensions under `after/queries/` are intentional project functionality.
-
-Generic utility facades should not be added. Prefer owner-local helpers or direct Neovim/plugin public APIs for small behavior.
-
-`utils.lsp`, `utils.cmp`, and `utils.window` contain higher-risk behavior. Change them deliberately and verify against the pinned plugin/Neovim APIs rather than deleting or rewriting them opportunistically.
-
-## Startup and private APIs
-
-Startup begins in `init.lua`, then `config.starter`.
-
-The first lazy.nvim bootstrap must use the revision pinned in `lazy-lock.json` and fail fast when Git clone or checkout fails. Do not silently continue with an invalid runtime path or a floating lazy.nvim revision.
-
-Avoid new dependencies on private plugin internals. If an existing private API must be changed, verify the exact pinned revision in `lazy-lock.json` first.
-
-## Platform behavior
-
-Windows support is intentional. Shell executable selection must use capability checks such as `vim.fn.executable()` rather than architecture assumptions.
-
-Preserve the Windows `ClearShada` safeguard in `lua/cmds/system.lua`. Do not broaden deletion behavior around shada files without a dedicated regression test.
-
-## Lockfile policy
-
-Keep `lazy-lock.json` unchanged unless a plugin version is intentionally updated or a plugin is intentionally added/removed. Do not regenerate the entire lockfile as incidental churn.
-
-## Validation
-
-Run `make all` for every behavioral change. It covers formatting checks, Luacheck, test-suite validation, and core tests.
-
-Run `make test-integration` when changing external seams such as SQLFluff, Treesitter parser/query behavior, LSP integration, or other plugin/runtime integration points.
-
-Run a headless startup smoke test when changing startup, plugin loading, shell/platform initialization, or core plugin specs:
+The core and general suites must remain deterministic and network-free. Run
+make test-general for general runtime or plugin behavior, and run
+make test-integration after preparing parsers with:
 
 ```sh
-nvim --headless "+qall"
+nvim --headless -u init.lua -l lua/test/install_parsers.lua
 ```
 
-CI validates Neovim `0.11.3` and stable. The stable lane also runs external integration/parser tests. Plugin installation must exercise the real `init.lua` bootstrap path; do not duplicate lazy.nvim setup through private or partial initialization in the workflow.
+Integration tests cover external SQLFluff and Treesitter seams and are not part
+of the default make all or regular CI test path. make test-all runs every suite.
+Run nvim --headless "+qall" when changing startup, plugin loading, shell
+initialization, or core plugin specs.
 
-Core tests must remain deterministic and hermetic. Avoid network access and machine-specific state in `lua/test/spec/`.
+When fixing a regression, update the closest focused test. In the final report
+state one of Tests added, Tests updated, or No tests added.
 
-When fixing a regression, add or update the closest focused test. In the final report explicitly state one of:
+## Documentation and change quality
 
-- `Tests added`
-- `Tests updated`
-- `No tests added`
-
-## Change quality
-
-Prefer small ownership surfaces and public APIs. Remove dead configuration when a feature is removed rather than leaving disabled code paths, stale statusline entries, commands, state files, or lockfile entries.
-
-Keep commit history reviewable. For broad architecture refactors, group runtime/test changes separately from validation/documentation changes rather than producing many per-file commits.
+Keep user workflows and public behavior in README.md; keep agent ownership,
+safety, and validation rules here; keep domain details in doc/. Remove dead
+configuration when a feature is removed. Prefer small ownership surfaces and
+reviewable changes.
