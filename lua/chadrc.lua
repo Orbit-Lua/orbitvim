@@ -7,27 +7,61 @@ local borders = require("config.borders")
 local M = {}
 
 M.base46 = {
+  -- Keep this literal here so nv-ui's built-in theme picker can persist changes.
   theme = "tokyonight",
   theme_toggle = { "tokyonight", "vscode_light" },
+
+  -- Merged into ALL integrations (treesitter, lsp, cmp, etc.).
+  -- Only affects EXISTING highlight groups, can NOT add new groups.
+  -- Uses per-key merge, not full override.
   hl_override = {
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Editor                                                                  --
+    -- ------------------------------------------------------------------------- --
     ["@comment"] = { italic = true },
-    ["@comment.todo"] = { bg = "green" },
+    ["@comment.todo"] = {
+      bg = "green",
+    },
     Comment = { italic = true },
     IblChar = { fg = "grey" },
     IblScopeChar = { fg = "purple" },
     NvimTreeOpenedFolderName = { fg = "green", bold = true },
     TreesitterContext = { link = "CursorLine" },
     LspInlayHint = { fg = "#808080", bg = "one_bg", italic = true },
+
+    -- icon hl fallback
     DevIconDefault = { fg = "white" },
-    NormalFloat = { bg = "black" },
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Window                                                                  --
+    -- ------------------------------------------------------------------------- --
+    NormalFloat = {
+      bg = "black",
+    },
     FloatBorder = { fg = "blue" },
     FloatTitle = { fg = "blue", bg = "black" },
   },
+
+  -- Merged into the "defaults" integration ONLY.
+  -- CAN add new highlight groups (not limited to existing ones).
+  -- Uses per-key merge, not full override.
   hl_add = {
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Misc                                                                    --
+    -- ------------------------------------------------------------------------- --
     active_context = { fg = "blue" },
     CmpGhostText = { link = "Comment", default = true },
     DapBreakpointColor = { fg = "red" },
+    ToolMuted = { fg = "grey" },
+
+    -- default icon hl
     MiniIconsGrey = { link = "DevIconDefault" },
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Noice.nvim                                                              --
+    -- ------------------------------------------------------------------------- --
     NoiceCmdlineIcon = { fg = "purple" },
     NoiceCmdlinePopupBorder = { fg = "green" },
     NoiceCmdlinePopup = { bg = "black" },
@@ -35,17 +69,50 @@ M.base46 = {
     NoiceCmdlinePopupBorderSearch = { fg = "yellow" },
     NoiceCmdlinePopupTitle = { fg = "blue" },
     NoicePopupBorder = { fg = "blue" },
+
+    -- ------------------------------------------------------------------------- --
+    -- ■ Snacks.nvim                                                             --
+    -- ------------------------------------------------------------------------- --
     SnacksLazygitActiveBorder = { fg = "purple", bold = true },
-    SnacksPickerMatch = { fg = "green", bold = true, bg = "NONE" },
+
+    -- Snacks input
+    -- SnacksInputPrompt = { fg = "purple" },
+    -- SnacksInputBorder = { fg = "green" },
+    -- SnacksInputTitle = { fg = "green" },
+
+    -- Snacks picker
+    SnacksPickerMatch = {
+      fg = "green",
+      bold = true,
+      bg = "NONE",
+    },
     SnacksPickerDir = { fg = "blue" },
     SnacksPickerPathHidden = { fg = "blue" },
+
+    -- SnacksPickerBorder = { fg = "blue" },
+    -- SnacksPickerInputBorder = { fg = "blue" },
+    -- SnacksPickerPreviewBorder = { fg = "blue" },
+    -- SnacksPickerListBorder = { fg = "blue" },
   },
+
+  -- integrations = {
+  --   "todo",
+  -- },
+
   excluded = {},
+
+  ---@diagnostic disable-next-line: missing-fields
   changed_themes = {},
+
   transparency = false,
 }
 
-M.nvdash = { load_on_startup = false, header = {}, buttons = {} }
+M.nvdash = {
+  load_on_startup = false,
+  header = {},
+  buttons = {},
+}
+
 M.term = {
   float = {
     relative = "editor",
@@ -60,7 +127,12 @@ M.term = {
   winopts = { number = false, relativenumber = false },
   sizes = { sp = 0.3, vsp = 0.2, ["bo sp"] = 0.3, ["bo vsp"] = 0.2 },
 }
-M.lsp = { signature = false }
+
+-- use noice signature so disable nvchad signature
+M.lsp = {
+  signature = false,
+}
+
 M.ui = {
   statusline = {
     enabled = true,
@@ -69,29 +141,43 @@ M.ui = {
     show_lsp_msg = false,
     order = nil,
     modules = nil,
+    ai = {
+      is_available = require("ai.statusline").is_available,
+    },
     truncation_length = 3,
   },
+
   tabufline = {
     enabled = true,
     lazyload = false,
     treeOffsetFt = "NvimTree",
     modules = nil,
     bufwidth = 21,
+
+    ---@type  ('"treeOffset"' | '"buffers"' | '"tabs"' | '"btns"')[]
     order = { "treeOffset", "buffers" },
   },
+
   cmp = {
     icons_left = false,
     style = "default",
     abbr_maxwidth = 60,
     format_colors = { lsp = true, icon = "󱓻" },
   },
+
   telescope = { style = "borderless" },
 }
+
 M.cheatsheet = {
   theme = "grid",
   excluded_groups = { "terminal (t)", "autopairs", "Nvim", "Opens" },
 }
-M.mason = { skip = {}, pkgs = config.packages.mason_ensure_installed }
+
+M.mason = {
+  skip = {},
+  pkgs = config.packages.mason_ensure_installed,
+}
+
 M.colorify = {
   enabled = true,
   mode = "virtual",

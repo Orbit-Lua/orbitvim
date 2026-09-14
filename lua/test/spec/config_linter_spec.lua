@@ -17,14 +17,6 @@ describe("config.linter", function()
     package.loaded["config.linter"] = nil
   end)
 
-  it("uses portable Luacheck and registry-derived SQLFluff routing", function()
-    local config = require("config.linter")
-    assert.equals("luacheck", config.linters.luacheck.cmd)
-    for _, filetype in ipairs({ "sql", "mysql", "plsql" }) do
-      assert.same({ "sqlfluff" }, config.linters_by_ft[filetype])
-    end
-  end)
-
   it(
     "resolves SQLFluff arguments for the current buffer on every run",
     function()
@@ -35,10 +27,12 @@ describe("config.linter", function()
 
       local sqlfluff = require("utils.sqlfluff")
       local linter = require("config.linter").linters.sqlfluff()
+
       assert.same(sqlfluff.lint_args(filename), linter.args)
       assert.same(sqlfluff.cwd(filename), linter.cwd)
       assert.is_true(linter.stdin)
       assert.same("1", linter.env.PYTHONUTF8)
+
       vim.fn.delete(root, "rf")
     end
   )

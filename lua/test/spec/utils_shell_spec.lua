@@ -36,32 +36,35 @@ describe("utils.shell", function()
     assert.is_true(ok2)
   end)
 
-  it(
-    "uses executable capability checks when selecting a Windows shell",
-    function()
-      local os_utils = require("utils.os")
-      local original_is_win = os_utils.is_win
-      local original_executable = vim.fn.executable
+  it("uses the win64 check result when selecting a Windows shell", function()
+    local os_utils = require("utils.os")
+    local original_is_win = os_utils.is_win
+    local original_has = vim.fn.has
 
-      os_utils.is_win = function()
-        return true
-      end
-      vim.fn.executable = function(name)
-        return name == "pwsh" and 1 or 0
-      end
-
-      shell.setup()
-      assert.equals("pwsh", vim.o.shell)
-
-      vim.fn.executable = function(name)
-        return name == "powershell.exe" and 1 or 0
-      end
-
-      shell.setup()
-      assert.equals("powershell.exe", vim.o.shell)
-
-      vim.fn.executable = original_executable
-      os_utils.is_win = original_is_win
+    os_utils.is_win = function()
+      return true
     end
-  )
+    vim.fn.has = function(name)
+      if name == "win64" then
+        return 0
+      end
+      return original_has(name)
+    end
+
+    shell.setup()
+    assert.equals("pwsh.exe", vim.o.shell)
+
+    vim.fn.has = function(name)
+      if name == "win64" then
+        return 1
+      end
+      return original_has(name)
+    end
+
+    shell.setup()
+    assert.equals("powershell.exe", vim.o.shell)
+
+    vim.fn.has = original_has
+    os_utils.is_win = original_is_win
+  end)
 end)

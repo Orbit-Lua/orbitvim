@@ -14,4 +14,20 @@ for _, mod_name in ipairs({
   vim.list_extend(specs, require(mod_name))
 end
 
+vim.api.nvim_create_autocmd("User", {
+  pattern = "LazyDone",
+  once = true,
+  callback = function()
+    vim.api.nvim_create_user_command("ToolManager", function()
+      require("tool").open()
+    end, { desc = "Open Tool Manager" })
+    vim.keymap.set(
+      "n",
+      "<leader>us",
+      "<cmd>ToolManager<CR>",
+      { desc = "tool manager" }
+    )
+  end,
+})
+
 return specs

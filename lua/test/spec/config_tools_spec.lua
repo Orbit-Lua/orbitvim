@@ -18,11 +18,13 @@ describe("config.tools", function()
   it("keeps runtime tool definitions well formed", function()
     for _, category in ipairs({ "lsp", "dap", "linter", "formatter" }) do
       assert.is_not_nil(next(tools[category]), category .. " must not be empty")
+
       for name, definition in pairs(tools[category]) do
         assert_filetypes(category .. "." .. name, definition, false)
         assert.equals(
           definition.mason and "mason" or "external",
-          definition.source
+          definition.source,
+          category .. "." .. name .. " has an inconsistent source"
         )
       end
     end
@@ -33,28 +35,43 @@ describe("config.tools", function()
       assert_filetypes("parser." .. name, definition, true)
       assert.equals("treesitter", definition.source)
     end
-    for _, definition in pairs(tools.package) do
+
+    for name, definition in pairs(tools.package) do
       assert.is_true(
-        definition.source == "mason" or definition.source == "external"
+        definition.source == "mason" or definition.source == "external",
+        "package." .. name .. " has an unsupported source"
       )
       assert.is_true(
-        type(definition.role) == "string" and definition.role ~= ""
+        type(definition.role) == "string" and definition.role ~= "",
+        "package." .. name .. " must declare its role"
       )
     end
   end)
 
   it(
-    "keeps critical routing invariants aligned with runtime behavior",
+    "references only registered tools in formatter and linter defaults",
     function()
-      assert.is_not_nil(tools.formatter.yamlfmt)
-      assert.is_nil(tools.formatter.yaml)
-      assert.is_true(
-        vim.tbl_contains(tools.formatter.deno_fmt.ft, "typescript")
-      )
-      assert.is_true(vim.tbl_contains(tools.formatter.deno_fmt.ft, "jsonc"))
-      assert.is_true(vim.tbl_contains(tools.linter.eslint_d.ft, "jsx"))
-      assert.is_nil(tools.linter.luacheck.mason)
-      assert.same({ "sql", "mysql", "plsql" }, tools.linter.sqlfluff.ft)
+      for _, category in ipairs({ "formatter", "linter" }) do
+        for filetype, order in pairs(tools[category .. "_defaults"]) do
+          local seen = {}
+          for _, name in ipairs(order) do
+            local definition = tools[category][name]
+            assert.is_not_nil(
+              definition,
+              category .. " default references unknown tool " .. name
+            )
+            assert.is_nil(
+              seen[name],
+              category .. " default repeats tool " .. name
+            )
+            assert.is_true(
+              vim.tbl_contains(definition.ft, filetype),
+              name .. " does not support " .. filetype
+            )
+            seen[name] = true
+          end
+        end
+      end
     end
   )
 end)

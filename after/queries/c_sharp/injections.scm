@@ -30,8 +30,8 @@
               (raw_string_content) @injection.content)
           ])))
   ]
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#set! injection.language "sql"))
 
 ((comment) @_injection_comment
@@ -46,8 +46,8 @@
         (variable_declarator
           (verbatim_string_literal) @injection.content) @_sql_string))
   ]
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#offset! @injection.content 0 2 0 -1)
   (#set! injection.language "sql"))
 
@@ -77,8 +77,8 @@
                 (_) @injection.content)
             ]+) @_sql_string)))
   ]
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#set! injection.language "sql")
   (#set! injection.include-children))
 
@@ -92,8 +92,8 @@
         (raw_string_literal
           (raw_string_content) @injection.content)
       ]))
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#set! injection.language "sql"))
 
 ((comment) @_injection_comment
@@ -101,8 +101,8 @@
   (expression_statement
     (assignment_expression
       right: (verbatim_string_literal) @injection.content) @_sql_string)
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#offset! @injection.content 0 2 0 -1)
   (#set! injection.language "sql"))
 
@@ -118,8 +118,8 @@
             .
             (_) @injection.content)
         ]+) @_sql_string))
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-comment-injection-enabled? @_injection_comment)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-comment-injection-enabled? @_injection_comment)
   (#set! injection.language "sql")
   (#set! injection.include-children))
 
@@ -133,15 +133,15 @@
     (raw_string_literal
       (raw_string_content) @injection.content)
   ]
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#set! injection.language "sql"))
 
 (variable_declarator
   name: (identifier) @_sql_variable
   (verbatim_string_literal) @injection.content @_sql_string
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#offset! @injection.content 0 2 0 -1)
   (#set! injection.language "sql"))
 
@@ -155,8 +155,8 @@
         .
         (_) @injection.content)
     ]+) @_sql_string
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#set! injection.language "sql")
   (#set! injection.include-children))
 
@@ -173,8 +173,8 @@
     (raw_string_literal
       (raw_string_content) @injection.content)
   ]
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#set! injection.language "sql"))
 
 (assignment_expression
@@ -185,8 +185,8 @@
   ]
   "="
   right: (verbatim_string_literal) @injection.content @_sql_string
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#offset! @injection.content 0 2 0 -1)
   (#set! injection.language "sql"))
 
@@ -205,7 +205,7 @@
         .
         (_) @injection.content)
     ]+) @_sql_string
-  (#nvim-config-sql-string-supported? @_sql_string)
-  (#nvim-config-sql-auto-injection-enabled? @_sql_variable)
+  (#orbitvim-sql-string-supported? @_sql_string)
+  (#orbitvim-sql-auto-injection-enabled? @_sql_variable)
   (#set! injection.language "sql")
   (#set! injection.include-children))

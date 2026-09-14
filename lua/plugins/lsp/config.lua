@@ -6,6 +6,7 @@ local spec = require("plugins.lsp.servers.base")
 local server_modules = {
   "plugins.lsp.servers.luals",
   "plugins.lsp.servers.markup",
+  "plugins.lsp.servers.typescript",
   "plugins.lsp.servers.python",
   "plugins.lsp.servers.dotnet",
   "plugins.lsp.servers.misc",
