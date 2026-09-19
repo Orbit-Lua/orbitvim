@@ -6,7 +6,7 @@ return {
     -- refer to: https://github.com/mfussenegger/nvim-dap/issues/1551
     "Orbit-Lua/nvim-dap",
     config = function()
-      local config = require("plugins.debugger.config")
+      local config = require("config.dap.config")
       local dap = require("dap")
 
       for name, adapter in pairs(config.adapters) do

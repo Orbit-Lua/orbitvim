@@ -2,8 +2,9 @@
 
 ## Project Overview
 
-OrbitVim is a modular Neovim configuration written in Lua. It bootstraps
-`lazy.nvim`, loads plugin specs from `lua/plugins/`, applies Nv UI/base46
+OrbitVim is a modular Neovim configuration written in Lua. It orchestrates a
+deterministic three-phase startup sequence in `init.lua`, bootstraps
+`lazy.nvim`, loads pure plugin specs from `lua/plugins/`, applies Nv UI/base46
 configuration, and provides a custom Tool Manager for LSP, DAP, formatter,
 linter, parser, and package management.
 
@@ -15,24 +16,28 @@ Stylua, and Luacheck.
 
 | Area | Owner |
 | --- | --- |
-| Bootstrap | `init.lua` bootstraps `lazy.nvim`, imports `lua/plugins/`, and calls `require("config.starter").setup()` |
-| Startup | `lua/config/starter.lua` orchestrates startup after Lazy setup |
-| Editor defaults | `lua/config/defaults.lua` sets baseline defaults and prepends Mason `bin` to `PATH` |
-| User-facing behavior | `lua/config/options.lua`, `keymaps.lua`, `autocmds.lua`, `events.lua`, and `filetypes.lua` |
+| Bootstrap & Startup | `init.lua` orchestrates the complete 3-phase startup lifecycle (Pre-Lazy options & autocmds -> Lazy plugin import -> Post-Lazy commands, theme caches, shell & keymaps) |
+| Editor options & PATH | `lua/config/options.lua` sets baseline defaults, globals, and prepends Mason `bin` to `PATH` |
+| User-facing behavior | `lua/config/keymaps.lua`, `autocmds.lua`, and `filetypes.lua` |
 | UI and theme | `lua/chadrc.lua` owns Nv UI/base46 overrides; `lua/config/theme.lua` loads generated highlight caches |
 | Tool registry | `lua/config/tools.lua` is canonical; `lua/config/packages.lua` derives Mason packages, LSP servers, and Treesitter parsers |
+| LSP configuration | `lua/config/lsp/` owns server configurations, setup handlers, schemas, and LSP keymaps |
+| DAP configuration | `lua/config/dap/` owns debugger adapters and language launch configurations |
 | Formatting and linting | `lua/config/formatter/` and `lua/config/linter/` |
-| Plugins | `lua/plugins/`, grouped by feature; LSP and DAP setup live in their respective subdirectories |
+| AI completion | `lua/ai/` owns Minuet endpoint state, connection verification, and statusline integration |
+| Plugins | `lua/plugins/`, strictly pure `LazySpec[]` definitions grouped by feature |
 | Tool Manager | `lua/tool/` owns state, actions, rendering, Mason integration, errors, and formatter/linter ordering |
 | Shared helpers | `lua/utils/`; reuse an existing domain module before adding another |
-| Commands | `lua/cmds/`, loaded during startup |
+| Commands | `lua/cmds/`, loaded declaratively via `lua/cmds/init.lua` during startup |
 | Core tests | `lua/test/spec/`, using hermetic Plenary tests |
 | Integration tests | `lua/test/integration/`, for installed plugins, parsers, and executables |
 | Test support | `lua/test/helpers.lua`, `lua/test/install_parsers.lua`, and `scripts/tests/minimal.vim` |
 
 ## Development Rules
 
-- Add plugin specs to the closest feature file under `lua/plugins/`.
+- Add plugin specs to `lua/plugins/`. Keep `lua/plugins/` strictly for
+  `LazySpec` definitions; domain tool and server configurations belong in
+  `lua/config/lsp/`, `lua/config/dap/`, etc.
 - Keep language-tool definitions in `lua/config/tools.lua`. Do not duplicate
   Mason package lists unless a package is intentionally an extra dependency in
   `lua/config/packages.lua`.
@@ -42,8 +47,7 @@ Stylua, and Luacheck.
   or domain module.
 - For Tool Manager changes, update `lua/tool/` and protect qualifying behavior
   with focused core tests.
-- Before changing startup behavior, inspect `init.lua` and
-  `lua/config/starter.lua` to confirm load order.
+- Before changing startup behavior, inspect `init.lua` to confirm load order.
 - Keep `lazy-lock.json` unchanged unless the task intentionally updates plugin
   versions.
 

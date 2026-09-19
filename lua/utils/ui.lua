@@ -29,11 +29,14 @@ M.buf_hl = highlights.buf_hl
 M.check_toggle_term = term.can_toggle
 
 M.close_lazy_view = function()
-  return require("config.startup").close_lazy_view()
+  local ok, lazy_view = pcall(require, "lazy.view")
+  if ok and lazy_view.visible() and lazy_view.view then
+    lazy_view.view:close()
+  end
 end
 
 M.load_options = function()
-  return require("config.startup").load_options()
+  return require("config.options")
 end
 
 M.load_base46_cache = function(name)

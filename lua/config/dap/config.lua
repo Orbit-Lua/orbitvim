@@ -12,8 +12,8 @@
 ---@field configurations? Dap.Configurations
 
 local modules = {
-  "plugins.debugger.python",
-  "plugins.debugger.dotnet",
+  "config.dap.python",
+  "config.dap.dotnet",
 }
 
 local state_mod = require("tool.state")

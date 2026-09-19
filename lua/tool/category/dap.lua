@@ -60,7 +60,7 @@ function M.apply_runtime(opts)
   if not dap_ok then
     return
   end
-  local config = require("plugins.debugger.config")
+  local config = require("config.dap.config")
   if is_enabled then
     dap.adapters[name] = config.available_adapters[name]
     add_configurations(dap, name, config.available_configurations)

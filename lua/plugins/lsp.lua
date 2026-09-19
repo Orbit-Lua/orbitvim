@@ -37,20 +37,20 @@ return {
     event = { "VeryLazy" },
 
     opts = function()
-      return require("plugins.lsp.config")
+      return require("config.lsp.config")
     end,
 
-    ---@module "plugins.lsp.config"
+    ---@module "config.lsp.config"
     ---@param _ LazyPlugin
     ---@param opts Lsp.Config.Spec
     config = function(_, opts)
-      local setup = require("plugins.lsp.setup")
+      local setup = require("config.lsp.setup")
 
       utils_lsp.setup()
       utils_lsp.on_attach(function(client, buffer)
-        require("plugins.lsp.keymaps").on_attach(client, buffer)
+        require("config.lsp.keymaps").on_attach(client, buffer)
       end)
-      utils_lsp.on_dynamic_capability(require("plugins.lsp.keymaps").on_attach)
+      utils_lsp.on_dynamic_capability(require("config.lsp.keymaps").on_attach)
 
       setup.configure_diagnostics(opts)
       setup.install_diagnostic_filter()

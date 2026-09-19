@@ -1,15 +1,15 @@
 ---@module "lspconfig"
 
 ---@type Lsp.Config.Spec
-local spec = require("plugins.lsp.servers.base")
+local spec = require("config.lsp.servers.base")
 
 local server_modules = {
-  "plugins.lsp.servers.luals",
-  "plugins.lsp.servers.markup",
-  "plugins.lsp.servers.typescript",
-  "plugins.lsp.servers.python",
-  "plugins.lsp.servers.dotnet",
-  "plugins.lsp.servers.misc",
+  "config.lsp.servers.luals",
+  "config.lsp.servers.markup",
+  "config.lsp.servers.typescript",
+  "config.lsp.servers.python",
+  "config.lsp.servers.dotnet",
+  "config.lsp.servers.misc",
 }
 
 for _, mod_name in ipairs(server_modules) do

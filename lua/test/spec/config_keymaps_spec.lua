@@ -66,8 +66,8 @@ describe("config.keymaps", function()
   end)
 
   it("only replaces K when an LSP supports hover", function()
-    package.loaded["plugins.lsp.keymaps"] = nil
-    local specs = require("plugins.lsp.keymaps").get()
+    package.loaded["config.lsp.keymaps"] = nil
+    local specs = require("config.lsp.keymaps").get()
 
     for _, spec in ipairs(specs) do
       if spec[1] == "K" then
