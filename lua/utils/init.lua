@@ -12,13 +12,11 @@ local modules = {
   buffer = "utils.buffer",
   hl = "utils.hl",
   term = "utils.term",
-  ui = "utils.ui",
   str = "utils.str",
   table = "utils.table",
   logger = "utils.logger",
   window = "utils.window",
   icons = "utils.icons",
-  tree = "utils.tree",
   harpoon = "utils.harpoon",
 }
 

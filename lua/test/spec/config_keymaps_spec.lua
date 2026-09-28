@@ -1,4 +1,4 @@
-describe("config.keymaps", function()
+describe("core.keymaps", function()
   it("<leader>fd changes cwd to roots containing spaces", function()
     local fs = require("utils.fs")
     local original_get_root = fs.get_root
@@ -7,8 +7,8 @@ describe("config.keymaps", function()
 
     vim.fn.mkdir(root, "p")
     vim.g.mapleader = " "
-    package.loaded["config.keymaps"] = nil
-    require("config.keymaps")
+    package.loaded["core.keymaps"] = nil
+    require("core.keymaps")
 
     fs.get_root = function()
       return root
@@ -36,8 +36,8 @@ describe("config.keymaps", function()
     end
 
     vim.g.mapleader = " "
-    package.loaded["config.keymaps"] = nil
-    require("config.keymaps")
+    package.loaded["core.keymaps"] = nil
+    require("core.keymaps")
     vim.api.nvim_win_set_buf(original_win, buf)
     vim.api.nvim_buf_set_lines(
       buf,
@@ -66,8 +66,8 @@ describe("config.keymaps", function()
   end)
 
   it("only replaces K when an LSP supports hover", function()
-    package.loaded["config.lsp.keymaps"] = nil
-    local specs = require("config.lsp.keymaps").get()
+    package.loaded["runtime.lsp.keymaps"] = nil
+    local specs = require("runtime.lsp.keymaps").get()
 
     for _, spec in ipairs(specs) do
       if spec[1] == "K" then

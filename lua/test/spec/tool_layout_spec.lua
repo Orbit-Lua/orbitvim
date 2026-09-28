@@ -1,5 +1,5 @@
-describe("tool.layout", function()
-  local layout = require("tool.layout")
+describe("tool.ui.layout", function()
+  local layout = require("tool.ui.layout")
 
   local function ui(overrides)
     return vim.tbl_extend("force", {

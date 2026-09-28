@@ -1,6 +1,6 @@
 ---@module "ui"
 
-local config = require("config")
+local packages = require("config.packages")
 local borders = require("config.borders")
 
 ---@type ChadrcConfig
@@ -175,7 +175,7 @@ M.cheatsheet = {
 
 M.mason = {
   skip = {},
-  pkgs = config.packages.mason_ensure_installed,
+  pkgs = packages.mason_ensure_installed,
 }
 
 M.colorify = {

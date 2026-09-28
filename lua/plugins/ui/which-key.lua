@@ -26,7 +26,7 @@ return {
     },
     cmd = "WhichKey",
     opts = function()
-      require("config.theme").load_cache("whichkey")
+      require("core.theme").load_cache("whichkey")
 
       ---@module "which-key"
       ---@type wk.Opts

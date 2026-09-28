@@ -1,7 +1,4 @@
-local theme = require("config.theme")
-
-theme.load_cache("syntax")
-theme.load_cache("treesitter")
+local theme = require("core.theme")
 
 ---@type LazySpec[]
 return {
@@ -16,6 +13,8 @@ return {
     cmd = { "TSInstall", "TSBufEnable", "TSBufDisable", "TSModuleInfo" },
     build = { ":TSUpdate" },
     init = function()
+      theme.load_cache("syntax")
+      theme.load_cache("treesitter")
       require("utils.treesitter").setup()
     end,
 

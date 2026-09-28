@@ -9,14 +9,14 @@ return {
       {
         "<leader>fm",
         function()
-          require("config.formatter.runtime").format()
+          require("runtime.formatter").format()
         end,
         desc = "format file",
         mode = { "n", "x" },
       },
     },
     opts = function()
-      local opts = require("config.formatter")
+      local opts = vim.deepcopy(require("config.formatter"))
       local state_mod = require("tool.state")
       local order = require("tool.order")
 

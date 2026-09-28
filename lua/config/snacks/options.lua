@@ -1,4 +1,4 @@
-local configs = require("config")
+local message_ignored = require("config.message_ignored")
 local borders = require("config.borders")
 
 ---@type snacks.Config
@@ -62,7 +62,7 @@ return {
   dashboard = {
     enabled = true,
     preset = {
-      header = require("plugins.ui.header").claude_snack,
+      header = require("config.snacks.header").claude_snack,
     },
 
     -- built-in sections: https://github.com/folke/snacks.nvim/blob/main/docs/dashboard.md#-features
@@ -93,7 +93,7 @@ return {
     margin = { bottom = 2 },
     timeout = 3000,
     filter = function(notif)
-      for _, msg in ipairs(configs.message_ignored.notify) do
+      for _, msg in ipairs(message_ignored.notify) do
         if notif.msg:find(msg) then
           return false
         end

@@ -1,13 +1,13 @@
-local configs = require("config")
-local theme = require("config.theme")
-
-theme.load_cache("git")
+local icons = require("config.icons")
 
 ---@type LazySpec[]
 return {
   {
     "lewis6991/gitsigns.nvim",
     event = "User FilePost",
+    init = function()
+      require("core.theme").load_cache("git")
+    end,
     opts = {
       signs = {
         add = { text = "▎" },
@@ -18,9 +18,9 @@ return {
         untracked = { text = "▎" },
       },
       signs_staged = {
-        add = { text = configs.icons.git.added },
-        change = { text = configs.icons.git.modified },
-        delete = { text = configs.icons.git.removed },
+        add = { text = icons.git.added },
+        change = { text = icons.git.modified },
+        delete = { text = icons.git.removed },
         topdelete = { text = "" },
         changedelete = { text = "▎" },
       },

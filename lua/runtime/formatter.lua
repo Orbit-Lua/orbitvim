@@ -1,6 +1,6 @@
 local M = {}
 
-local icons = require("config").icons
+local icons = require("config.icons")
 
 local function spinner_frame()
   local ok, spinners = pcall(require, "noice.util.spinners")

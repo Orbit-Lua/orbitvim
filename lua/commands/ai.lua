@@ -3,6 +3,7 @@ local service = require("ai.service")
 
 local title = "Minuet"
 local add_endpoint = {}
+local M = {}
 
 local function notify(message, level)
   vim.notify(message, level or vim.log.levels.INFO, { title = title })
@@ -111,25 +112,29 @@ local function choose_endpoint_to_forget()
   end)
 end
 
-vim.api.nvim_create_user_command("MinuetEndpoint", function(args)
-  if args.bang then
-    if args.args ~= "" then
-      forget_endpoint(args.args)
+function M.setup()
+  vim.api.nvim_create_user_command("MinuetEndpoint", function(args)
+    if args.bang then
+      if args.args ~= "" then
+        forget_endpoint(args.args)
+      else
+        choose_endpoint_to_forget()
+      end
+    elseif args.args ~= "" then
+      select_endpoint(args.args)
     else
-      choose_endpoint_to_forget()
+      choose_endpoint()
     end
-  elseif args.args ~= "" then
-    select_endpoint(args.args)
-  else
-    choose_endpoint()
-  end
-end, {
-  nargs = "?",
-  bang = true,
-  complete = function(arg_lead)
-    return vim.tbl_filter(function(value)
-      return vim.startswith(value, arg_lead)
-    end, endpoint.list())
-  end,
-  desc = "Select the Minuet completion API endpoint",
-})
+  end, {
+    nargs = "?",
+    bang = true,
+    complete = function(arg_lead)
+      return vim.tbl_filter(function(value)
+        return vim.startswith(value, arg_lead)
+      end, endpoint.list())
+    end,
+    desc = "Select the Minuet completion API endpoint",
+  })
+end
+
+return M

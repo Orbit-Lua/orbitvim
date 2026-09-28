@@ -1,10 +1,7 @@
 local harpoon_utils = require("utils.harpoon")
 local fs = require("utils.fs")
-local theme = require("config.theme")
-local icons = require("config").icons
+local icons = require("config.icons")
 local borders = require("config.borders")
-
-theme.load_cache("nvimtree")
 
 ---@type LazySpec[]
 return {
@@ -52,6 +49,9 @@ return {
   -- doc: https://github.com/nvim-tree/nvim-tree.lua
   {
     "nvim-tree/nvim-tree.lua",
+    init = function()
+      require("core.theme").load_cache("nvimtree")
+    end,
     ---@type nvim_tree.config
     opts = {
       filters = { dotfiles = false },
@@ -70,9 +70,6 @@ return {
         signcolumn = "no",
       },
       renderer = {
-        -- root_folder_label = function()
-        --   return fs.new():get_cwd():pretty_path({ transform_home = true })
-        -- end,
         root_folder_label = false,
         highlight_git = "all",
         highlight_diagnostics = "all",

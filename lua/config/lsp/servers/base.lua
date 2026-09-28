@@ -20,7 +20,7 @@
 ---@field servers? Lsp.Config.Servers
 ---@field setup? {[string]: fun()}
 
-local configs = require("config")
+local icons = require("config.icons")
 local borders = require("config.borders")
 
 ---@type Lsp.Config.Spec
@@ -41,10 +41,10 @@ return {
     severity_sort = true,
     signs = {
       text = {
-        [vim.diagnostic.severity.ERROR] = configs.icons.diagnostics.error,
-        [vim.diagnostic.severity.WARN] = configs.icons.diagnostics.warning,
-        [vim.diagnostic.severity.HINT] = configs.icons.diagnostics.hint,
-        [vim.diagnostic.severity.INFO] = configs.icons.diagnostics.info,
+        [vim.diagnostic.severity.ERROR] = icons.diagnostics.error,
+        [vim.diagnostic.severity.WARN] = icons.diagnostics.warning,
+        [vim.diagnostic.severity.HINT] = icons.diagnostics.hint,
+        [vim.diagnostic.severity.INFO] = icons.diagnostics.info,
       },
     },
 

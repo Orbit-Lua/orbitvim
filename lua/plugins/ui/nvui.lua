@@ -33,7 +33,7 @@ return {
     lazy = false,
     cond = false,
     opts = function()
-      require("config.theme").load_cache("devicons")
+      require("core.theme").load_cache("devicons")
       return { override = require("nvchad.icons.devicons") }
     end,
   },

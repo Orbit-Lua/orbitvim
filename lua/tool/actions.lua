@@ -4,41 +4,28 @@ local cfg = require("tool.config")
 local core = require("tool.core")
 local mason = require("tool.mason")
 local state_mod = require("tool.state")
-local tooltip = require("tool.tooltip")
+local tooltip = require("tool.ui.tooltip")
 local category_handlers = require("tool.category")
-local cursor = require("tool.cursor")
+local cursor = require("tool.ui.cursor")
 
----@class Tool.Actions.State
----@field ui Tool.UI?
----@field render (fun())?
-
----@type Tool.Actions.State
-local _state = { ui = nil, render = nil }
-
----@param opts { ui: Tool.UI, tooltip_ns: integer, render: fun() }
-function M.init(opts)
-  _state.ui = opts.ui
-  _state.render = opts.render
-  tooltip.init({ ui = opts.ui, ns = opts.tooltip_ns })
-end
-
+---@param ctx Tool.UIContext
 ---@return Tool.UIEntry?
-local function current_entry()
-  return cursor.current_entry(_state.ui)
+local function current_entry(ctx)
+  return cursor.current_entry(ctx.ui)
 end
 
 ---@return nil
-function M.show_tooltip_at_cursor()
-  tooltip.show_at_cursor()
+function M.show_tooltip_at_cursor(ctx)
+  tooltip.show_at_cursor(ctx)
 end
 
 ---@return nil
-function M.do_toggle()
-  local entry = current_entry()
+function M.do_toggle(ctx)
+  local entry = current_entry(ctx)
   if not entry or not entry.meta then
     return
   end
-  local category = cfg.tool_categories[_state.ui.category_idx]
+  local category = cfg.tool_categories[ctx.ui.category_idx]
   local handler = category_handlers[category]
   if not handler or not handler.capabilities.toggle then
     vim.notify(
@@ -68,7 +55,7 @@ function M.do_toggle()
             meta = entry.meta,
             is_enabled = true,
           })
-          _state.render()
+          ctx.render()
         end)
         return
       end
@@ -83,16 +70,16 @@ function M.do_toggle()
     meta = entry.meta,
     is_enabled = is_now_enabled,
   })
-  _state.render()
+  ctx.render()
 end
 
 ---@return nil
-function M.do_install()
-  local entry = current_entry()
+function M.do_install(ctx)
+  local entry = current_entry(ctx)
   if not entry or not entry.meta then
     return
   end
-  local category = cfg.tool_categories[_state.ui.category_idx]
+  local category = cfg.tool_categories[ctx.ui.category_idx]
   local handler = category_handlers[category]
   if not handler or not handler.capabilities.install then
     vim.notify(
@@ -102,7 +89,7 @@ function M.do_install()
     return
   end
   if handler.install then
-    handler.install(entry.name, _state.render)
+    handler.install(entry.name, ctx.render)
     return
   end
   if not entry.meta.mason then
@@ -114,17 +101,17 @@ function M.do_install()
     )
     return
   end
-  mason.install(entry.meta.mason, _state.render)
+  mason.install(entry.meta.mason, ctx.render)
 end
 
 ---@param dir integer -1 for up, 1 for down
 ---@return nil
-function M.do_reorder(dir)
-  local entry = current_entry()
+function M.do_reorder(ctx, dir)
+  local entry = current_entry(ctx)
   if not entry or not entry.ft or not entry.order_names then
     return
   end
-  local category = cfg.tool_categories[_state.ui.category_idx]
+  local category = cfg.tool_categories[ctx.ui.category_idx]
   local handler = category_handlers[category]
   if not handler or not handler.capabilities.reorder then
     return
@@ -164,55 +151,55 @@ function M.do_reorder(dir)
     handler.apply_order({ ft = entry.ft, enabled_names = enabled_names })
   end
 
-  _state.render()
+  ctx.render()
 
-  cursor.focus_match(_state.ui, function(e)
+  cursor.focus_match(ctx.ui, function(e)
     return e.name == entry.name and e.ft == entry.ft
   end)
 end
 
 ---@return nil
-function M.toggle_expand()
-  if _state.ui.help_open then
+function M.toggle_expand(ctx)
+  if ctx.ui.help_open then
     return
   end
-  local entry = current_entry()
+  local entry = current_entry(ctx)
   if not entry then
     return
   end
-  local category = cfg.tool_categories[_state.ui.category_idx]
+  local category = cfg.tool_categories[ctx.ui.category_idx]
 
   local key
   if core.is_ordered_category(category) and entry.ft then
     key = core.ft_key(category, entry.ft)
-    local is_expanded = _state.ui.expanded[key]
+    local is_expanded = ctx.ui.expanded[key]
     if is_expanded == nil then
-      is_expanded = _state.ui.scope == "buffer"
+      is_expanded = ctx.ui.scope == "buffer"
     end
-    _state.ui.expanded[key] = not is_expanded
+    ctx.ui.expanded[key] = not is_expanded
   elseif entry.name then
     key = core.tool_key(category, entry.name)
-    _state.ui.expanded[key] = not _state.ui.expanded[key]
+    ctx.ui.expanded[key] = not ctx.ui.expanded[key]
   else
     return
   end
 
-  _state.render()
+  ctx.render()
 end
 
 ---@param idx integer
 ---@return nil
-function M.switch_tab(idx)
-  _state.ui.category_idx = idx
-  _state.render()
-  cursor.focus_first(_state.ui)
+function M.switch_tab(ctx, idx)
+  ctx.ui.category_idx = idx
+  ctx.render()
+  cursor.focus_first(ctx.ui)
 end
 
 ---@return nil
-function M.toggle_scope()
-  _state.ui.scope = _state.ui.scope == "buffer" and "states" or "buffer"
-  _state.render()
-  cursor.focus_first(_state.ui)
+function M.toggle_scope(ctx)
+  ctx.ui.scope = ctx.ui.scope == "buffer" and "states" or "buffer"
+  ctx.render()
+  cursor.focus_first(ctx.ui)
 end
 
 return M

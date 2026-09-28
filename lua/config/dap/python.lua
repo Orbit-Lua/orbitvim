@@ -1,4 +1,4 @@
-local py_cmd = require("cmds.python")
+local py_cmd = require("runtime.python")
 local os_utils = require("utils.os")
 
 local is_debugpy_installed = function()

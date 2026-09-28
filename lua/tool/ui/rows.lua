@@ -7,7 +7,7 @@ local tools = require("config.tools")
 local state_mod = require("tool.state")
 local str = require("utils.str")
 local order = require("tool.order")
-local layout = require("tool.layout")
+local layout = require("tool.ui.layout")
 
 ---@param meta Tool.Definition
 ---@return string

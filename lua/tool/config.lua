@@ -175,12 +175,8 @@
 ---@field max_h integer
 ---@field min_h integer
 ---@field col_name integer
----@field col_ft integer
----@field col_status integer
 ---@field col_package integer
 ---@field col_tool integer
----@field pad_flat integer
----@field pad_tool integer
 ---@field tool_categories ToolCategory[]
 ---@field cat_label table<ToolCategory, string>
 ---@field tooltip Tool.Config.Tooltip
@@ -201,12 +197,8 @@ local cfg = {
   max_h = 40,
   min_h = 40,
   col_name = 32,
-  col_ft = 32,
-  col_status = 64,
   col_package = 24,
   col_tool = 32,
-  pad_flat = 2,
-  pad_tool = 4,
   tool_categories = {
     "lsp",
     "dap",

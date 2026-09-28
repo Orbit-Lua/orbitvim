@@ -22,13 +22,7 @@ return {
         end)(),
         opts = { history = true, updateevents = "TextChanged,TextChangedI" },
         config = function(_, opts)
-          require("luasnip").config.set_config(opts)
-
-          local ls = require("luasnip")
-          ls.filetype_extend("jsx", { "javascript", "javascriptreact" })
-          ls.filetype_extend("sql", { "tsql" })
-
-          require("config.snippets")
+          require("runtime.completion").setup_luasnip(opts)
         end,
       },
 
@@ -77,7 +71,8 @@ return {
     },
 
     opts = function()
-      return require("config.blink")
+      require("core.theme").load_cache("blink")
+      return require("config.blink").build()
     end,
 
     main = "utils.cmp",

@@ -62,8 +62,8 @@ function M.apply_runtime(opts)
   end
   local config = require("config.dap.config")
   if is_enabled then
-    dap.adapters[name] = config.available_adapters[name]
-    add_configurations(dap, name, config.available_configurations)
+    dap.adapters[name] = config.adapters[name]
+    add_configurations(dap, name, config.configurations)
   else
     dap.adapters[name] = nil
     remove_configurations(dap, name)

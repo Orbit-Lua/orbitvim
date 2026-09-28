@@ -7,15 +7,9 @@ return {
     "Orbit-Lua/nvim-dap",
     config = function()
       local config = require("config.dap.config")
+      local state = require("tool.state")
       local dap = require("dap")
-
-      for name, adapter in pairs(config.adapters) do
-        dap.adapters[name] = adapter
-      end
-
-      for ft, configurations in pairs(config.configurations) do
-        dap.configurations[ft] = configurations
-      end
+      require("runtime.dap").setup(dap, config, state)
     end,
     keys = {
       {

@@ -1,4 +1,4 @@
-describe("config.formatter.runtime", function()
+describe("runtime.formatter", function()
   local original_conform
   local original_notify
   local notifications
@@ -15,14 +15,14 @@ describe("config.formatter.runtime", function()
       })
       return 42
     end
-    package.loaded["config.formatter.runtime"] = nil
+    package.loaded["runtime.formatter"] = nil
   end)
 
   after_each(function()
     package.loaded.conform = original_conform
     vim.notify = original_notify
     vim.b.orbit_formatting = nil
-    package.loaded["config.formatter.runtime"] = nil
+    package.loaded["runtime.formatter"] = nil
   end)
 
   it("formats asynchronously without changing buffer modifiability", function()
@@ -37,7 +37,7 @@ describe("config.formatter.runtime", function()
       end,
     }
 
-    require("config.formatter.runtime").format()
+    require("runtime.formatter").format()
 
     assert.is_true(received.async)
     assert.same(vim.api.nvim_get_current_buf(), received.bufnr)
@@ -59,7 +59,7 @@ describe("config.formatter.runtime", function()
       end,
     }
 
-    require("config.formatter.runtime").format()
+    require("runtime.formatter").format()
 
     assert.same(vim.log.levels.ERROR, notifications[2].level)
     assert.is_truthy(notifications[2].message:find("failed"))
@@ -75,7 +75,7 @@ describe("config.formatter.runtime", function()
       end,
     }
 
-    require("config.formatter.runtime").format()
+    require("runtime.formatter").format()
 
     assert.same(vim.log.levels.ERROR, notifications[2].level)
     assert.is_nil(vim.b.orbit_formatting)
@@ -85,7 +85,7 @@ describe("config.formatter.runtime", function()
     package.loaded.conform = {
       format = function() end,
     }
-    local runtime = require("config.formatter.runtime")
+    local runtime = require("runtime.formatter")
 
     runtime.format()
     runtime.format()

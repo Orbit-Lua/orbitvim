@@ -4,9 +4,9 @@
 vim.g.base46_cache = vim.fn.stdpath("data") .. "/nvchad/base46/"
 vim.g.mapleader = " "
 
-require("config.options")
-require("config.autocmds")
-require("config.filetypes")
+require("core.options")
+require("core.autocmds")
+require("core.filetypes")
 
 --------------------------------------------------------------------------------
 -- 2. Bootstrap & Setup lazy.nvim
@@ -31,13 +31,13 @@ require("lazy").setup({
 --------------------------------------------------------------------------------
 -- 3. Post-Lazy: user commands, theme caches, shell, and keymaps
 --------------------------------------------------------------------------------
-require("cmds").setup()
+require("commands").setup()
 
-local theme = require("config.theme")
+local theme = require("core.theme")
 theme.load_cache("defaults")
 theme.load_cache("statusline")
 
 require("utils.shell").setup()
 require("utils.hl").setup()
 
-require("config.keymaps")
+require("core.keymaps")

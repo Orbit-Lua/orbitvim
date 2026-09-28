@@ -1,6 +1,6 @@
 local borders = require("config.borders")
 local window = require("utils.window")
-local config = require("config")
+local message_ignored = require("config.message_ignored")
 
 -- config: https://github.com/folke/noice.nvim?tab=readme-ov-file#%EF%B8%8F-configuration
 ---@type LazySpec[]
@@ -31,7 +31,7 @@ return {
             event = "msg_show",
             any = vim.tbl_map(function(msg)
               return { find = msg }
-            end, config.message_ignored.msg_show),
+            end, message_ignored.msg_show),
           },
           opts = { skip = true },
         },
@@ -43,7 +43,7 @@ return {
             kind = "progress",
             any = vim.tbl_map(function(msg)
               return { find = msg }
-            end, config.message_ignored.progress),
+            end, message_ignored.progress),
           },
           opts = { skip = true },
         },

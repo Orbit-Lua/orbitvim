@@ -9,25 +9,12 @@ local highlights = require("utils.hl")
 local logger = require("utils.logger")
 local str = require("utils.str")
 local category_handlers = require("tool.category")
-local cursor = require("tool.cursor")
+local cursor = require("tool.ui.cursor")
 
----@class Tool.Tooltip.State
----@field ui Tool.UI?
----@field ns integer?
----@field win integer?
-
----@type Tool.Tooltip.State
-local _state = { ui = nil, ns = nil, win = nil }
-
----@param opts { ui: Tool.UI, ns: integer }
-function M.init(opts)
-  _state.ui = opts.ui
-  _state.ns = opts.ns
-end
-
+---@param ctx Tool.UIContext
 ---@return Tool.UIEntry?
-local function current_entry()
-  return cursor.current_entry(_state.ui)
+local function current_entry(ctx)
+  return cursor.current_entry(ctx.ui)
 end
 
 ---@param line string
@@ -151,36 +138,53 @@ local function max_display_width(lines)
   return max_w
 end
 
+---@param ctx Tool.UIContext
 ---@param tooltip_buf integer
 ---@param lines string[]
 ---@param status_hl string
 ---@param name_hl string
-local function apply_highlights(tooltip_buf, lines, status_hl, name_hl)
-  highlights.buf_hl(tooltip_buf, _state.ns, name_hl, 0, 1, 4)
+local function apply_highlights(ctx, tooltip_buf, lines, status_hl, name_hl)
+  highlights.buf_hl(tooltip_buf, ctx.tooltip_ns, name_hl, 0, 1, 4)
 
   for i, line in ipairs(lines) do
     if line:match("^   status:") then
       local prefix_len = #"   status: "
       highlights.buf_hl(
         tooltip_buf,
-        _state.ns,
+        ctx.tooltip_ns,
         status_hl,
         i - 1,
         prefix_len,
         -1
       )
     elseif line:match("^   E  ") then
-      highlights.buf_hl(tooltip_buf, _state.ns, "DiagnosticError", i - 1, 3, 4)
+      highlights.buf_hl(
+        tooltip_buf,
+        ctx.tooltip_ns,
+        "DiagnosticError",
+        i - 1,
+        3,
+        4
+      )
     elseif line:match("^   W  ") then
-      highlights.buf_hl(tooltip_buf, _state.ns, "DiagnosticWarn", i - 1, 3, 4)
+      highlights.buf_hl(
+        tooltip_buf,
+        ctx.tooltip_ns,
+        "DiagnosticWarn",
+        i - 1,
+        3,
+        4
+      )
     end
   end
 end
 
+---@param ctx Tool.UIContext
 ---@param tooltip_win integer?
 ---@param cursor_autocmd_id integer?
 ---@param win_closed_autocmd_id integer?
 local function close_window(
+  ctx,
   tooltip_win,
   cursor_autocmd_id,
   win_closed_autocmd_id
@@ -188,33 +192,33 @@ local function close_window(
   if tooltip_win and vim.api.nvim_win_is_valid(tooltip_win) then
     vim.api.nvim_win_close(tooltip_win, true)
   end
-  if _state.win == tooltip_win then
-    _state.win = nil
+  if ctx.tooltip_win == tooltip_win then
+    ctx.tooltip_win = nil
   end
   pcall(vim.api.nvim_del_autocmd, cursor_autocmd_id)
   pcall(vim.api.nvim_del_autocmd, win_closed_autocmd_id)
 end
 
 ---@return nil
-function M.close()
-  close_window(_state.win, nil, nil)
+function M.close(ctx)
+  close_window(ctx, ctx.tooltip_win, nil, nil)
 end
 
 ---@return nil
-function M.show_at_cursor()
-  if _state.win and vim.api.nvim_win_is_valid(_state.win) then
-    if vim.api.nvim_get_current_win() == _state.win then
+function M.show_at_cursor(ctx)
+  if ctx.tooltip_win and vim.api.nvim_win_is_valid(ctx.tooltip_win) then
+    if vim.api.nvim_get_current_win() == ctx.tooltip_win then
       return
     end
-    vim.api.nvim_set_current_win(_state.win)
+    vim.api.nvim_set_current_win(ctx.tooltip_win)
     return
   end
 
-  local entry = current_entry()
+  local entry = current_entry(ctx)
   if not entry or not entry.meta then
     return
   end
-  local category = cfg.tool_categories[_state.ui.category_idx]
+  local category = cfg.tool_categories[ctx.ui.category_idx]
   local lines, status_hl, name_hl = M.build_lines({
     category = category,
     entry = entry,
@@ -223,11 +227,11 @@ function M.show_at_cursor()
 
   local tooltip_buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(tooltip_buf, 0, -1, false, lines)
-  apply_highlights(tooltip_buf, lines, status_hl, name_hl)
+  apply_highlights(ctx, tooltip_buf, lines, status_hl, name_hl)
 
-  local cursor_pos = vim.api.nvim_win_get_cursor(_state.ui.win)
+  local cursor_pos = vim.api.nvim_win_get_cursor(ctx.ui.win)
   local screen_pos =
-    vim.fn.screenpos(_state.ui.win, cursor_pos[1], cursor_pos[2] + 1)
+    vim.fn.screenpos(ctx.ui.win, cursor_pos[1], cursor_pos[2] + 1)
   local screen_col = screen_pos.col
   local float_w = max_w + 2
 
@@ -252,7 +256,7 @@ function M.show_at_cursor()
   local tooltip_win
 
   local function close()
-    close_window(tooltip_win, cursor_autocmd_id, win_closed_autocmd_id)
+    close_window(ctx, tooltip_win, cursor_autocmd_id, win_closed_autocmd_id)
   end
 
   tooltip_win = vim.api.nvim_open_win(tooltip_buf, false, {
@@ -268,13 +272,13 @@ function M.show_at_cursor()
     zindex = cfg.tooltip.zindex,
     noautocmd = true,
   })
-  _state.win = tooltip_win
+  ctx.tooltip_win = tooltip_win
 
   for _, key in ipairs(cfg.tooltip.close_keys) do
     vim.keymap.set("n", key, function()
       close()
-      if _state.ui.win and vim.api.nvim_win_is_valid(_state.ui.win) then
-        vim.api.nvim_set_current_win(_state.ui.win)
+      if ctx.ui.win and vim.api.nvim_win_is_valid(ctx.ui.win) then
+        vim.api.nvim_set_current_win(ctx.ui.win)
       end
     end, { buffer = tooltip_buf, nowait = true, silent = true })
   end
@@ -289,13 +293,13 @@ function M.show_at_cursor()
   end
 
   win_closed_autocmd_id = vim.api.nvim_create_autocmd("WinClosed", {
-    pattern = tostring(_state.ui.win),
+    pattern = tostring(ctx.ui.win),
     once = true,
     callback = close,
   })
 
   cursor_autocmd_id = vim.api.nvim_create_autocmd("CursorMoved", {
-    buffer = vim.api.nvim_win_get_buf(_state.ui.win),
+    buffer = vim.api.nvim_win_get_buf(ctx.ui.win),
     once = true,
     callback = close,
   })

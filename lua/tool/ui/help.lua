@@ -1,7 +1,7 @@
 local M = {}
 
 local cfg = require("tool.config")
-local layout = require("tool.layout")
+local layout = require("tool.ui.layout")
 local str = require("utils.str")
 
 ---@param lines string[]

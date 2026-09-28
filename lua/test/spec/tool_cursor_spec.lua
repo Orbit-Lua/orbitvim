@@ -1,5 +1,5 @@
-describe("tool.cursor", function()
-  local cursor = require("tool.cursor")
+describe("tool.ui.cursor", function()
+  local cursor = require("tool.ui.cursor")
   local buf
   local win
 

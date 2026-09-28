@@ -1,5 +1,5 @@
-describe("tool.table", function()
-  local tool_table = require("tool.table")
+describe("tool.ui.table", function()
+  local tool_table = require("tool.ui.table")
 
   it("renders a fixed-width header and rows", function()
     local header, lines = tool_table.render({

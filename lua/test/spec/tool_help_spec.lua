@@ -1,5 +1,5 @@
-describe("tool.help", function()
-  local help = require("tool.help")
+describe("tool.ui.help", function()
+  local help = require("tool.ui.help")
 
   it("builds help lines and marks section headings", function()
     local lines, section_lnums = help.build(100)

@@ -3,16 +3,16 @@ local M = {}
 ---Registers all configured LSP servers with vim.lsp.
 ---@param opts Lsp.Config.Spec
 M.register_servers = function(opts)
-  require("config.theme").load_cache("lsp")
+  require("core.theme").load_cache("lsp")
 
-  local configs = require("config")
+  local packages = require("config.packages")
   local state_mod = require("tool.state")
   local default_lsp_config = {
     on_init = opts.on_init,
     capabilities = opts.capabilities,
   }
 
-  for _, server in ipairs(configs.packages.lsp_servers) do
+  for _, server in ipairs(packages.lsp_servers) do
     local server_opts = vim.tbl_deep_extend(
       "force",
       default_lsp_config,
@@ -44,7 +44,7 @@ end
 ---Applies diagnostic signs, virtual-text icon resolution, and commits the final config.
 ---@param opts Lsp.Config.Spec
 M.configure_diagnostics = function(opts)
-  local configs = require("config")
+  local icons = require("config.icons")
 
   if vim.fn.has("nvim-0.10.0") < 1 then
     if type(opts.diagnostics.signs) ~= "boolean" then
@@ -64,8 +64,7 @@ M.configure_diagnostics = function(opts)
     opts.diagnostics.virtual_text.prefix = vim.fn.has("nvim-0.10.0") < 1
         and "●"
       or function(diagnostic)
-        local icons = configs.icons.diagnostics
-        for severity_name, icon in pairs(icons) do
+        for severity_name, icon in pairs(icons.diagnostics) do
           if
             diagnostic.severity
             == vim.diagnostic.severity[severity_name:upper()]
@@ -90,7 +89,7 @@ M.install_diagnostic_filter = function()
     config
   )
     if result and result.diagnostics then
-      local suppressed_patterns = require("config").message_ignored.lsp
+      local suppressed_patterns = require("config.message_ignored").lsp
       local filtered = {}
       for _, diagnostic in ipairs(result.diagnostics) do
         local is_suppressed = false

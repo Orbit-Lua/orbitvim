@@ -2,16 +2,16 @@ local utils_lsp = require("utils.lsp")
 local ft = require("utils.ft")
 local utils_table = require("utils.table")
 local fs = require("utils.fs")
-local theme = require("config.theme")
-local icons = require("config").icons
-
-theme.load_cache("mason")
+local icons = require("config.icons")
 
 ---@type LazySpec[]
 return {
   {
     "williamboman/mason.nvim",
     cmd = { "Mason", "MasonInstall", "MasonUpdate" },
+    init = function()
+      require("core.theme").load_cache("mason")
+    end,
     opts = {
       PATH = "skip",
 
@@ -44,13 +44,13 @@ return {
     ---@param _ LazyPlugin
     ---@param opts Lsp.Config.Spec
     config = function(_, opts)
-      local setup = require("config.lsp.setup")
+      local setup = require("runtime.lsp")
 
       utils_lsp.setup()
       utils_lsp.on_attach(function(client, buffer)
-        require("config.lsp.keymaps").on_attach(client, buffer)
+        require("runtime.lsp.keymaps").on_attach(client, buffer)
       end)
-      utils_lsp.on_dynamic_capability(require("config.lsp.keymaps").on_attach)
+      utils_lsp.on_dynamic_capability(require("runtime.lsp.keymaps").on_attach)
 
       setup.configure_diagnostics(opts)
       setup.install_diagnostic_filter()

@@ -1,171 +1,77 @@
+<!-- markdownlint-disable MD013 -->
+
 # AGENTS Instructions
 
-## Project Overview
+## Project
 
-OrbitVim is a modular Neovim configuration written in Lua. It orchestrates a
-deterministic three-phase startup sequence in `init.lua`, bootstraps
-`lazy.nvim`, loads pure plugin specs from `lua/plugins/`, applies Nv UI/base46
-configuration, and provides a custom Tool Manager for LSP, DAP, formatter,
-linter, parser, and package management.
+OrbitVim is a Lua Neovim configuration. `init.lua` runs editor setup, imports Lazy plugin specifications, then registers commands and finishes UI setup. Tool Manager manages LSP, DAP, formatter, linter, parser, and package state.
 
-The main technologies are Neovim's Lua APIs, `lazy.nvim`, Nv UI/base46, Mason,
-`nvim-lspconfig`, `conform.nvim`, `nvim-lint`, `nvim-dap`, Plenary/Busted,
-Stylua, and Luacheck.
+Read `init.lua` before changing startup or plugin loading. Preserve its phase order and the user-visible commands, mappings, and persisted state unless the task explicitly changes them.
 
-## Architecture and Ownership
+## Where changes belong
 
-| Area | Owner |
+| Change | Owner |
 | --- | --- |
-| Bootstrap & Startup | `init.lua` orchestrates the complete 3-phase startup lifecycle (Pre-Lazy options & autocmds -> Lazy plugin import -> Post-Lazy commands, theme caches, shell & keymaps) |
-| Editor options & PATH | `lua/config/options.lua` sets baseline defaults, globals, and prepends Mason `bin` to `PATH` |
-| User-facing behavior | `lua/config/keymaps.lua`, `autocmds.lua`, and `filetypes.lua` |
-| UI and theme | `lua/chadrc.lua` owns Nv UI/base46 overrides; `lua/config/theme.lua` loads generated highlight caches |
-| Tool registry | `lua/config/tools.lua` is canonical; `lua/config/packages.lua` derives Mason packages, LSP servers, and Treesitter parsers |
-| LSP configuration | `lua/config/lsp/` owns server configurations, setup handlers, schemas, and LSP keymaps |
-| DAP configuration | `lua/config/dap/` owns debugger adapters and language launch configurations |
-| Formatting and linting | `lua/config/formatter/` and `lua/config/linter/` |
-| AI completion | `lua/ai/` owns Minuet endpoint state, connection verification, and statusline integration |
-| Plugins | `lua/plugins/`, strictly pure `LazySpec[]` definitions grouped by feature |
-| Tool Manager | `lua/tool/` owns state, actions, rendering, Mason integration, errors, and formatter/linter ordering |
-| Shared helpers | `lua/utils/`; reuse an existing domain module before adding another |
-| Commands | `lua/cmds/`, loaded declaratively via `lua/cmds/init.lua` during startup |
-| Core tests | `lua/test/spec/`, using hermetic Plenary tests |
-| Integration tests | `lua/test/integration/`, for installed plugins, parsers, and executables |
-| Test support | `lua/test/helpers.lua`, `lua/test/install_parsers.lua`, and `scripts/tests/minimal.vim` |
+| Startup order | `init.lua` |
+| Editor options, PATH, autocmds, filetypes, general keys, theme activation | `lua/core/` |
+| Lazy plugin identity, dependencies, loading triggers, keys | `lua/plugins/` |
+| Plugin options and language settings | `lua/config/` |
+| Canonical language-tool registry | `lua/config/tools.lua` |
+| Derived package, LSP server, and parser lists | `lua/config/packages.lua` |
+| LSP, DAP, completion, formatting, linting, and snippet setup | `lua/runtime/` |
+| User command registration | `lua/commands/` |
+| Tool Manager state, actions, Mason and category adapters | `lua/tool/` |
+| Tool Manager rendering, layout, help, cursor, and live updates | `lua/tool/ui/` |
+| AI endpoint persistence and statusline integration | `lua/ai/` |
+| Shared helpers | `lua/utils/` |
+| Nv UI/base46 entry point | `lua/chadrc.lua` |
+| Core specs and external integration specs | `lua/test/spec/` and `lua/test/integration/` |
 
-## Development Rules
+Keep `lua/plugins/` limited to `LazySpec[]` definitions and their Lazy lifecycle callbacks. Importing a spec must not register commands, events, mappings, or load highlight caches. Put editable values in `lua/config/` and runtime mutation in the owning `lua/runtime/` or `lua/core/` module. Prefer a direct import over a forwarding facade; add a module only when it gives callers a meaningful interface.
 
-- Add plugin specs to `lua/plugins/`. Keep `lua/plugins/` strictly for
-  `LazySpec` definitions; domain tool and server configurations belong in
-  `lua/config/lsp/`, `lua/config/dap/`, etc.
-- Keep language-tool definitions in `lua/config/tools.lua`. Do not duplicate
-  Mason package lists unless a package is intentionally an extra dependency in
-  `lua/config/packages.lua`.
-- Put formatter and linter behavior in their owning `lua/config/` subdirectory.
-- Keep `lua/config/` modules declarative. Move calculations, event registration,
-  runtime mutation, and plugin setup glue to the owning utility, plugin setup,
-  or domain module.
-- For Tool Manager changes, update `lua/tool/` and protect qualifying behavior
-  with focused core tests.
-- Before changing startup behavior, inspect `init.lua` to confirm load order.
-- Keep `lazy-lock.json` unchanged unless the task intentionally updates plugin
-  versions.
+Keep language-tool definitions in `lua/config/tools.lua`. Do not duplicate Mason package lists unless a package is an intentional extra dependency. Preserve sorted, deterministic derivation of package, server, and parser lists. Ordered defaults belong in `formatter_defaults` and `linter_defaults`. Parser entries map Tree-sitter parser names to Neovim filetypes; package entries describe non-toggleable dependencies. Managed runtime tools should declare their Mason package and supported filetypes; external DAP adapters may have `mason = nil`.
 
-## Commands
+Keep Tool Manager persistence compatible with missing, invalid, and stale `tools.json`; it also reads legacy `service.json`. For changes to toggling, installation, ordering, window lifecycle, or persisted state, protect the affected behavior through the public module interface.
 
-Install `stylua`, `luacheck`, Tree-sitter CLI 0.26.1 or newer, and Neovim before
-running development commands. Open Neovim once to bootstrap plugins; the test
-bootstrap expects `plenary.nvim` in Neovim's Lazy data directory. Install
-configured parsers with `:TSInstallAll` when integration tests need them.
+Keep `lazy-lock.json` unchanged unless the task intentionally changes plugin versions. Update README for user workflows and `doc/` for owning SQL behavior; update this file when ownership or validation rules change.
 
-| Command | Purpose |
+## Validation
+
+From the repository root, install Neovim 0.12+, StyLua, Luacheck, Tree-sitter CLI 0.26.1+, and `make`. Open Neovim once to bootstrap plugins; core tests expect `plenary.nvim` in Lazy's data directory. Install configured parsers with `:TSInstallAll` before integration tests that need them.
+
+| Command | Effect |
 | --- | --- |
-| `make fmt` | Rewrite Lua formatting |
-| `make fmt-check` | Check formatting without modifying files |
+| `make fmt` | Rewrite Lua formatting, including `init.lua` |
+| `make fmt-check` | Check formatting without rewriting |
 | `make lint` | Run Luacheck |
 | `make test` / `make test-core` | Run hermetic core specs |
 | `make test-integration` | Run plugin, parser, and executable integration specs |
-| `make test-all` | Run both test suites |
-| `make all` | Run the read-only core validation: format check, lint, and core specs |
-| `nvim --headless "+qall"` | Smoke-test startup |
+| `make test-all` | Run both suites |
+| `make all` | Format check, lint, and core specs |
+| `nvim --headless "+qall"` | Smoke-test startup; may use installed plugins and user state |
 
-Run a single spec with:
+For one core spec:
 
-```bash
+```sh
 nvim --headless --noplugin -u scripts/tests/minimal.vim \
-  -c "PlenaryBustedFile lua/test/spec/tool_state_spec.lua {minimal_init = 'scripts/tests/minimal.vim'}"
+  -c "lua require('plenary.busted').run('lua/test/spec/tool_state_spec.lua')" \
+  -c 'qall'
 ```
 
-## Testing Policy
+Run `make all` before completion. Run `make test-integration` for changes to Tree-sitter queries or parsers, LuaSnip collections, SQLFluff executable behavior, or their adapters. Run the startup smoke test when startup changes. Report the checks actually run; do not silently skip missing integration dependencies.
 
-Production changes do not automatically require a new test. Add or update one
-only when it protects at least one of these contracts:
+## Tests
 
-- a reproduced regression that fails before the fix
-- persistence, safety, ordering, or a state transition
-- a documented cross-module invariant
-- a seam with Neovim, a plugin, parser, or executable whose contract can drift
-- branch-heavy headless behavior not already covered by a deeper interface test
+Add or update a test only when it protects a reproduced regression, persistence or safety behavior, ordering or state transitions, a cross-module invariant, an external seam, or branch-heavy headless behavior not already covered more deeply. Moving a file or adding a constant alone does not justify a test.
 
-Core tests must be deterministic and hermetic. Integration tests are required
-for changes to Treesitter queries or parsers, LuaSnip collections, SQLFluff
-executable behavior, or their adapters. Missing integration dependencies must
-fail the suite; pending and silently skipped tests are not allowed.
+Test observable outputs, side effects, errors, and state transitions at the module interface. Identify a plausible behavior-breaking mutation. Prefer a table-driven invariant over separate tests for each field, icon, tool, or filetype. Replace shallow wiring or compatibility tests when a deeper behavior test supersedes them; do not layer both. Avoid assertions that only show a function, table, or primitive type exists. Do not change expected values merely to make a failure pass; state whether the contract changed, the old test was wrong, or production regressed. For more than three cases or roughly 80 lines for one change, explain why a deeper or table-driven test is insufficient.
 
-### Test Design
+Core specs must be deterministic and hermetic: no network, Mason installation, plugin updates, or external executables. Mock an external dependency at its owning seam. Restore buffers, windows, globals, options, and `package.loaded` entries. Write files, logs, and persisted state only below `vim.g.orbitvim_test_root`. Integration tests must fail when their required dependency is missing; pending or silently skipped tests are not acceptable.
 
-- Test observable behavior at the module interface: outputs, side effects,
-  errors, state transitions, and cross-module invariants.
-- Identify a plausible behavior-breaking mutation before accepting a test. For
-  regressions, run the test red before the fix when practical.
-- Prefer one table-driven invariant over separate tests for individual fields,
-  tools, icons, or filetypes.
-- Do not test only that a module, table, function, or primitive type exists when
-  a behavioral assertion already exercises it.
-- For declarative configuration, protect required schema, ordering, derivation,
-  safety policy, and consumer-facing contracts. Avoid pinning cosmetic values.
-- Mock external dependencies at the owning module's seam. Avoid private-state
-  assertions and production-only test interfaces.
-- Replace shallow tests when a deeper interface test supersedes them; do not
-  layer both.
-- Data-only changes need tests only when they alter validated schema,
-  derivation, ordering, or user-visible behavior.
-- Prefer extending an existing domain contract over creating another spec.
-  More than three cases or roughly 80 lines for one change requires an
-  explanation of why a table-driven or deeper test is insufficient.
-- Never change expected values only to make a test pass. State whether the
-  contract changed, the old test was wrong, or production regressed.
-- Characterization and compatibility tests must name the behavior they preserve
-  and should be removed when the old interface or migration path disappears.
+## Safety and style
 
-### Isolation
+Follow `.stylua.toml` and `.editorconfig`. Keep changes aligned with existing feature owners and use comments for non-obvious behavior. Avoid broad rewrites that do not improve ownership, readability, or a tested contract.
 
-- Core tests must not use the network, install Mason packages, update plugins,
-  or depend on external executables.
-- Restore modified buffers, windows, globals, options, and `package.loaded`
-  entries.
-- Redirect files, logs, and persisted state below
-  `vim.g.orbitvim_test_root`; never write to real Neovim user state.
+Do not commit secrets, tokens, credentials, or private machine paths. Treat `lua/config/*/template/` as reusable templates. Preserve the Windows `ClearShada` rule that skips `main.shada`. Resolve and verify exact targets before destructive filesystem operations.
 
-## Code Style
-
-- Follow `.stylua.toml`: two-space indentation, Unix line endings, and automatic
-  quote preference.
-- Follow `.editorconfig`: UTF-8, final newline, and no trailing whitespace.
-- Keep modules small and aligned with existing feature areas.
-- Prefer structured Lua tables, Neovim APIs, and existing `lua/utils/` helpers
-  over ad hoc strings or new helper modules.
-- Use comments only for non-obvious behavior and avoid broad rewrites when a
-  focused change is sufficient.
-
-## Tool Registry Rules
-
-- Runtime tool entries should include the Mason package when Mason manages them
-  and list their supported filetypes.
-- Parser entries map Treesitter parser names to Neovim filetypes; package entries
-  describe non-toggleable installer dependencies.
-- DAP entries may use `mason = nil` for external adapters such as virtualenv
-  `debugpy`.
-- Ordered defaults belong in `formatter_defaults` and `linter_defaults`.
-- Package, LSP, and parser derivation must remain deterministic and sorted.
-- Persisted Tool Manager state must tolerate missing, invalid, and stale
-  `tools.json` data.
-
-## Safety
-
-- Do not commit secrets, tokens, machine-specific paths, or generated
-  credentials.
-- Treat `lua/config/*/template/` as reusable templates; do not embed private
-  values.
-- Preserve the Windows `ClearShada` safeguard that skips `main.shada`.
-- Do not perform destructive filesystem operations without resolving and
-  verifying their exact target.
-
-## Completion Checklist
-
-- Run `make all`.
-- Run `make test-integration` when an external integration changed.
-- Run `nvim --headless "+qall"` when a startup path changed.
-- Keep documentation synchronized with commands, ownership, and layout.
-- In the final report, state `Tests added`, `Tests updated`, or `No tests added`
-  and name the protected regression or contract.
+In the final report, state `Tests added`, `Tests updated`, or `No tests added` and name the behavior or contract protected.

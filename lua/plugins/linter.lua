@@ -8,7 +8,7 @@ return {
       return require("config.linter")
     end,
     config = function(_, opts)
-      require("config.linter.runtime").setup(opts)
+      require("runtime.linter").setup(opts)
     end,
   },
 }

@@ -35,42 +35,14 @@ function M.is_tool_expanded(ui, category, name)
   return ui.expanded[core.tool_key(category, name)] == true
 end
 
----@param ui Tool.UI
----@param category ToolCategory
----@return integer
-function M.content_lines(ui, category)
-  local ft = M.active_ft(ui)
-  if core.is_ordered_category(category) then
-    local count = 0
-    for _, group in ipairs(data.build_ft_groups(category, ft)) do
-      count = count + 1
-      if M.is_ft_expanded(ui, category, group.ft) then
-        count = count + #group.names
-      end
-    end
-    return count
-  end
-
-  local count = 0
-  for _, tool_entry in ipairs(data.tool_entries(category, ft)) do
-    local name = tool_entry.name
-    local meta = tool_entry.meta
-    count = count + 1
-    if M.is_tool_expanded(ui, category, name) then
-      count = count + #(meta.ft or {})
-    end
-  end
-  return count
-end
-
 ---@return integer
 function M.chrome_lines()
-  return 4 + (cfg.layout.section_margin * 4)
+  return 3 + (cfg.layout.section_margin * 4)
 end
 
----@param ui Tool.UI
+---@param row_count integer rendered data row count
 ---@return vim.api.keyset.win_config
-function M.make_win_cfg(ui)
+function M.make_win_cfg(row_count)
   local win_cfg = cfg.window
   local win_width = math.min(
     vim.o.columns - win_cfg.editor_padding,
@@ -79,8 +51,9 @@ function M.make_win_cfg(ui)
       math.min(cfg.max_w, vim.o.columns - win_cfg.width_margin)
     )
   )
-  local natural = M.chrome_lines()
-    + M.content_lines(ui, cfg.tool_categories[ui.category_idx])
+  -- The table header accompanies nonempty rows; the empty state has one line.
+  local body_lines = row_count == 0 and 1 or row_count + 1
+  local natural = M.chrome_lines() + body_lines
   local win_height = math.min(
     vim.o.lines - win_cfg.height_margin,
     math.max(cfg.min_h, math.min(cfg.max_h, natural))

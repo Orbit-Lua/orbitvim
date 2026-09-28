@@ -13,10 +13,7 @@ local function list_contains(list, value)
 end
 
 local function get_kind_icon(kind)
-  local config = package.loaded.config
-  if type(config) == "table" and config.icons and config.icons.kinds then
-    return config.icons.kinds[kind]
-  end
+  return require("config.icons").kinds[kind]
 end
 
 ---@alias Core.util.cmp.Action fun():boolean?

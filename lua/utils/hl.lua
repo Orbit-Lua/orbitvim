@@ -116,7 +116,7 @@ end
 ---Refer to: https://github.com/mfussenegger/nvim-dap/issues/1341#issuecomment-2381393267
 M.setup_dap = function()
   local colors = require("base46").get_theme_tb("base_30")
-  local dap_icons = require("config").icons.dap
+  local dap_icons = require("config.icons").dap
   local dap_signs = {}
 
   for k, v in pairs(dap_icons) do

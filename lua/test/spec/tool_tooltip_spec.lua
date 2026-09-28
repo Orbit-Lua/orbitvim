@@ -1,10 +1,10 @@
-describe("tool.tooltip", function()
+describe("tool.ui.tooltip", function()
   local tooltip
   local cfg = require("tool.config")
 
   before_each(function()
-    package.loaded["tool.tooltip"] = nil
-    tooltip = require("tool.tooltip")
+    package.loaded["tool.ui.tooltip"] = nil
+    tooltip = require("tool.ui.tooltip")
   end)
 
   it("builds reusable tool tooltip lines from an entry", function()

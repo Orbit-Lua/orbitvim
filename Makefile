@@ -10,15 +10,15 @@ all: fmt-check lint test-core
 
 fmt:
 	echo "===> Formatting"
-	stylua lua/ luasnippets/ --config-path=.stylua.toml
+	stylua init.lua lua/ luasnippets/ --config-path=.stylua.toml
 
 fmt-check:
 	echo "===> Checking formatting"
-	stylua --check lua/ luasnippets/ --config-path=.stylua.toml
+	stylua --check init.lua lua/ luasnippets/ --config-path=.stylua.toml
 
 lint:
 	echo "===> Linting"
-	$(LUACHECK) lua luasnippets --globals vim
+	$(LUACHECK) init.lua lua luasnippets --globals vim
 
 validate-test-suites:
 	echo "===> Validating test suites"
