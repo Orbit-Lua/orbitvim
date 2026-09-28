@@ -62,8 +62,18 @@ function M.apply_runtime(opts)
   end
   local config = require("config.dap.config")
   if is_enabled then
-    dap.adapters[name] = config.adapters[name]
-    add_configurations(dap, name, config.configurations)
+    if name == "coreclr" then
+      local ok, dotnet = pcall(require, "dotnet-cli")
+      if ok then
+        local ready, err = dotnet.setup_dap()
+        if not ready then
+          vim.notify(err, vim.log.levels.ERROR)
+        end
+      end
+    else
+      dap.adapters[name] = config.adapters[name]
+      add_configurations(dap, name, config.configurations)
+    end
   else
     dap.adapters[name] = nil
     remove_configurations(dap, name)

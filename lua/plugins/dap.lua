@@ -10,6 +10,19 @@ return {
       local state = require("tool.state")
       local dap = require("dap")
       require("runtime.dap").setup(dap, config, state)
+      if state.is_enabled("dap", "coreclr") then
+        local ok, plugin = pcall(require, "dotnet-cli")
+        if ok then
+          local registered, err = plugin.setup_dap()
+          if not registered then
+            vim.notify(err, vim.log.levels.WARN, { title = "Dotnet" })
+          end
+        else
+          vim.notify("dotnet-cli.nvim is unavailable", vim.log.levels.WARN, {
+            title = "Dotnet",
+          })
+        end
+      end
     end,
     keys = {
       {

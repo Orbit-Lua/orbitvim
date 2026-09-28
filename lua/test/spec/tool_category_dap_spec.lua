@@ -74,4 +74,35 @@ describe("tool.category.dap", function()
     assert.equals("registered 0 cfg", status)
     assert.equals("DiagnosticWarn", hl)
   end)
+
+  it(
+    "delegates coreclr enablement to dotnet-cli and removes it on disable",
+    function()
+      local previous_dotnet = package.loaded["dotnet-cli"]
+      local previous_config = package.loaded["config.dap.config"]
+      local dap = { adapters = {}, configurations = {} }
+      local setup_calls = 0
+      package.loaded.dap = dap
+      package.loaded["dotnet-cli"] = {
+        setup_dap = function()
+          setup_calls = setup_calls + 1
+          dap.adapters.coreclr = { type = "executable" }
+          dap.configurations.cs = { { type = "coreclr", name = "Launch" } }
+          return true
+        end,
+      }
+      package.loaded["config.dap.config"] =
+        { adapters = {}, configurations = {} }
+
+      dap_category.apply_runtime({ name = "coreclr", is_enabled = true })
+      assert.equals(1, setup_calls)
+      assert.is_not_nil(dap.adapters.coreclr)
+      dap_category.apply_runtime({ name = "coreclr", is_enabled = false })
+      assert.is_nil(dap.adapters.coreclr)
+      assert.is_nil(dap.configurations.cs)
+
+      package.loaded["dotnet-cli"] = previous_dotnet
+      package.loaded["config.dap.config"] = previous_config
+    end
+  )
 end)

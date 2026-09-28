@@ -34,6 +34,10 @@ On Windows, place the checkout at the path returned by `:echo stdpath('config')`
 
 Minuet/Ollama completion code is included but its plugin is **disabled by default**. The `:MinuetEndpoint` command manages endpoint settings; it does not enable the disabled plugin.
 
+### .NET development
+
+Open `:DotnetManager` in an SDK-style C# workspace to choose a startup project and run build, test, package, EF Core, diagnostics, and publish actions. `:DotnetDebug` builds and launches the selected project; `:DotnetAttach` attaches to a local process. Install `netcoredbg` and enable `coreclr` in Tool Manager's DAP tab. `dotnet-cli.nvim` supplies the .NET launch and attach configurations while OrbitVim keeps the generic DAP keys and UI. See the [dotnet-cli.nvim guide](https://github.com/Orbit-Lua/dotnet-cli.nvim) for optional tools and profiles.
+
 ## Tool Manager
 
 Run `:ToolManager` or press `<leader>us`.

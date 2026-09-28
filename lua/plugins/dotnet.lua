@@ -8,6 +8,8 @@ return {
       "DotnetBuild",
       "DotnetPublish",
       "DotnetGlobalJson",
+      "DotnetDebug",
+      "DotnetAttach",
     },
     keys = {
       { "<leader>ud", "<cmd>DotnetManager<CR>", desc = "open dotnet manager" },

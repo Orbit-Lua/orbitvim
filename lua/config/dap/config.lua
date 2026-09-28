@@ -11,7 +11,6 @@
 
 local modules = {
   "config.dap.python",
-  "config.dap.dotnet",
 }
 
 local spec = {
