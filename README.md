@@ -8,9 +8,14 @@
 
 OrbitVim is a Neovim configuration for development in C#, Python, JavaScript, TypeScript, Go, SQL, Markdown, and related files. It combines lazy-loaded plugins, Nv UI/base46, language tooling, and an interactive Tool Manager. The layout is intended to make both everyday use and customization easy to navigate.
 
-## Quick start
+## Requirements
 
-You need Neovim **0.12 or newer** and Git. A C compiler and Tree-sitter CLI **0.26.1 or newer** are needed when building configured parsers. Language tools may need their own runtimes, such as .NET, Python, Node.js, or Go.
+- **Neovim 0.12 or newer** and Git.
+- Network access on first launch to download `lazy.nvim` and the configured plugins.
+- A C compiler and **Tree-sitter CLI 0.26.1 or newer** when building configured parsers.
+- The relevant runtime for each language you use, such as .NET, Python, Node.js, or Go.
+
+## Quick start
 
 On Linux or macOS, clone into Neovim's configuration directory. If you already have a configuration at `~/.config/nvim`, move it aside first.
 
@@ -19,7 +24,7 @@ git clone https://github.com/Orbit-Lua/orbitvim.git ~/.config/nvim
 nvim
 ```
 
-The first launch downloads `lazy.nvim` and the declared plugins, so it needs network access. After plugin installation, run `:ToolManager`. A window with LSP, DAP, formatter, linter, parser, and package tabs confirms that the configuration loaded. `<leader>us` opens the same window; the leader key is Space.
+After plugin installation, run `:ToolManager`. A window with LSP, DAP, formatter, linter, parser, and package tabs confirms that the configuration loaded. `<leader>us` opens the same window; the leader key is Space.
 
 To install every configured Tree-sitter parser, run `:TSInstallAll`. This downloads and builds parsers. You can also install individual missing tools from Tool Manager.
 
