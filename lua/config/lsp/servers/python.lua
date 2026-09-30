@@ -33,14 +33,15 @@ return {
           analysis = {
             autoSearchPaths = true,
             diagnosticMode = "workspace",
-            include = { "src" },
-            extraPaths = { "typings" },
+            useLibraryCodeForTypes = true,
+            typeCheckingMode = "standard",
+
+            -- include = { "src" },
 
             -- fix completion delay: https://github.com/microsoft/pyright/issues/4878
-            useLibraryCodeForTypes = true,
-            stubPath = data_path .. "/lazy/python-type-stubs/stubs",
-
-            typeCheckingMode = "standard",
+            -- extraPaths = { "typings" },
+            -- useLibraryCodeForTypes = false,
+            -- stubPath = data_path .. "/lazy/python-type-stubs/stubs",
           },
         },
       },
