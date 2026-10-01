@@ -3,71 +3,58 @@
 # OrbitVim
 
 [![Validate on main](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml?query=branch%3Amain)
-[![Neovim 0.12 or newer](https://img.shields.io/badge/Neovim-0.12%2B-57A143?style=flat-square&logo=neovim&logoColor=white)](https://neovim.io/)
-[![Managed with lazy.nvim](https://img.shields.io/badge/plugins-lazy.nvim-blue?style=flat-square)](https://github.com/folke/lazy.nvim)
+[![Neovim 0.12+](https://img.shields.io/badge/Neovim-0.12%2B-57A143?style=flat-square&logo=neovim&logoColor=white)](https://neovim.io/)
+[![lazy.nvim](https://img.shields.io/badge/plugins-lazy.nvim-blue?style=flat-square)](https://github.com/folke/lazy.nvim)
+[![Nui UI](https://img.shields.io/badge/Tool_Manager-nui.nvim-blue?style=flat-square)](https://github.com/MunifTanjim/nui.nvim)
 
-OrbitVim is a Neovim configuration for development in C#, Python, JavaScript, TypeScript, Go, SQL, Markdown, and related files. It combines lazy-loaded plugins, Nv UI/base46, language tooling, and an interactive Tool Manager. The layout is intended to make both everyday use and customization easy to navigate.
+A Lua Neovim configuration with language tooling, debugging, completion, Nv UI/base46 themes, and a Nui-based Tool Manager. It supports C#, Python, JavaScript, TypeScript, Go, SQL, Markdown, and related files. Tool Manager brings tool availability, runtime health, installation, and formatter/linter priority into one view.
 
-## Requirements
+[Getting started](#getting-started) · [Tool Manager](#tool-manager) · [Customization](#customization) · [Development](#development)
 
-- **Neovim 0.12 or newer** and Git.
-- Network access on first launch to download `lazy.nvim` and the configured plugins.
-- A C compiler and **Tree-sitter CLI 0.26.1 or newer** when building configured parsers.
-- The relevant runtime for each language you use, such as .NET, Python, Node.js, or Go.
+## Getting started
 
-## Quick start
+You need **Neovim 0.12 or newer**, Git, and network access for the first plugin installation. Building Tree-sitter parsers also requires a C compiler and **Tree-sitter CLI 0.26.1 or newer**. Install the runtimes and package managers required by the languages you use; `:checkhealth mason` reports the available installation tools.
 
-On Linux or macOS, clone into Neovim's configuration directory. If you already have a configuration at `~/.config/nvim`, move it aside first.
+On Linux or macOS, clone into Neovim's configuration directory. Move any existing configuration aside before using this destination:
 
 ```sh
 git clone https://github.com/Orbit-Lua/orbitvim.git ~/.config/nvim
 nvim
 ```
 
-After plugin installation, run `:ToolManager`. A window with LSP, DAP, formatter, linter, parser, and package tabs confirms that the configuration loaded. `<leader>us` opens the same window; the leader key is Space.
+On Windows, use the configuration path returned by `:echo stdpath('config')`.
 
-To install every configured Tree-sitter parser, run `:TSInstallAll`. This downloads and builds parsers. You can also install individual missing tools from Tool Manager.
+Let Lazy finish installing plugins, then run `:ToolManager` or press `<leader>us` (Space, `u`, `s`). The category navigation and tools for your source buffer confirm that the configuration loaded. Press `s` to see all registered tool states.
 
-On Windows, place the checkout at the path returned by `:echo stdpath('config')`, then start Neovim in the usual way.
-
-## What is included
-
-- **Tool Manager:** inspect available language tools, enable or disable them, install missing Mason packages and parsers, and change formatter or linter order.
-- **Language features:** LSP, debugging for Python and .NET, formatting, linting, completion, and snippets.
-- **Editing and UI:** Nv UI/base46 themes, file navigation, diagnostics, terminals, Git signs, and context menus.
-- **SQL support:** T-SQL highlighting, SQLFluff integration, and project-local LuaSnip templates. See [highlighting](doc/tsql-highlighting.md), [snippets](doc/tsql-snippets.md), and [conventions](doc/tsql-conventions.md).
-
-Minuet/Ollama completion code is included but its plugin is **disabled by default**. The `:MinuetEndpoint` command manages endpoint settings; it does not enable the disabled plugin.
-
-### .NET development
-
-Open `:DotnetManager` in an SDK-style C# workspace to choose a startup project and run build, test, package, EF Core, diagnostics, and publish actions. `:DotnetDebug` builds and launches the selected project; `:DotnetAttach` attaches to a local process. Install `netcoredbg` and enable `coreclr` in Tool Manager's DAP tab. `dotnet-cli.nvim` supplies the .NET launch and attach configurations while OrbitVim keeps the generic DAP keys and UI. See the [dotnet-cli.nvim guide](https://github.com/Orbit-Lua/dotnet-cli.nvim) for optional tools and profiles.
+Missing language tools are installed separately from plugins. Select a tool and press `i`, or enable a missing Mason-backed tool with Space: the default policy installs it before enabling it. To download and build every configured parser, run `:TSInstallAll`.
 
 ## Tool Manager
 
-Run `:ToolManager` or press `<leader>us`.
+The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter entries are grouped by filetype, with their priority visible in the expanded group.
 
 | Key | Action |
 | --- | --- |
-| `1`–`6` | Select LSP, DAP, formatter, linter, parser, or package |
-| `<Tab>` / `<S-Tab>` | Move between categories |
+| `1`–`6` | Select a category |
+| `<Tab>` / `<S-Tab>` | Next / previous category |
+| `s` | Current buffer / all tool states |
 | `<Space>` | Enable or disable a tool |
-| `i` | Install a missing package or parser |
-| `[` / `]` | Change formatter or linter priority |
+| `i` | Install its package or parser |
+| `[` / `]` | Move a formatter or linter earlier / later |
 | `o` / `<CR>` / `za` | Expand or collapse an entry |
-| `K` | Show details for the selected tool |
-| `s` | Switch between current-buffer and all-state views |
-| `?` / `g?` | Show help |
-| `q` / `<Esc>` | Close |
+| `K` | Open details, including linter errors and diagnostics |
+| `?` / `g?` | Toggle help |
+| `q` / `<Esc>` | Close the view |
 
-Tool definitions and default ordering come from `lua/config/tools.lua`. Tool Manager saves enabled state and ordering in Neovim's data directory as `tools.json`; it can read an older `service.json` state file.
+Parsers and dependency packages can be installed but cannot be toggled or reordered. Enabling a tool and installing its package are separate operations: `i` alone does not change enablement. A failed automatic installation leaves the tool disabled.
 
-## Common shortcuts
+Enablement and priority are saved as `tools.json` in Neovim's data directory. An older `service.json` is read when `tools.json` is absent. Tool support and initial runtime activation are distinct: a registered tool can support your filetype while its status reports that it is not configured.
+
+See the [Tool Manager guide](doc/tool-manager.md) for status interpretation, install policy, and persistence behavior.
+
+## Everyday workflows
 
 | Mapping | Action |
 | --- | --- |
-| `<leader>us` | Open Tool Manager |
-| `<leader>ut` | Open the theme picker |
 | `<leader>fm` | Format the current buffer |
 | `<leader>tf` | Show diagnostics for the current line |
 | `<C-n>` | Toggle the file tree |
@@ -75,43 +62,61 @@ Tool definitions and default ordering come from `lua/config/tools.lua`. Tool Man
 | `<C-e>` | Open Harpoon's quick menu |
 | `<leader>dt` | Toggle a breakpoint |
 | `<leader>du` | Toggle the debug UI |
-| `<M-i>` / `<M-h>` / `<M-v>` | Toggle floating, horizontal, or vertical terminal |
+| `<M-i>` / `<M-h>` / `<M-v>` | Floating / horizontal / vertical terminal |
+| `<leader>ut` | Choose a theme |
 
-## Where to customize
+### .NET
 
-`init.lua` shows the startup sequence: editor setup, Lazy plugin import, then post-Lazy commands and theme setup. Each directory has one main role:
+In an SDK-style C# workspace, `:DotnetManager` provides startup-project selection, build, test, package, EF Core, diagnostics, and publish actions. `:DotnetDebug` builds and launches the selected project; `:DotnetAttach` attaches to a local process. Install `netcoredbg` and enable `coreclr` in Tool Manager. [dotnet-cli.nvim](https://github.com/Orbit-Lua/dotnet-cli.nvim) owns the launch/attach configurations; OrbitVim supplies generic DAP mappings and UI.
 
-| Change | Location |
+### SQL
+
+T-SQL support combines Tree-sitter highlighting, focused syntax fallbacks, SQLFluff formatting/linting adapters, and LuaSnip templates. Read the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md), and [SQL conventions](doc/tsql-conventions.md).
+
+### AI completion
+
+Minuet/Ollama completion is included but disabled by default. `:MinuetEndpoint` manages endpoint settings; it does not enable the plugin. Its plugin specification is in [lua/plugins/ai.lua](lua/plugins/ai.lua).
+
+## Customization
+
+| Responsibility | Owner |
 | --- | --- |
-| Editor options, filetypes, events, general keys, theme activation | `lua/core/` |
-| Plugin identity, dependencies, lazy triggers, plugin keys | `lua/plugins/` |
-| Plugin options, tool registry, language and UI settings | `lua/config/` |
-| LSP, DAP, completion, formatter, linter, and snippet activation | `lua/runtime/` |
+| Editor options, events, filetypes, keys, theme activation | `lua/core/` |
+| Plugin identities, dependencies, lazy triggers, plugin keys | `lua/plugins/` |
+| Editable plugin and language settings | `lua/config/` |
+| Canonical tools, filetypes, installer packages, default priority | `lua/config/tools.lua` |
+| Tool Manager dimensions, categories, mappings, install policy | `lua/config/tool_manager.lua` |
+| LSP, DAP, completion, formatting, linting, snippets, Tree-sitter activation | `lua/runtime/` |
 | User command registration | `lua/commands/` |
-| Tool Manager state, actions, adapters, and UI | `lua/tool/` |
-| AI endpoint state and statusline integration | `lua/ai/` |
-| Reusable helpers | `lua/utils/` |
+| Tool operations, persistence, category adapters | `lua/tool/` |
+| Nui view sessions, rendering, details | `lua/tool/ui/` |
+| AI endpoint persistence and statusline | `lua/ai/` |
+| Shared helpers | `lua/utils/` |
 
-To change a tool or its filetypes, start in `lua/config/tools.lua`. To change a plugin's loading condition, find its spec in `lua/plugins/`. For plugin behavior, follow its runtime module. `lua/chadrc.lua` remains the Nv UI/base46 entry point.
+`lua/chadrc.lua` is the Nv UI/base46 entry point. `init.lua` preserves three startup phases: editor setup, Lazy bootstrap/import, then commands and final UI setup. See [architecture](doc/architecture.md) for the module boundaries.
 
 ## Development
 
-Work from the repository root. Install Neovim, `make`, StyLua, Luacheck, and Tree-sitter CLI 0.26.1 or newer. Open Neovim once so `lazy.nvim` and `plenary.nvim` are available. Integration tests also need the configured parsers and external tools, including SQLFluff.
+Install Neovim, `make`, StyLua, and Luacheck. Open Neovim once to bootstrap the locked plugins, including Plenary and Nui. Integration tests additionally require the configured parsers, LuaSnip, and SQLFluff; use `:TSInstallAll` to prepare parsers.
 
-| Command | Checks or changes |
+Run commands from the repository root:
+
+| Command | Effect |
 | --- | --- |
 | `make all` | Check formatting, lint, and run hermetic core specs |
 | `make test-integration` | Run parser, snippet, and executable integration specs |
-| `make test-all` | Run both test suites |
+| `make test-all` | Run both suites |
 | `make fmt` | Rewrite Lua formatting |
-| `nvim --headless "+qall"` | Smoke-test startup |
+| `nvim --headless "+qall"` | Smoke-test startup with installed plugins |
 
-`make all` checks the local source tree; the badge above reports the repository's main-branch workflow. For a single core spec:
+For one core spec:
 
 ```sh
 nvim --headless --noplugin -u scripts/tests/minimal.vim \
-  -c "lua require('plenary.busted').run('lua/test/spec/tool_state_spec.lua')" \
+  -c "lua require('plenary.busted').run('tests/core/tool_state_spec.lua')" \
   -c 'qall'
 ```
 
-Repository editing and test isolation rules are in [AGENTS.md](AGENTS.md).
+Core tests use isolated files and mocked installation/runtime seams; they do not install tools or update plugins. UI contract specs exercise the installed Nui library. Integration suites fail when a required dependency is missing.
+
+[AGENTS.md](AGENTS.md) defines editing and test admission rules. Tests protect behavior, safety, persistence, ordering, or external seams; moving a file or adding a constant does not require another test.

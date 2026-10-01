@@ -237,10 +237,13 @@ $0
 
 Keep triggers unique and lowercase, give every placeholder a useful default,
 terminate complete T-SQL statements with semicolons, and retain `$0` as the
-final cursor position. Update the catalog and the expected collection size in
-`lua/test/spec/tsql_snippets_spec.lua`, then run:
+final cursor position. Update the catalog and protect meaningful expansion,
+transaction, identifier-validation, and parameterization behavior in
+`tests/integration/tsql_snippets_spec.lua`. Do not add fixed trigger inventories
+or collection-size assertions. Then run:
 
 ```bash
 make all
+make test-integration
 nvim --headless "+qall"
 ```

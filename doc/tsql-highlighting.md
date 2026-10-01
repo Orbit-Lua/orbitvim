@@ -18,7 +18,7 @@ maintenance cost of a separate T-SQL grammar.
 
 ## Runtime behavior
 
-Every `FileType` event calls `require("utils.treesitter").start(buf)`. The
+Every `FileType` event calls `require("runtime.treesitter").start(buf)`. The
 module starts Tree-sitter first. For an `sql` buffer, it then selects the
 configured legacy SQL dialect and enables Vim syntax alongside Tree-sitter. For
 a Markdown buffer, it maps the `sql` fence label to the configured dialect and
@@ -137,11 +137,11 @@ redundant legacy rule.
 
 ## Validation
 
-Focused coverage lives in `lua/test/spec/treesitter_tsql_spec.lua`. It verifies
+Focused coverage lives in `tests/integration/treesitter_tsql_spec.lua`. It verifies
 the query corrections, dialect precedence, opt-out behavior, syntax groups,
 Markdown containment, and protection of strings and comments.
 
-`lua/test/spec/treesitter_tsql_corpus_spec.lua` treats every `sql` fence in
+`tests/integration/treesitter_tsql_corpus_spec.lua` treats every `sql` fence in
 `doc/tsql-conventions.md` as an executable highlighting corpus. It verifies
 that every fence receives a SQL injection, every uppercase SQL/T-SQL lexeme is
 covered by either a Tree-sitter capture or a contained fallback group, and the
@@ -156,5 +156,6 @@ Before committing a change, run the full suite and startup smoke test:
 
 ```bash
 make all
+make test-integration
 nvim --headless "+qall"
 ```
