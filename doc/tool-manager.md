@@ -4,6 +4,8 @@ Open `:ToolManager` or `<leader>us`. Repeating the command focuses the existing 
 
 ## Categories and selection
 
+One outer frame contains category navigation, source scope, the tool list, and action hints. The selected category has a filled highlight. Narrow views retain its name; short views omit separators to keep the list usable. Formatter/linter views show priority hints when space permits.
+
 Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand an entry with `o`, Enter, or `za`. Formatter/linter groups expand by default in buffer scope and collapse by default in all-state scope, unless you have explicitly changed that group's expansion.
 
 The selected tool stays selected after priority changes and live refreshes. Category and explicit expansion choices survive closing and reopening the manager. Help (`?` or `g?`) suspends tool actions and remains visible during background refreshes. `K` opens and focuses details so they can be scrolled. Close details with `q` or Escape to return to the tool list.

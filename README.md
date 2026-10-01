@@ -1,5 +1,3 @@
-<!-- markdownlint-disable MD013 -->
-
 # OrbitVim
 
 [![Validate on main](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml?query=branch%3Amain)
@@ -30,7 +28,7 @@ Missing language tools are installed separately from plugins. Select a tool and 
 
 ## Tool Manager
 
-The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter entries are grouped by filetype, with their priority visible in the expanded group.
+The navigation, source scope, tool list, and action hints share one outer frame. The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter entries are grouped by filetype, with their priority visible in the expanded group.
 
 | Key | Action |
 | --- | --- |

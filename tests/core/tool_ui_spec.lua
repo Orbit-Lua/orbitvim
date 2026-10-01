@@ -288,7 +288,13 @@ describe("Tool Manager Nui sessions", function()
       assert.is_true(vim.wait(100, function()
         return #snapshots == count + 1
       end))
-      tool.close()
+      vim.api.nvim_win_close(
+        vim.fn.bufwinid(buffer_for("ToolManagerFrame")),
+        true
+      )
+      assert.is_true(vim.wait(100, function()
+        return buffer_for("ToolManager") == nil
+      end))
       vim.api.nvim_exec_autocmds("User", { pattern = "ToolManagerChanged" })
       vim.wait(20)
       assert.equals(count + 1, #snapshots)
@@ -316,6 +322,33 @@ describe("Tool Manager Nui sessions", function()
           buffer_for("ToolManagerDetails"),
           vim.api.nvim_get_current_buf()
         )
+        local frame = vim.fn.bufwinid(buffer_for("ToolManagerFrame"))
+        local origin = vim.api.nvim_win_get_position(frame)
+        -- Neovim reports the outer border position; child windows start inside it.
+        origin[1], origin[2] = origin[1] + 1, origin[2] + 1
+        local frame_width = vim.api.nvim_win_get_width(frame)
+        local frame_height = vim.api.nvim_win_get_height(frame)
+        for _, filetype in ipairs({
+          "ToolManagerNavigation",
+          "ToolManager",
+          "ToolManagerStatus",
+        }) do
+          local window = vim.fn.bufwinid(buffer_for(filetype))
+          local position = vim.api.nvim_win_get_position(window)
+          assert.equals(origin[2], position[2])
+          assert.equals(frame_width, vim.api.nvim_win_get_width(window))
+          assert.is_true(position[1] >= origin[1])
+          assert.is_true(
+            position[1] + vim.api.nvim_win_get_height(window)
+              <= origin[1] + frame_height
+          )
+          assert.equals("none", vim.api.nvim_win_get_config(window).border)
+        end
+        if size[1] == 24 then
+          assert.is_truthy(
+            lines(buffer_for("ToolManagerNavigation")):find("Linter", 1, true)
+          )
+        end
         for _, window in ipairs(vim.api.nvim_list_wins()) do
           local buffer = vim.api.nvim_win_get_buf(window)
           if vim.bo[buffer].filetype:match("^ToolManager") then

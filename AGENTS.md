@@ -1,5 +1,3 @@
-<!-- markdownlint-disable MD013 -->
-
 # AGENTS Instructions
 
 ## Project and contracts

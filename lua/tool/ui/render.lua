@@ -20,37 +20,95 @@ end
 function M.chrome(view, snapshot)
   local width = vim.api.nvim_win_get_width(view.header.winid)
   local tabs = Line()
-  if width >= 100 then
-    tabs:append(" Tool Manager ·", "Title")
-  end
-  for index, category in ipairs(config.categories) do
-    local label = width < 50 and ""
-      or width < 75 and category:sub(1, 3)
-      or config.labels[category]
+  local current = view.state.category
+  local active_highlight = "ToolManagerCategoryActive"
+  if width < 75 then
     tabs:append(
-      width < 50 and (" " .. index .. " ")
-        or (" " .. index .. " " .. label .. " "),
-      index == view.state.category and "Title" or "Comment"
+      str.trunc(
+        " " .. current .. " " .. config.labels[view:category()] .. " ",
+        width
+      ),
+      active_highlight
+    )
+    tabs:append(
+      str.trunc(" · Tab switch", math.max(0, width - tabs:width())),
+      "Comment"
+    )
+  else
+    for index, category in ipairs(config.categories) do
+      local selected = index == current
+      tabs:append(
+        " " .. index .. " " .. config.labels[category] .. " ",
+        selected and active_highlight or "ToolManagerCategoryInactive"
+      )
+      tabs:append(" ", "Normal")
+    end
+  end
+  local context = Line()
+  local buffer_scope = view.state.scope == "buffer"
+  context:append(
+    str.trunc(buffer_scope and " Buffer" or " All", width),
+    "Title"
+  )
+  context:append(
+    str.trunc(
+      " · " .. #snapshot.tools .. " tools",
+      math.max(0, width - context:width())
+    ),
+    "Normal"
+  )
+  if buffer_scope then
+    local source = view.source
+    local filename = source.name == "" and "[No Name]"
+      or vim.fs.basename(source.name)
+    local filetype = source.filetype == "" and "no filetype" or source.filetype
+    context:append(
+      str.trunc(
+        " · " .. filetype .. " · " .. filename,
+        math.max(0, width - context:width())
+      ),
+      "Comment"
     )
   end
-  write(view.header, { tabs })
-  local footer = Line()
-  local source = view.source
-  local filename = source.name == "" and "[No Name]"
-    or vim.fs.basename(source.name)
-  local filetype = source.filetype == "" and "no filetype" or source.filetype
-  local context = view.state.scope == "buffer"
-      and (filename .. " · " .. filetype)
-    or "All tool states"
-  local counts = string.format(" · %d tools", #snapshot.tools)
-  footer:append(
-    str.trunc(
-      " " .. context .. counts .. " · s scope · ? help · q close",
-      width
-    ),
-    "Comment"
-  )
-  write(view.footer, { footer })
+  local function separator()
+    local line = Line()
+    line:append(string.rep("─", width), "FloatBorder")
+    return line
+  end
+  local header = { tabs, context }
+  if vim.api.nvim_win_get_height(view.header.winid) > 2 then
+    table.insert(header, separator())
+  end
+  write(view.header, header)
+  local hints = Line()
+  local category = view:category()
+  local actions = width < 50
+      and { { "?", "help" }, { "s", "scope" }, { "q", "close" } }
+    or {
+      { "Space", "toggle" },
+      { "i", "install" },
+      { "K", "details" },
+      { "s", "scope" },
+      { "?", "help" },
+      { "q", "close" },
+    }
+  if width >= 100 and (category == "formatter" or category == "linter") then
+    table.insert(actions, 1, { "[/]", "priority" })
+  end
+  for _, action in ipairs(actions) do
+    local text = " " .. action[1] .. " " .. action[2]
+    if hints:width() + vim.fn.strdisplaywidth(text) > width then
+      break
+    end
+    hints:append(" " .. action[1], "Special")
+    hints:append(" " .. action[2], "Comment")
+  end
+  local footer = {}
+  if vim.api.nvim_win_get_height(view.footer.winid) > 1 then
+    table.insert(footer, separator())
+  end
+  table.insert(footer, hints)
+  write(view.footer, footer)
 end
 
 local function node_line(node, width)
@@ -59,7 +117,10 @@ local function node_line(node, width)
   local arrow = node:has_children()
       and (node:is_expanded() and config.icons.expanded or config.icons.collapsed)
     or " "
-  line:append(indent .. arrow .. " ", "Comment")
+  line:append(
+    indent .. arrow .. " ",
+    node.kind == "detail" and "Comment" or "Title"
+  )
   if node.kind == "group" then
     line:append(
       str.trunc(

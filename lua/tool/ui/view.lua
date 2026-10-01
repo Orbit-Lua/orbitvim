@@ -23,9 +23,18 @@ local function dimensions()
     width = math.max(3, math.min(config.width, vim.o.columns - 4)),
     height = math.max(
       5,
-      math.min(config.height, vim.o.lines - vim.o.cmdheight - 2)
+      math.min(config.height, vim.o.lines - vim.o.cmdheight - 4)
     ),
   }
+end
+
+local function sections(view, height)
+  local compact = height < 8
+  return Layout.Box({
+    Layout.Box(view.header, { size = compact and 2 or 3 }),
+    Layout.Box(view.body, { grow = 1 }),
+    Layout.Box(view.footer, { size = compact and 1 or 2 }),
+  }, { dir = "col" })
 end
 
 function View:current()
@@ -43,7 +52,9 @@ function View:refresh(first, identity)
   local selected_id = identity or selected and selected.id
   selected_id = selected_id or self.saved_selection
   local position = vim.api.nvim_win_get_cursor(self.body.winid)
-  self.layout:update({ size = dimensions() })
+  local size = dimensions()
+  self.frame:update_layout({ size = size })
+  self.layout:update({}, sections(self, size.height))
   local snapshot = manager.snapshot({
     category = self:category(),
     scope = self.state.scope,
@@ -112,6 +123,7 @@ function View:close()
   end
   details.close(self)
   self.layout:unmount()
+  self.frame:unmount()
   self.on_close(self)
 end
 
@@ -207,18 +219,27 @@ end
 function View.new(source, state, on_close)
   local self =
     setmetatable({ source = source, state = state, on_close = on_close }, View)
+  local size = dimensions()
+  self.frame = Popup({
+    relative = "editor",
+    position = "50%",
+    size = size,
+    border = require("config.borders").default,
+    focusable = false,
+    zindex = 49,
+    buf_options = { filetype = "ToolManagerFrame", buflisted = false },
+    win_options = { wrap = false },
+  })
   self.header = popup("ToolManagerNavigation")
-  self.body = popup("ToolManager", require("config.borders").default)
+  self.body = popup("ToolManager")
   self.footer = popup("ToolManagerStatus")
-  self.layout = Layout(
-    { relative = "editor", position = "50%", size = dimensions() },
-    Layout.Box({
-      Layout.Box(self.header, { size = 1 }),
-      Layout.Box(self.body, { grow = 1 }),
-      Layout.Box(self.footer, { size = 1 }),
-    }, { dir = "col" })
-  )
+  self.layout = Layout(self.frame, sections(self, size.height))
   self.layout:mount()
+  -- Native title keeps the frame a single window, including external-close cleanup.
+  vim.api.nvim_win_set_config(self.frame.winid, {
+    title = " Tool Manager ",
+    title_pos = "center",
+  })
   vim.wo[self.body.winid].cursorline = true
   vim.api.nvim_set_current_win(self.body.winid)
   self.group = vim.api.nvim_create_augroup(
@@ -242,7 +263,7 @@ function View.new(source, state, on_close)
       self:refresh(true)
     end, { nowait = true, silent = true })
   end
-  for _, component in ipairs({ self.header, self.body, self.footer }) do
+  for _, component in ipairs({ self.frame, self.header, self.body, self.footer }) do
     vim.api.nvim_create_autocmd("WinClosed", {
       group = self.group,
       pattern = tostring(component.winid),
@@ -264,15 +285,18 @@ function View.new(source, state, on_close)
       end,
     })
   end
-  vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach", "VimResized" }, {
-    group = self.group,
-    callback = function(event)
-      if event.event == "VimResized" then
-        details.resize(self)
-      end
-      self:schedule_refresh()
-    end,
-  })
+  vim.api.nvim_create_autocmd(
+    { "LspAttach", "LspDetach", "VimResized", "ColorScheme" },
+    {
+      group = self.group,
+      callback = function(event)
+        if event.event == "VimResized" then
+          details.resize(self)
+        end
+        self:schedule_refresh()
+      end,
+    }
+  )
   vim.api.nvim_create_autocmd("User", {
     group = self.group,
     pattern = { "TSUpdate", "ToolManagerChanged" },

@@ -56,6 +56,10 @@ M.base46 = {
     DapBreakpointColor = { fg = "red" },
     ToolMuted = { fg = "grey" },
 
+    -- Tool Manager categories mirror base46's Mason palette without Mason links.
+    ToolManagerCategoryActive = { fg = "black", bg = "green" },
+    ToolManagerCategoryInactive = { fg = "light_grey", bg = "one_bg" },
+
     -- default icon hl
     MiniIconsGrey = { link = "DevIconDefault" },
 
