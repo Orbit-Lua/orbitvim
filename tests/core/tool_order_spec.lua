@@ -11,7 +11,7 @@ describe("tool.order", function()
     original_state_path = vim.g.tool_state_path
     original_state_module = package.loaded["tool.state"]
     original_order_module = package.loaded["tool.order"]
-    vim.g.tool_state_path = require("test.helpers").temp_dir("tool-order")
+    vim.g.tool_state_path = require("tests.helpers").temp_dir("tool-order")
       .. "/tools.json"
     package.loaded["tool.order"] = nil
     package.loaded["tool.state"] = nil
@@ -28,7 +28,7 @@ describe("tool.order", function()
     vim.g.tool_state_path = original_state_path
     package.loaded["tool.state"] = original_state_module
     package.loaded["tool.order"] = original_order_module
-    require("test.helpers").cleanup_all()
+    require("tests.helpers").cleanup_all()
   end)
 
   it(

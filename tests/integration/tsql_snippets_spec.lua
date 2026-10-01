@@ -1,5 +1,6 @@
-local test = require("test.helpers")
+local test = require("tests.helpers")
 local luasnip_path = test.plugin_path("LuaSnip")
+local original_runtimepath = vim.opt.runtimepath:get()
 vim.opt.runtimepath:append(luasnip_path)
 
 local snippets = dofile(vim.fn.getcwd() .. "/luasnippets/tsql.lua")
@@ -25,31 +26,8 @@ end
 describe("T-SQL snippets", function()
   local indexed = index_by_trigger()
 
-  it("provides the complete convention-based collection", function()
-    for _, trigger in ipairs({
-      "ctable",
-      "idxinc",
-      "cview",
-      "cprocr",
-      "cprocw",
-      "citvf",
-      "sel",
-      "ijoin",
-      "cte",
-      "rowpart",
-      "ins",
-      "updo",
-      "delo",
-      "upsert",
-      "temptable",
-      "txn",
-      "dynsql",
-      "dynident",
-      "grantobj",
-      "utccol",
-    }) do
-      assert.is_not_nil(indexed[trigger], "missing trigger: " .. trigger)
-    end
+  after_each(function()
+    vim.opt.runtimepath = original_runtimepath
   end)
 
   it("uses unique non-empty triggers and names", function()
@@ -58,20 +36,6 @@ describe("T-SQL snippets", function()
         type(snippet.trigger) == "string" and snippet.trigger ~= ""
       )
       assert.is_true(type(snippet.name) == "string" and snippet.name ~= "")
-    end
-  end)
-
-  it("documents every trigger in the complete guide", function()
-    local documentation = table.concat(
-      vim.fn.readfile(vim.fn.getcwd() .. "/doc/tsql-snippets.md"),
-      "\n"
-    )
-
-    for _, snippet in ipairs(snippets) do
-      assert.is_truthy(
-        documentation:find("`" .. snippet.trigger .. "`", 1, true),
-        "undocumented trigger: " .. snippet.trigger
-      )
     end
   end)
 

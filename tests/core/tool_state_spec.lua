@@ -1,5 +1,5 @@
 describe("tool.state", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local tools = require("config.tools")
   local state
   local state_path

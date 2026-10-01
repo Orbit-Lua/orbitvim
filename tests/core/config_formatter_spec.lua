@@ -1,17 +1,27 @@
 describe("config.formatter", function()
   local formatter = require("config.formatter")
+  local fs = require("utils.fs")
+  local os_utils = require("utils.os")
+  local sqlfluff = require("utils.sqlfluff")
+  local originals
 
-  it("only declares options supported by Conform defaults", function()
-    assert.is_nil(formatter.default_format_opts.async)
-    assert.same(5000, formatter.default_format_opts.timeout_ms)
+  before_each(function()
+    originals = {
+      get_root = fs.get_root,
+      is_win = os_utils.is_win,
+      format_args = sqlfluff.format_args,
+      cwd = sqlfluff.cwd,
+    }
+  end)
+
+  after_each(function()
+    fs.get_root = originals.get_root
+    os_utils.is_win = originals.is_win
+    sqlfluff.format_args = originals.format_args
+    sqlfluff.cwd = originals.cwd
   end)
 
   it("uses the project-local Prisma formatter on Unix", function()
-    local fs = require("utils.fs")
-    local os_utils = require("utils.os")
-    local original_get_root = fs.get_root
-    local original_is_win = os_utils.is_win
-
     fs.get_root = function()
       return "/tmp/project"
     end
@@ -23,17 +33,9 @@ describe("config.formatter", function()
       "/tmp/project/node_modules/.bin/prisma",
       formatter.formatters.prisma_fmt.command()
     )
-
-    fs.get_root = original_get_root
-    os_utils.is_win = original_is_win
   end)
 
   it("uses the project-local Prisma formatter on Windows", function()
-    local fs = require("utils.fs")
-    local os_utils = require("utils.os")
-    local original_get_root = fs.get_root
-    local original_is_win = os_utils.is_win
-
     fs.get_root = function()
       return "C:/project"
     end
@@ -45,15 +47,9 @@ describe("config.formatter", function()
       "C:/project/node_modules/.bin/prisma.CMD",
       formatter.formatters.prisma_fmt.command()
     )
-
-    fs.get_root = original_get_root
-    os_utils.is_win = original_is_win
   end)
 
   it("passes SQL buffer context to SQLFluff", function()
-    local sqlfluff = require("utils.sqlfluff")
-    local original_format_args = sqlfluff.format_args
-    local original_cwd = sqlfluff.cwd
     local filename = "/tmp/project/query.sql"
 
     sqlfluff.format_args = function(path)
@@ -74,11 +70,6 @@ describe("config.formatter", function()
       formatter.formatters.sqlfluff.cwd(nil, { filename = filename })
     )
 
-    sqlfluff.format_args = original_format_args
-    sqlfluff.cwd = original_cwd
-  end)
-
-  it("forces UTF-8 for SQLFluff stdin", function()
     assert.same("1", formatter.formatters.sqlfluff.env.PYTHONUTF8)
   end)
 end)

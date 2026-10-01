@@ -58,6 +58,4 @@ M.get_file_icon = function(path, opts)
   return format_icon(icon, icon_hl_name, opts.colored)
 end
 
-M.get_file_icons = M.get_file_icon
-
 return M

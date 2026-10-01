@@ -1,7 +1,10 @@
 describe("AI completion endpoint", function()
+  local test = require("tests.helpers")
   local endpoint
   local state_path
   local original_minuet
+  local original_endpoint
+  local original_path
 
   local function write_state(content)
     local file = assert(io.open(state_path, "w"))
@@ -10,7 +13,9 @@ describe("AI completion endpoint", function()
   end
 
   before_each(function()
-    state_path = vim.fn.tempname()
+    state_path = test.temp_dir("ai-endpoint") .. "/state.json"
+    original_path = vim.g.minuet_endpoint_state_path
+    original_endpoint = package.loaded["ai.endpoint"]
     vim.g.minuet_endpoint_state_path = state_path
     package.loaded["ai.endpoint"] = nil
     endpoint = require("ai.endpoint")
@@ -18,10 +23,10 @@ describe("AI completion endpoint", function()
   end)
 
   after_each(function()
-    os.remove(state_path)
-    vim.g.minuet_endpoint_state_path = nil
+    vim.g.minuet_endpoint_state_path = original_path
     package.loaded.minuet = original_minuet
-    package.loaded["ai.endpoint"] = nil
+    package.loaded["ai.endpoint"] = original_endpoint
+    test.cleanup_all()
   end)
 
   it("normalizes hosts and completion URLs", function()

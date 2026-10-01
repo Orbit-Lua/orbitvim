@@ -78,7 +78,7 @@ jobs:
             -c "qall"
 
       - name: Install integration parsers
-        run: nvim --headless -u init.lua -l lua/test/install_parsers.lua
+        run: nvim --headless -u init.lua -l scripts/tests/install_parsers.lua
 
       - name: Run core validation
         run: make all

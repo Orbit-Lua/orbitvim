@@ -1,5 +1,5 @@
 describe("tool.category.formatter", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local formatter
   local state
   local conform

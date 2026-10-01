@@ -1,5 +1,5 @@
 describe("SQLFluff executable", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local sqlfluff = require("utils.sqlfluff")
 
   after_each(function()

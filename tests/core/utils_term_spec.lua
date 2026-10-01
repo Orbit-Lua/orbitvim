@@ -1,12 +1,31 @@
 describe("utils.term", function()
   local term = require("utils.term")
+  local originals
+  local original_has
+
+  before_each(function()
+    originals = {
+      display = term.display,
+      has = vim.fn.has,
+      jobstart = vim.fn.jobstart,
+      shell = vim.o.shell,
+      window = package.loaded["utils.window"],
+      filetype = vim.bo.filetype,
+    }
+    original_has = vim.fn.has
+  end)
+
+  after_each(function()
+    term.display = originals.display
+    vim.fn.has = originals.has
+    vim.fn.jobstart = originals.jobstart
+    vim.o.shell = originals.shell
+    vim.bo.filetype = originals.filetype
+    package.loaded["utils.window"] = originals.window
+  end)
 
   describe("new", function()
     it("opens PowerShell without forwarding gsub replacement count", function()
-      local original_display = term.display
-      local original_has = vim.fn.has
-      local original_jobstart = vim.fn.jobstart
-      local original_shell = vim.o.shell
       local captured_cmd
 
       term.display = function() end
@@ -26,19 +45,12 @@ describe("utils.term", function()
         term.new({ pos = "sp" })
       end)
 
-      term.display = original_display
-      vim.fn.has = original_has
-      vim.fn.jobstart = original_jobstart
-      vim.o.shell = original_shell
-
       assert.is_true(ok, err)
       assert.same({ "pwsh.exe", "-NoLogo" }, captured_cmd)
     end)
   end)
 
   it("allows toggling from editor and managed terminal windows only", function()
-    local loaded_window = package.loaded["utils.window"]
-    local original_filetype = vim.bo.filetype
     local floating = true
     package.loaded["utils.window"] = {
       is_floating = function()
@@ -53,8 +65,5 @@ describe("utils.term", function()
     floating = true
     vim.bo.filetype = "Term_sp"
     assert.is_true(term.can_toggle())
-
-    vim.bo.filetype = original_filetype
-    package.loaded["utils.window"] = loaded_window
   end)
 end)

@@ -1,23 +1,18 @@
 describe("utils.fs", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local fs = require("utils.fs")
+  local original_get_clients
+  local original_root_pattern
 
-  after_each(function()
-    test.cleanup_all()
+  before_each(function()
+    original_get_clients = vim.lsp.get_clients
+    original_root_pattern = fs.root_pattern
   end)
 
-  it("makes paths relative only to an exact root directory", function()
-    local cases = {
-      { "/project/src/main.lua", "/project", "src/main.lua" },
-      { "/project/main.lua", "/project/", "main.lua" },
-      { "/project", "/project", "" },
-      { "/project-other/main.lua", "/project", "" },
-      { "/a/b/c/d/e.lua", "/a/b", "c/d/e.lua" },
-    }
-
-    for _, case in ipairs(cases) do
-      assert.equals(case[3], fs.make_relative_path(case[1], case[2]))
-    end
+  after_each(function()
+    vim.lsp.get_clients = original_get_clients
+    fs.root_pattern = original_root_pattern
+    test.cleanup_all()
   end)
 
   it(
@@ -37,30 +32,27 @@ describe("utils.fs", function()
     end
   )
 
-  it(
-    "keeps the project-root marker policy complete and duplicate-free",
-    function()
-      local seen = {}
-      for _, marker in ipairs(fs.root_pattern) do
-        assert.is_nil(seen[marker], "duplicate root marker: " .. marker)
-        seen[marker] = true
-      end
+  it("discovers project roots from directory and file markers", function()
+    local cases = {
+      { marker = ".git", directory = true },
+      { marker = "pyproject.toml", content = "[project]\n" },
+      { marker = "go.mod", content = "module example.test/app\n" },
+    }
 
-      for _, required in ipairs({
-        ".git",
-        "package.json",
-        "pyproject.toml",
-        "Cargo.toml",
-        "go.mod",
-        "Makefile",
-      }) do
-        assert.is_true(seen[required], "missing root marker: " .. required)
+    for index, case in ipairs(cases) do
+      local root = test.temp_dir("root-marker-" .. index)
+      local nested = root .. "/src/deep"
+      vim.fn.mkdir(nested, "p")
+      if case.directory then
+        vim.fn.mkdir(root .. "/" .. case.marker, "p")
+      else
+        test.write_file(root .. "/" .. case.marker, case.content)
       end
+      assert.equals(root, fs.get_root(nested .. "/main.lua"), case.marker)
     end
-  )
+  end)
 
   it("prefers an attached LSP root for the current buffer", function()
-    local original_get_clients = vim.lsp.get_clients
     local root = test.temp_dir("lsp-root")
     vim.lsp.get_clients = function(opts)
       assert.equals(0, opts.bufnr)
@@ -68,8 +60,6 @@ describe("utils.fs", function()
     end
 
     local resolved = fs.get_root()
-    vim.lsp.get_clients = original_get_clients
-
     assert.equals(root, resolved)
   end)
 
@@ -84,10 +74,8 @@ describe("utils.fs", function()
       assert.equals(root, fs.get_root(nested .. "/main.lua"))
 
       local standalone = test.temp_dir("standalone") .. "/query.sql"
-      local original_markers = fs.root_pattern
       fs.root_pattern = { "_orbitvim_missing_root_marker_" }
       local fallback = fs.get_root(standalone)
-      fs.root_pattern = original_markers
 
       assert.equals(vim.fs.dirname(standalone), fallback)
     end

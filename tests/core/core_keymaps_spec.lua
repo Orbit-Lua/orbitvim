@@ -1,11 +1,35 @@
 describe("core.keymaps", function()
-  it("<leader>fd changes cwd to roots containing spaces", function()
-    local fs = require("utils.fs")
-    local original_get_root = fs.get_root
-    local original_cwd = vim.fn.getcwd()
-    local root = vim.fn.tempname() .. " with space"
+  local test = require("tests.helpers")
+  local fs = require("utils.fs")
+  local utils_lsp = require("utils.lsp")
+  local original_mapleader
+  local original_cwd
+  local original_fs_root
+  local original_get_clients
+  local original_core_keymaps
+  local original_runtime_keymaps
 
-    vim.fn.mkdir(root, "p")
+  before_each(function()
+    original_mapleader = vim.g.mapleader
+    original_cwd = vim.fn.getcwd()
+    original_fs_root = fs.get_root
+    original_get_clients = utils_lsp.get_clients
+    original_core_keymaps = package.loaded["core.keymaps"]
+    original_runtime_keymaps = package.loaded["runtime.lsp.keymaps"]
+  end)
+
+  after_each(function()
+    vim.g.mapleader = original_mapleader
+    vim.api.nvim_set_current_dir(original_cwd)
+    fs.get_root = original_fs_root
+    utils_lsp.get_clients = original_get_clients
+    package.loaded["core.keymaps"] = original_core_keymaps
+    package.loaded["runtime.lsp.keymaps"] = original_runtime_keymaps
+    test.cleanup_all()
+  end)
+
+  it("<leader>fd changes cwd to roots containing spaces", function()
+    local root = test.temp_dir("root with space")
     vim.g.mapleader = " "
     package.loaded["core.keymaps"] = nil
     require("core.keymaps")
@@ -19,10 +43,6 @@ describe("core.keymaps", function()
 
     mapping.callback()
     assert.equals(vim.fs.normalize(root), vim.fs.normalize(vim.fn.getcwd()))
-
-    fs.get_root = original_get_root
-    vim.api.nvim_set_current_dir(original_cwd)
-    vim.fn.delete(root, "rf")
   end)
 
   it("prevents K from falling back to unrelated help", function()
@@ -65,17 +85,27 @@ describe("core.keymaps", function()
     assert.same({}, unexpected)
   end)
 
-  it("only replaces K when an LSP supports hover", function()
-    package.loaded["runtime.lsp.keymaps"] = nil
-    local specs = require("runtime.lsp.keymaps").get()
-
-    for _, spec in ipairs(specs) do
-      if spec[1] == "K" then
-        assert.equals("hover", spec.has)
-        return
+  it(
+    "resolves hover only for clients that support the actual LSP method",
+    function()
+      local supports_hover = true
+      utils_lsp.get_clients = function(opts)
+        assert.is_table(opts)
+        return {
+          {
+            supports_method = function(_, method)
+              assert.equals("textDocument/hover", method)
+              return supports_hover
+            end,
+          },
+        }
       end
-    end
+      package.loaded["runtime.lsp.keymaps"] = nil
+      local keymaps = require("runtime.lsp.keymaps")
 
-    error("missing LSP hover keymap")
-  end)
+      assert.is_true(keymaps.has(vim.api.nvim_get_current_buf(), "hover"))
+      supports_hover = false
+      assert.is_false(keymaps.has(vim.api.nvim_get_current_buf(), "hover"))
+    end
+  )
 end)

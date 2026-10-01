@@ -8,8 +8,8 @@ describe("test bootstrap", function()
 
     for name, path in pairs(paths) do
       assert.equals(
-        root,
-        path:sub(1, #root),
+        root .. "/",
+        path:sub(1, #root + 1),
         name .. " must stay below the isolated test root"
       )
     end

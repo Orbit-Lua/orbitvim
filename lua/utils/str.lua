@@ -1,13 +1,6 @@
 local M = {}
 
 ---@param s string
----@return string
----@return integer count
-M.rstrip_slash = function(s)
-  return s:gsub("/+$", "")
-end
-
----@param s string
 ---@param max_w integer
 ---@return string
 M.trunc = function(s, max_w)

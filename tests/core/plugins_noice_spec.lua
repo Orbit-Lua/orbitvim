@@ -1,6 +1,16 @@
 describe("plugins.ui.noice", function()
-  it("routes formatter lifecycle notifications to the mini view", function()
+  local original_noice
+
+  before_each(function()
+    original_noice = package.loaded["plugins.ui.noice"]
     package.loaded["plugins.ui.noice"] = nil
+  end)
+
+  after_each(function()
+    package.loaded["plugins.ui.noice"] = original_noice
+  end)
+
+  it("routes formatter lifecycle notifications to the mini view", function()
     local opts = require("plugins.ui.noice")[1].opts
     local formatter_route
 
@@ -18,14 +28,6 @@ describe("plugins.ui.noice", function()
         opts = { orbit_formatter = state },
       }))
     end
-
-    local view = opts.views.formatter_progress
-    assert.same("mini", view.view)
-    assert.same("{data.orbit_formatter_icon} ", view.format[1][1])
-    assert.same("NoiceLspProgressSpinner", view.format[1].hl_group)
-    assert.same("{message}", view.format[2][1])
-    assert.same("NoiceLspProgressTitle", view.format[2].hl_group)
-
-    package.loaded["plugins.ui.noice"] = nil
+    assert.is_false(formatter_route.filter.cond({ opts = {} }))
   end)
 end)

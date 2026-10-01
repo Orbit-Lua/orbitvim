@@ -1,9 +1,21 @@
 describe("utils.logger", function()
+  local test = require("tests.helpers")
   local logger
+  local original_logger
+  local original_log_path
 
   before_each(function()
+    original_logger = package.loaded["utils.logger"]
+    original_log_path = vim.g.orbitvim_log_path
+    vim.g.orbitvim_log_path = test.temp_dir("logger") .. "/nvim-config.log"
     package.loaded["utils.logger"] = nil
     logger = require("utils.logger")
+  end)
+
+  after_each(function()
+    vim.g.orbitvim_log_path = original_log_path
+    package.loaded["utils.logger"] = original_logger
+    test.cleanup_all()
   end)
 
   it("records structured entries in memory and on disk", function()

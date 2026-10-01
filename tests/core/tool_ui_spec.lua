@@ -63,7 +63,7 @@ describe("Tool Manager Nui sessions", function()
     original_columns, original_lines = vim.o.columns, vim.o.lines
     original_notify = vim.notify
     vim.notify = function() end
-    local nui = require("test.helpers").plugin_path("nui.nvim")
+    local nui = require("tests.helpers").plugin_path("nui.nvim")
     assert.equals(
       1,
       vim.fn.isdirectory(nui),
@@ -95,7 +95,7 @@ describe("Tool Manager Nui sessions", function()
     vim.bo[source].filetype = "python"
     vim.api.nvim_buf_set_name(
       source,
-      require("test.helpers").temp_dir("ui-source") .. "/sample.py"
+      require("tests.helpers").temp_dir("ui-source") .. "/sample.py"
     )
     callbacks, operations, snapshots = {}, {}, {}
     order = { "ruff_fix", "ruff_format" }
@@ -164,7 +164,7 @@ describe("Tool Manager Nui sessions", function()
         package.loaded[name] = saved_modules[name]
       end
     end
-    require("test.helpers").cleanup_all()
+    require("tests.helpers").cleanup_all()
   end)
 
   it(

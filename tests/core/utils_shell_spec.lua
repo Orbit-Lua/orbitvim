@@ -8,6 +8,8 @@ describe("utils.shell", function()
   local original_shellquote
   local original_shellxquote
   local original_cc
+  local original_is_win
+  local original_has
 
   before_each(function()
     original_shell = vim.o.shell
@@ -17,6 +19,8 @@ describe("utils.shell", function()
     original_shellquote = vim.o.shellquote
     original_shellxquote = vim.o.shellxquote
     original_cc = vim.env.CC
+    original_is_win = require("utils.os").is_win
+    original_has = vim.fn.has
   end)
 
   after_each(function()
@@ -27,19 +31,30 @@ describe("utils.shell", function()
     vim.o.shellquote = original_shellquote
     vim.o.shellxquote = original_shellxquote
     vim.env.CC = original_cc
+    require("utils.os").is_win = original_is_win
+    vim.fn.has = original_has
   end)
 
-  it("setup is idempotent (can be called multiple times)", function()
-    local ok1 = pcall(shell.setup)
-    local ok2 = pcall(shell.setup)
-    assert.is_true(ok1)
-    assert.is_true(ok2)
+  it("leaves shell options unchanged on repeated setup", function()
+    local function options()
+      return {
+        shell = vim.o.shell,
+        shellcmdflag = vim.o.shellcmdflag,
+        shellredir = vim.o.shellredir,
+        shellpipe = vim.o.shellpipe,
+        shellquote = vim.o.shellquote,
+        shellxquote = vim.o.shellxquote,
+        cc = vim.env.CC,
+      }
+    end
+    shell.setup()
+    local first = options()
+    shell.setup()
+    assert.same(first, options())
   end)
 
   it("uses the win64 check result when selecting a Windows shell", function()
     local os_utils = require("utils.os")
-    local original_is_win = os_utils.is_win
-    local original_has = vim.fn.has
 
     os_utils.is_win = function()
       return true
@@ -63,8 +78,5 @@ describe("utils.shell", function()
 
     shell.setup()
     assert.equals("powershell.exe", vim.o.shell)
-
-    vim.fn.has = original_has
-    os_utils.is_win = original_is_win
   end)
 end)

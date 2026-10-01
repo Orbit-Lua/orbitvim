@@ -127,10 +127,4 @@ describe("utils.icons", function()
 
     assert.equals("", icons.get_file_icon("init.lua"))
   end)
-
-  it("exposes get_file_icons as a compatibility alias", function()
-    local icons = reload_icons()
-
-    assert.equals(icons.get_file_icon, icons.get_file_icons)
-  end)
 end)

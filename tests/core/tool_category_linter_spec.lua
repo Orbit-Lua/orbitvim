@@ -1,5 +1,5 @@
 describe("tool.category.linter", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local linter
   local logger
   local state

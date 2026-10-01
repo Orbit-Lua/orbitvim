@@ -1,5 +1,5 @@
 describe("tool.manager", function()
-  local test = require("test.helpers")
+  local test = require("tests.helpers")
   local manager
   local state
   local categories

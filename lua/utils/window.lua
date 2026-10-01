@@ -5,27 +5,12 @@ local CONFIG = {
   doc = { max_w = 80, max_h = 20, pct_w = 0.5, pct_h = 0.4 },
 }
 
----@param win_id integer
----@return integer
-M.get_text_offset = function(win_id)
-  return vim.fn.getwininfo(win_id)[1].textoff
-end
-
 ---@param winid? integer
 ---@return boolean
 M.is_floating = function(winid)
   winid = winid or 0
   local cfg = vim.api.nvim_win_get_config(winid)
   return cfg.relative ~= ""
-end
-
----@return integer?
-M.get_editor_win = function()
-  for _, win in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_get_config(win).relative == "" then
-      return win
-    end
-  end
 end
 
 ---@return integer, integer
