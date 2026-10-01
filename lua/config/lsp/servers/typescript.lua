@@ -1,6 +1,5 @@
 local lsp = require("utils.lsp")
 local ft = require("utils.ft")
-local utils = require("utils")
 
 -- https://github.com/yioneko/vtsls/blob/main/packages/service/configuration.schema.json
 ---@type Lsp.Server.Module
@@ -120,7 +119,7 @@ return {
           command,
           _
         )
-          local arg0, arg1, arg2 = utils.unpack(command.arguments)
+          local arg0, arg1, arg2 = unpack(command.arguments)
 
           ---@type string, string, lsp.Range
           local action, uri, range =

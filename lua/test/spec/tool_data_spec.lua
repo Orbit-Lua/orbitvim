@@ -9,19 +9,6 @@ describe("tool.data", function()
     package.loaded.conform = nil
   end)
 
-  it("derives content height from flat and grouped categories", function()
-    assert.equals(vim.tbl_count(tools.lsp), data.content_lines("lsp"))
-    assert.equals(vim.tbl_count(tools.dap), data.content_lines("dap"))
-
-    for _, category in ipairs({ "formatter", "linter" }) do
-      local expected = 0
-      for _, group in ipairs(data.build_ft_groups(category)) do
-        expected = expected + 1 + #group.names
-      end
-      assert.equals(expected, data.content_lines(category), category)
-    end
-  end)
-
   it(
     "builds sorted, complete filetype groups for ordered categories",
     function()

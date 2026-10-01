@@ -1,10 +1,25 @@
 describe("tool.category.formatter", function()
+  local test = require("test.helpers")
   local formatter
   local state
   local conform
   local tools = require("config.tools")
+  local original_state_path
+  local original_state_module
+  local original_order_module
+  local original_formatter_module
+  local original_handler_module
+  local original_conform
 
   before_each(function()
+    original_state_path = vim.g.tool_state_path
+    original_state_module = package.loaded["tool.state"]
+    original_order_module = package.loaded["tool.order"]
+    original_formatter_module = package.loaded["tool.category.formatter"]
+    original_handler_module = package.loaded["tool.category.list"]
+    original_conform = package.loaded.conform
+    vim.g.tool_state_path = test.temp_dir("tool-category-formatter")
+      .. "/tools.json"
     package.loaded["tool.category.formatter"] = nil
     package.loaded["tool.order"] = nil
     package.loaded["tool.state"] = nil
@@ -16,12 +31,18 @@ describe("tool.category.formatter", function()
     state.set_order("formatter", "python", { "ruff_fix", "ruff_format" })
     state.set_enabled("formatter", "ruff_fix", true)
     state.set_enabled("formatter", "ruff_format", true)
+    vim.g.tool_state_path = original_state_path
+    package.loaded["tool.state"] = original_state_module
+    package.loaded["tool.order"] = original_order_module
+    package.loaded["tool.category.formatter"] = original_formatter_module
+    package.loaded["tool.category.list"] = original_handler_module
+    test.cleanup_all()
 
     formatter = require("tool.category.formatter")
   end)
 
   after_each(function()
-    package.loaded.conform = nil
+    package.loaded.conform = original_conform
     if tools.formatter_defaults.python then
       state.set_order(
         "formatter",
@@ -61,7 +82,7 @@ describe("tool.category.formatter", function()
       installed = true,
     })
 
-    assert.equals("partly configured 1/5", status)
+    assert.equals("partly configured 1/11", status)
     assert.equals("DiagnosticWarn", hl)
   end)
 
@@ -77,6 +98,26 @@ describe("tool.category.formatter", function()
     assert.equals("configured", status)
     assert.equals("DiagnosticOk", hl)
   end)
+
+  it(
+    "maps the persisted yaml tool identity to Conform's yamlfmt runtime",
+    function()
+      conform.formatters_by_ft.yaml = { "yamlfmt" }
+      formatter.apply_runtime({
+        name = "yaml",
+        meta = tools.formatter.yaml,
+        is_enabled = false,
+      })
+      assert.same({}, conform.formatters_by_ft.yaml)
+
+      formatter.apply_runtime({
+        name = "yaml",
+        meta = tools.formatter.yaml,
+        is_enabled = true,
+      })
+      assert.same({ "yamlfmt" }, conform.formatters_by_ft.yaml)
+    end
+  )
 
   it("reports configured formatters with a missing executable", function()
     conform.formatters_by_ft.lua = { "stylua" }

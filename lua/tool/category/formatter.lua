@@ -37,7 +37,8 @@ function M.entry_status(opts)
     return wiring_text, wiring_hl
   end
 
-  local executable_text, executable_hl = executable_status(conform, opts.name)
+  local executable_text, executable_hl =
+    executable_status(conform, opts.meta.runtime_name or opts.name)
   if executable_text then
     return executable_text, executable_hl
   end

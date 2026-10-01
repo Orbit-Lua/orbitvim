@@ -2,6 +2,40 @@ local M = {}
 
 local icons = require("config.icons")
 
+---Build formatter options from fresh config and current Tool Manager state.
+---@return table
+function M.options()
+  local opts = vim.deepcopy(require("config.formatter"))
+  local state_mod = require("tool.state")
+  local order = require("tool.order")
+  local ft = require("utils.ft")
+
+  if state_mod.is_enabled("formatter", "sqlfluff") then
+    for _, filetype in ipairs(ft.sql_ft) do
+      opts.formatters_by_ft[filetype] = opts.formatters_by_ft[filetype] or {}
+      table.insert(opts.formatters_by_ft[filetype], "sqlfluff")
+    end
+  end
+
+  for filetype, formatters in pairs(opts.formatters_by_ft) do
+    local registry_names = vim.tbl_map(function(name)
+      for registry_name, meta in pairs(require("config.tools").formatter) do
+        if (meta.runtime_name or registry_name) == name then
+          return registry_name
+        end
+      end
+      return name
+    end, formatters)
+    local enabled =
+      order.enabled_names_for_ft("formatter", filetype, registry_names)
+    opts.formatters_by_ft[filetype] = vim.tbl_map(function(name)
+      local meta = require("config.tools").formatter[name]
+      return meta and (meta.runtime_name or name) or name
+    end, enabled)
+  end
+  return opts
+end
+
 local function spinner_frame()
   local ok, spinners = pcall(require, "noice.util.spinners")
   return ok and spinners.spin("dots") or icons.misc.dots

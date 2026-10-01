@@ -1,8 +1,10 @@
 describe("T-SQL conventions highlighting corpus", function()
-  local treesitter = require("utils.treesitter")
+  local treesitter = require("runtime.treesitter")
   local config = require("config.treesitter").sql
   local lines
   local buf
+  local original_config
+  local original_markdown_fences
 
   local function syntax_name(row, column)
     return vim.api.nvim_buf_call(buf, function()
@@ -59,6 +61,12 @@ describe("T-SQL conventions highlighting corpus", function()
   end
 
   before_each(function()
+    original_config = {
+      dialect = config.dialect,
+      markdown_fenced_fallback = config.markdown_fenced_fallback,
+      syntax_fallback = config.syntax_fallback,
+    }
+    original_markdown_fences = vim.g.markdown_fenced_languages
     config.dialect = "tsql"
     config.markdown_fenced_fallback = true
     config.syntax_fallback = true
@@ -76,7 +84,10 @@ describe("T-SQL conventions highlighting corpus", function()
     if vim.api.nvim_buf_is_valid(buf) then
       vim.api.nvim_buf_delete(buf, { force = true })
     end
-    vim.g.markdown_fenced_languages = nil
+    vim.g.markdown_fenced_languages = original_markdown_fences
+    config.dialect = original_config.dialect
+    config.markdown_fenced_fallback = original_config.markdown_fenced_fallback
+    config.syntax_fallback = original_config.syntax_fallback
   end)
 
   it("injects SQL into every documented SQL fence", function()

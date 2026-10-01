@@ -2,17 +2,26 @@ describe("tool.category.dap", function()
   local dap_category
   local previous_loaded_dap
   local previous_preload_dap
+  local previous_category
+  local previous_dotnet
+  local previous_config
 
   before_each(function()
+    previous_category = package.loaded["tool.category.dap"]
     package.loaded["tool.category.dap"] = nil
     previous_loaded_dap = package.loaded.dap
     previous_preload_dap = package.preload.dap
+    previous_dotnet = package.loaded["dotnet-cli"]
+    previous_config = package.loaded["config.dap.config"]
     dap_category = require("tool.category.dap")
   end)
 
   after_each(function()
     package.loaded.dap = previous_loaded_dap
     package.preload.dap = previous_preload_dap
+    package.loaded["tool.category.dap"] = previous_category
+    package.loaded["dotnet-cli"] = previous_dotnet
+    package.loaded["config.dap.config"] = previous_config
   end)
 
   it("returns nil status when nvim-dap is unavailable", function()
@@ -78,8 +87,6 @@ describe("tool.category.dap", function()
   it(
     "delegates coreclr enablement to dotnet-cli and removes it on disable",
     function()
-      local previous_dotnet = package.loaded["dotnet-cli"]
-      local previous_config = package.loaded["config.dap.config"]
       local dap = { adapters = {}, configurations = {} }
       local setup_calls = 0
       package.loaded.dap = dap
@@ -100,9 +107,6 @@ describe("tool.category.dap", function()
       dap_category.apply_runtime({ name = "coreclr", is_enabled = false })
       assert.is_nil(dap.adapters.coreclr)
       assert.is_nil(dap.configurations.cs)
-
-      package.loaded["dotnet-cli"] = previous_dotnet
-      package.loaded["config.dap.config"] = previous_config
     end
   )
 end)

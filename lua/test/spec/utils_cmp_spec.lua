@@ -95,7 +95,7 @@ describe("utils.cmp", function()
   it(
     "repairs an invalid expansion and restores the top-level session",
     function()
-      local original_utils = package.loaded.utils
+      local original_notify = vim.notify
       local original_active = vim.snippet.active
       local original_expand = vim.snippet.expand
       local original_session = vim.snippet._session
@@ -103,14 +103,12 @@ describe("utils.cmp", function()
       local expansions = {}
       local warning
 
-      package.loaded.utils = {
-        warn = function(message)
-          warning = message
-        end,
-        error = function(message)
+      vim.notify = function(message, level)
+        if level == vim.log.levels.ERROR then
           error(message)
-        end,
-      }
+        end
+        warning = message
+      end
       vim.snippet._session = top_session
       vim.snippet.active = function()
         return true
@@ -123,14 +121,15 @@ describe("utils.cmp", function()
         vim.snippet._session = { nested = true }
       end
 
-      cmp_utils.expand("${1:${2:value}}")
+      local ok, err = pcall(cmp_utils.expand, "${1:${2:value}}")
       local restored_session = vim.snippet._session
 
-      package.loaded.utils = original_utils
+      vim.notify = original_notify
       vim.snippet.active = original_active
       vim.snippet.expand = original_expand
       vim.snippet._session = original_session
 
+      assert.is_true(ok, err)
       assert.equals(2, #expansions)
       assert.is_truthy(warning:find("able to fix", 1, true))
       assert.equals(top_session, restored_session)
@@ -219,8 +218,17 @@ describe("utils.cmp", function()
       }
 
       cmp_utils.setup(opts)
+      local original_action = cmp_utils.actions.snippet_forward
+      local accepted = false
+      cmp_utils.actions.snippet_forward = function()
+        accepted = true
+        return true
+      end
+      local result = opts.keymap["<Tab>"][1]()
+      cmp_utils.actions.snippet_forward = original_action
 
-      assert.is_true(type(opts.keymap["<Tab>"][1]) == "function")
+      assert.is_true(result)
+      assert.is_true(accepted)
       assert.equals("fallback", opts.keymap["<Tab>"][2])
     end)
 

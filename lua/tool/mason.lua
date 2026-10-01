@@ -1,4 +1,52 @@
 local M = {}
+local pending = {}
+
+function M.is_installing(name)
+  if pending[name] then
+    return true
+  end
+  local package = M.get_package(name)
+  return package
+      and type(package.is_installing) == "function"
+      and package:is_installing()
+    or false
+end
+
+---Observe registry changes for a single view session without retaining it.
+function M.observe(callback)
+  local ok, registry = pcall(require, "mason-registry")
+  if
+    not ok
+    or type(registry.on) ~= "function"
+    or type(registry.off) ~= "function"
+  then
+    return function() end
+  end
+  local events = {
+    "package:install:handle",
+    "package:install:success",
+    "package:install:failed",
+    "package:uninstall:success",
+    "package:uninstall:failed",
+    "update:success",
+  }
+  for _, event in ipairs(events) do
+    registry:on(event, callback)
+  end
+  return function()
+    for _, event in ipairs(events) do
+      registry:off(event, callback)
+    end
+  end
+end
+
+local function finish_install(pkg_name, success, err)
+  local callbacks = pending[pkg_name] or {}
+  pending[pkg_name] = nil
+  for _, callback in ipairs(callbacks) do
+    callback(success, err)
+  end
+end
 
 ---@param pkg_name string
 ---@return table? pkg, string? err
@@ -27,7 +75,7 @@ function M.package_status(pkg_name)
 end
 
 ---@param pkg_name string?
----@param on_done (fun())?
+---@param on_done (fun(success: boolean, err?: string)?)?
 ---@return boolean
 function M.install(pkg_name, on_done)
   if not pkg_name then
@@ -37,29 +85,47 @@ function M.install(pkg_name, on_done)
   local pkg, err = M.get_package(pkg_name)
   if not pkg then
     vim.notify("ToolManager: " .. err, vim.log.levels.WARN)
+    if on_done then
+      on_done(false, err)
+    end
     return false
+  end
+
+  if pending[pkg_name] then
+    if on_done then
+      table.insert(pending[pkg_name], on_done)
+    end
+    return true
   end
 
   if pkg:is_installed() then
     vim.notify(pkg_name .. " is already installed", vim.log.levels.INFO)
     if on_done then
-      on_done()
+      on_done(true)
     end
     return true
   end
 
+  pending[pkg_name] = on_done and { on_done } or {}
   vim.notify("Installing " .. pkg_name .. "…", vim.log.levels.INFO)
-  pkg:install():once("closed", function()
+  local install_ok, handle = pcall(pkg.install, pkg)
+  if not install_ok or not handle or type(handle.once) ~= "function" then
+    local install_err = install_ok and "invalid install handle"
+      or tostring(handle)
+    vim.notify("Failed to install " .. pkg_name, vim.log.levels.ERROR)
+    finish_install(pkg_name, false, install_err)
+    return false
+  end
+  handle:once("closed", function()
     if pkg:is_installed() then
       vim.schedule(function()
         vim.notify(pkg_name .. " installed", vim.log.levels.INFO)
-        if on_done then
-          on_done()
-        end
+        finish_install(pkg_name, true)
       end)
     else
       vim.schedule(function()
         vim.notify("Failed to install " .. pkg_name, vim.log.levels.ERROR)
+        finish_install(pkg_name, false, "installation failed")
       end)
     end
   end)

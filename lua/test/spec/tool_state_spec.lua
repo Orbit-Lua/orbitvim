@@ -3,6 +3,8 @@ describe("tool.state", function()
   local tools = require("config.tools")
   local state
   local state_path
+  local original_state_path
+  local original_state_module
 
   local function reload()
     package.loaded["tool.state"] = nil
@@ -10,14 +12,16 @@ describe("tool.state", function()
   end
 
   before_each(function()
+    original_state_path = vim.g.tool_state_path
+    original_state_module = package.loaded["tool.state"]
     state_path = test.temp_dir("tool-state") .. "/tools.json"
     vim.g.tool_state_path = state_path
     reload()
   end)
 
   after_each(function()
-    vim.g.tool_state_path = nil
-    package.loaded["tool.state"] = nil
+    vim.g.tool_state_path = original_state_path
+    package.loaded["tool.state"] = original_state_module
     test.cleanup_all()
   end)
 

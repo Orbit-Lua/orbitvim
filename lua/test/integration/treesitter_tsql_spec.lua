@@ -1,7 +1,10 @@
 describe("T-SQL highlighting", function()
   local config = require("config.treesitter").sql
-  local treesitter = require("utils.treesitter")
+  local treesitter = require("runtime.treesitter")
   local buffers = {}
+  local original_config
+  local original_markdown_fences
+  local original_sql_default
 
   local function buffer(lines, filetype)
     local buf = vim.api.nvim_create_buf(false, true)
@@ -34,6 +37,13 @@ describe("T-SQL highlighting", function()
   end
 
   before_each(function()
+    original_config = {
+      dialect = config.dialect,
+      markdown_fenced_fallback = config.markdown_fenced_fallback,
+      syntax_fallback = config.syntax_fallback,
+    }
+    original_markdown_fences = vim.g.markdown_fenced_languages
+    original_sql_default = vim.g.sql_type_default
     config.dialect = "tsql"
     config.markdown_fenced_fallback = true
     config.syntax_fallback = true
@@ -48,8 +58,11 @@ describe("T-SQL highlighting", function()
       end
     end
     buffers = {}
-    vim.g.markdown_fenced_languages = nil
-    vim.g.sql_type_default = nil
+    config.dialect = original_config.dialect
+    config.markdown_fenced_fallback = original_config.markdown_fenced_fallback
+    config.syntax_fallback = original_config.syntax_fallback
+    vim.g.markdown_fenced_languages = original_markdown_fences
+    vim.g.sql_type_default = original_sql_default
   end)
 
   it("extends the SQL query with T-SQL semantic corrections", function()

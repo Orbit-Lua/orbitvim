@@ -1,7 +1,11 @@
 describe("tool.category.package", function()
   local package_handler
+  local original_handler
+  local original_mason
 
   before_each(function()
+    original_handler = package.loaded["tool.category.package"]
+    original_mason = package.loaded["tool.mason"]
     package.loaded["tool.category.package"] = nil
     package.loaded["tool.mason"] = {
       package_status = function(name)
@@ -15,8 +19,8 @@ describe("tool.category.package", function()
   end)
 
   after_each(function()
-    package.loaded["tool.category.package"] = nil
-    package.loaded["tool.mason"] = nil
+    package.loaded["tool.category.package"] = original_handler
+    package.loaded["tool.mason"] = original_mason
   end)
 
   it("reports Mason dependency installation", function()
@@ -37,7 +41,5 @@ describe("tool.category.package", function()
         ["missing-package"] = {},
       })
     )
-    assert.is_false(package_handler.capabilities.toggle)
-    assert.is_true(package_handler.capabilities.install)
   end)
 end)

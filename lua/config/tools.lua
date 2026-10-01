@@ -49,7 +49,13 @@ M.dap = {
 M.linter = {
   eslint_d = {
     mason = "eslint_d",
-    ft = { "typescript", "javascript", "typescriptreact", "javascriptreact" },
+    ft = {
+      "typescript",
+      "javascript",
+      "typescriptreact",
+      "javascriptreact",
+      "jsx",
+    },
   },
   hadolint = { mason = "hadolint", ft = { "dockerfile" } },
   ["markdownlint-cli2"] = { mason = "markdownlint-cli2", ft = { "markdown" } },
@@ -67,11 +73,29 @@ M.formatter = {
   shfmt = { mason = "shfmt", ft = { "sh" } },
   deno_fmt = {
     mason = "deno",
-    ft = { "css", "html", "json", "markdown", "markdown.mdx" },
+    ft = {
+      "css",
+      "html",
+      "typescript",
+      "javascript",
+      "typescriptreact",
+      "javascriptreact",
+      "jsx",
+      "json",
+      "jsonc",
+      "markdown",
+      "markdown.mdx",
+    },
   },
   eslint_d = {
     mason = "eslint_d",
-    ft = { "typescript", "javascript", "typescriptreact", "javascriptreact" },
+    ft = {
+      "typescript",
+      "javascript",
+      "typescriptreact",
+      "javascriptreact",
+      "jsx",
+    },
   },
   csharpier = { mason = "csharpier", ft = { "cs" } },
   ["markdownlint-cli2"] = {
@@ -89,7 +113,7 @@ M.formatter = {
     note = "uses local node_modules",
   },
   tombi = { mason = "tombi", ft = { "toml" } },
-  yaml = { mason = "yamlfmt", ft = { "yaml" } },
+  yaml = { mason = "yamlfmt", ft = { "yaml" }, runtime_name = "yamlfmt" },
 }
 
 -- PARSER: Treesitter parser name -> { ft }

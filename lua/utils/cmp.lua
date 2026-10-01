@@ -140,11 +140,12 @@ function M.expand(snippet)
         and "Failed to parse snippet,\nbut was able to fix it automatically."
       or ("Failed to parse snippet.\n" .. err)
 
-    require("utils")[ok and "warn" or "error"](
+    vim.notify(
       ([[%s
 ```%s
 %s
 ```]]):format(message, vim.bo.filetype, snippet),
+      ok and vim.log.levels.WARN or vim.log.levels.ERROR,
       { title = "vim.snippet" }
     )
   end

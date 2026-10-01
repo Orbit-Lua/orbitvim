@@ -53,7 +53,7 @@ local function debounce(ms, fn)
     if timer ~= nil then
       timer:start(ms, 0, function()
         timer:stop()
-        vim.schedule_wrap(fn)(require("utils").unpack(captured_args))
+        vim.schedule_wrap(fn)(unpack(captured_args))
       end)
     end
   end

@@ -1,7 +1,5 @@
 local M = {}
 
-local core = require("tool.core")
-
 local _state = nil
 
 local function state_path()
@@ -121,12 +119,12 @@ end
 
 ---@param kind "formatter"|"linter"
 function M.get_order(kind, ft)
-  return M.get()[core.order_key(kind)][ft]
+  return M.get()[kind .. "_order"][ft]
 end
 
 ---@param kind "formatter"|"linter"
 function M.set_order(kind, ft, order)
-  M.get()[core.order_key(kind)][ft] = order
+  M.get()[kind .. "_order"][ft] = order
   M.save()
 end
 

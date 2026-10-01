@@ -46,32 +46,48 @@ end
 function M.install(name, on_done)
   local module = treesitter()
   if not module or type(module.install) ~= "function" then
-    vim.notify(
-      "ToolManager: nvim-treesitter is unavailable",
-      vim.log.levels.WARN
-    )
+    local err = "nvim-treesitter is unavailable"
+    vim.notify("ToolManager: " .. err, vim.log.levels.WARN)
+    if on_done then
+      on_done(false, err)
+    end
     return false
   end
 
-  local task = module.install({ name })
+  local ok, task = pcall(module.install, { name })
+  if not ok then
+    if on_done then
+      on_done(false, tostring(task))
+    end
+    return false
+  end
   vim.notify(
     "Installing Treesitter parser " .. name .. "…",
     vim.log.levels.INFO
   )
-  if task and type(task.await) == "function" then
-    task:await(vim.schedule_wrap(function(err, installed)
-      if err or installed == false then
-        vim.notify(
-          "Failed to install Treesitter parser " .. name,
-          vim.log.levels.ERROR
-        )
-      elseif on_done then
-        on_done()
-      end
-    end))
-  elseif on_done then
-    vim.defer_fn(on_done, 500)
+  if not task or type(task.await) ~= "function" then
+    local err = "nvim-treesitter returned no install task"
+    vim.notify("ToolManager: " .. err, vim.log.levels.ERROR)
+    if on_done then
+      on_done(false, err)
+    end
+    return false
   end
+
+  task:await(vim.schedule_wrap(function(err, installed)
+    if err or installed ~= true then
+      local message = err or "installation failed"
+      vim.notify(
+        "Failed to install Treesitter parser " .. name,
+        vim.log.levels.ERROR
+      )
+      if on_done then
+        on_done(false, message)
+      end
+    elseif on_done then
+      on_done(true)
+    end
+  end))
   return true
 end
 

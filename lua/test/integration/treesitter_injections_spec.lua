@@ -1,14 +1,29 @@
 describe("C# Treesitter injections", function()
   local config = require("config.treesitter").sql_injections
+  local original_config
+  local buffers = {}
 
   before_each(function()
+    original_config = { comment = config.comment, auto = config.auto }
     config.comment = true
     config.auto = true
-    require("utils.treesitter").setup()
+    require("runtime.treesitter").setup()
+  end)
+
+  after_each(function()
+    for _, buf in ipairs(buffers) do
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+    end
+    buffers = {}
+    config.comment = original_config.comment
+    config.auto = original_config.auto
   end)
 
   local function sql_injections(lines)
     local buf = vim.api.nvim_create_buf(false, true)
+    table.insert(buffers, buf)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     local parser = assert(vim.treesitter.get_parser(buf, "c_sharp"))
@@ -16,12 +31,12 @@ describe("C# Treesitter injections", function()
     local sql_parser = parser:children().sql
     local has_sql_parser = sql_parser ~= nil
 
-    vim.api.nvim_buf_delete(buf, { force = true })
     return has_sql_parser
   end
 
   local function sql_trees(lines)
     local buf = vim.api.nvim_create_buf(false, true)
+    table.insert(buffers, buf)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
     local parser = assert(vim.treesitter.get_parser(buf, "c_sharp"))
@@ -39,7 +54,6 @@ describe("C# Treesitter injections", function()
       range_count = range_count + #ranges
     end
 
-    vim.api.nvim_buf_delete(buf, { force = true })
     return tree_count, has_errors, range_count
   end
 

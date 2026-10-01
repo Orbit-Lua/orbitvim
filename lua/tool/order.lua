@@ -1,6 +1,5 @@
 local M = {}
 
-local core = require("tool.core")
 local tools = require("config.tools")
 local state_mod = require("tool.state")
 
@@ -44,7 +43,7 @@ end
 ---@param ft string
 ---@return string[]?
 local function configured_order(category, ft)
-  if not core.is_ordered_category(category) then
+  if category ~= "formatter" and category ~= "linter" then
     return nil
   end
   return state_mod.get_order(category --[[@as "formatter"|"linter"]], ft)
@@ -82,7 +81,7 @@ end
 ---@return string[]
 function M.enabled_names_for_ft(category, ft, names)
   return vim.tbl_filter(function(name)
-    return tools[category][name] == nil or state_mod.is_enabled(category, name)
+    return state_mod.is_enabled(category, name)
   end, M.names_for_ft(category, ft, names))
 end
 

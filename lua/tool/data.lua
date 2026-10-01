@@ -1,7 +1,6 @@
 local M = {}
 
 local tools = require("config.tools")
-local core = require("tool.core")
 local order = require("tool.order")
 local mason = require("tool.mason")
 local state_mod = require("tool.state")
@@ -128,19 +127,6 @@ function M.build_ft_groups(category, ft)
   return vim.tbl_filter(function(group)
     return group.ft == ft
   end, groups)
-end
-
----@param category ToolCategory
----@return integer
-function M.content_lines(category)
-  if not core.is_ordered_category(category) then
-    return vim.tbl_count(tools[category])
-  end
-  local h = 0
-  for _, group in ipairs(M.build_ft_groups(category)) do
-    h = h + 1 + #group.names
-  end
-  return h
 end
 
 return M

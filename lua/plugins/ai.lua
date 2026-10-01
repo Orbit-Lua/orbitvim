@@ -1,4 +1,4 @@
-local utils = require("utils")
+local completion = require("runtime.completion")
 local utils_cmp = require("utils.cmp")
 local endpoint = require("ai.endpoint")
 local service = require("ai.service")
@@ -66,7 +66,7 @@ local specs = {
       utils_cmp.actions.ai_accept = function()
         local action = require("minuet.virtualtext").action
         if action.is_visible() then
-          utils.create_undo()
+          completion.create_undo()
           action.accept()
           return true
         end

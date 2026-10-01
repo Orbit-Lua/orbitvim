@@ -15,7 +15,7 @@ return {
     init = function()
       theme.load_cache("syntax")
       theme.load_cache("treesitter")
-      require("utils.treesitter").setup()
+      require("runtime.treesitter").setup()
     end,
 
     ---@module "nvim-treesitter"

@@ -1,10 +1,21 @@
 describe("tool.category.linter", function()
+  local test = require("test.helpers")
   local linter
   local logger
   local state
   local tools = require("config.tools")
+  local prior = {}
 
   before_each(function()
+    prior = {
+      state_path = vim.g.tool_state_path,
+      state = package.loaded["tool.state"],
+      logger = package.loaded["utils.logger"],
+      category = package.loaded["tool.category.linter"],
+      lint = package.loaded.lint,
+    }
+    vim.g.tool_state_path = test.temp_dir("tool-category-linter")
+      .. "/tools.json"
     package.loaded["tool.category.linter"] = nil
     package.loaded["utils.logger"] = nil
     package.loaded["tool.state"] = nil
@@ -22,10 +33,15 @@ describe("tool.category.linter", function()
   end)
 
   after_each(function()
-    package.loaded.lint = nil
     logger.clear_channel("linter")
     state.set_enabled("linter", "luacheck", true)
     state.set_enabled("linter", "eslint_d", true)
+    vim.g.tool_state_path = prior.state_path
+    package.loaded["tool.state"] = prior.state
+    package.loaded["utils.logger"] = prior.logger
+    package.loaded["tool.category.linter"] = prior.category
+    package.loaded.lint = prior.lint
+    test.cleanup_all()
   end)
 
   it(
@@ -75,7 +91,11 @@ describe("tool.category.linter", function()
       installed = true,
     })
 
-    assert.equals("partly configured 1/4", status)
+    assert.is_true(vim.tbl_contains(tools.linter.eslint_d.ft, "jsx"))
+    assert.equals(
+      string.format("partly configured 1/%d", #tools.linter.eslint_d.ft),
+      status
+    )
     assert.equals("DiagnosticWarn", hl)
   end)
 end)

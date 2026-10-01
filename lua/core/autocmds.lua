@@ -34,7 +34,7 @@ autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
 autocmd("FileType", {
   pattern = "*",
   callback = function(args)
-    require("utils.treesitter").start(args.buf)
+    require("runtime.treesitter").start(args.buf)
   end,
 })
 
