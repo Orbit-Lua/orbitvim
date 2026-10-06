@@ -7,7 +7,7 @@ local M = {}
 M.lsp = {
   pyright = { mason = "pyright", ft = { "python" } },
   ruff = { mason = "ruff", ft = { "python" } },
-  roslyn = { mason = "roslyn", ft = { "cs" } },
+  roslyn = { mason = "roslyn-language-server", ft = { "cs" } },
   html = { mason = "html-lsp", ft = { "html" } },
   cssls = { mason = "css-lsp", ft = { "css" } },
   tailwindcss = {

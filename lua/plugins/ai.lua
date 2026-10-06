@@ -42,7 +42,7 @@ local specs = {
             return "ollama"
           end,
 
-          model = "qwen2.5-coder:Q4_K_M",
+          model = "Qwen2.5-Coder-3B-Q4_K_M.gguf",
 
           transform = { endpoint.transform_request },
 
