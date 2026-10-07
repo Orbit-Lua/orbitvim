@@ -65,6 +65,8 @@ See the [Tool Manager guide](doc/tool-manager.md) for status interpretation, ins
 
 ### .NET
 
+Roslyn loads for C# files when both `dotnet` and `roslyn-language-server` are executable. Install the server through Tool Manager or `:MasonInstall roslyn-language-server`, then restart Neovim. Solution discovery searches upward from the C# file, independently of cwd. When multiple valid solutions are found, OrbitVim prefers the unique `.sln` directly in the nearest Git root, provided Roslyn confirms it contains the current project. Otherwise, normal Roslyn selection applies; use `:Roslyn target` to select a solution manually. This preference is configured in `lua/config/lsp/roslyn.lua`.
+
 In an SDK-style C# workspace, `:DotnetManager` provides startup-project selection, build, test, package, EF Core, diagnostics, and publish actions. `:DotnetDebug` builds and launches the selected project; `:DotnetAttach` attaches to a local process. Install `netcoredbg` and enable `coreclr` in Tool Manager. [dotnet-cli.nvim](https://github.com/Orbit-Lua/dotnet-cli.nvim) owns the launch/attach configurations; OrbitVim supplies generic DAP mappings and UI.
 
 ### SQL

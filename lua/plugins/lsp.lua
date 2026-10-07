@@ -66,12 +66,13 @@ return {
     ft = { "cs" },
     ---@module 'roslyn.config'
     ---@type RoslynNvimConfig
-    opts = {
-      filewatching = "roslyn",
-      silent = true,
-    },
+    opts = function()
+      return require("config.lsp.roslyn")
+    end,
     cond = function()
-      return vim.fn.executable("dotnet") == 1
+      local server = vim.fn.has("win32") == 1 and "roslyn-language-server.cmd"
+        or "roslyn-language-server"
+      return vim.fn.executable("dotnet") == 1 and vim.fn.executable(server) == 1
     end,
   },
 
