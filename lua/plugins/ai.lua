@@ -18,13 +18,13 @@ local specs = {
 
       n_completions = 1,
 
-      context_window = 4000,
-      context_ratio = 0.8,
+      context_window = 3200,
+      context_ratio = 0.75,
 
       request_timeout = 3,
 
-      throttle = 500,
-      debounce = 200,
+      throttle = 350,
+      debounce = 350,
 
       virtualtext = {
         auto_trigger_ft = vim.g.ai_cmp and {} or { "*" },
@@ -47,7 +47,7 @@ local specs = {
           transform = { endpoint.transform_request },
 
           optional = {
-            max_tokens = 128,
+            max_tokens = 64,
             temperature = 0.1,
             top_p = 0.9,
           },
@@ -62,6 +62,43 @@ local specs = {
     },
     config = function(_, opts)
       require("minuet").setup(opts)
+
+      -- On Windows, terminating an in-flight curl job via job.kill('sigterm')
+      -- causes libuv uv_process_kill to invoke TerminateProcess, returning exit code 1.
+      -- Intercept cancelled requests to safely unlink temporary files and suppress
+      -- spurious error notifications when typing triggers a new completion.
+      local minuet_utils = require("minuet.utils")
+      local orig_no_stream = minuet_utils.no_stream_decode
+      minuet_utils.no_stream_decode = function(
+        response,
+        data_file,
+        provider,
+        get_text_fn
+      )
+        if
+          response.code == 1 and (not response.stdout or response.stdout == "")
+        then
+          vim.uv.fs_unlink(data_file)
+          return nil
+        end
+        return orig_no_stream(response, data_file, provider, get_text_fn)
+      end
+
+      local orig_stream = minuet_utils.stream_decode
+      minuet_utils.stream_decode = function(
+        response,
+        data_file,
+        provider,
+        get_text_fn
+      )
+        if
+          response.code == 1 and (not response.stdout or response.stdout == "")
+        then
+          vim.uv.fs_unlink(data_file)
+          return nil
+        end
+        return orig_stream(response, data_file, provider, get_text_fn)
+      end
 
       utils_cmp.actions.ai_accept = function()
         local action = require("minuet.virtualtext").action

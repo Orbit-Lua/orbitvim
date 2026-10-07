@@ -48,6 +48,9 @@ Reject tests whose only evidence is:
 - An expected result computed by repeating the implementation under test.
 - Cosmetic snapshots or fixed collection counts without a user-visible contract.
 - Compatibility for unused APIs, or shallow cases already superseded by deeper coverage.
+- Pure configuration, parameter/timeout tuning, or option tables without an observable contract transition.
+- Trivial wrappers, monkey-patches, or lifecycle hooks verified only by feeding synthetic mocks that mirror the implementation's own branch conditions without testing actual subsystem behavior.
+- Tests written purely for the sake of testing or to satisfy a coverage expectation; state `No tests added` when an edit is adequately protected by existing invariant suites, represents platform-specific glue, or cannot be meaningfully verified hermetically.
 
 The audit removed the old Tool Manager cursor/table/renderer/help/layout wiring specs; public Nui interaction and lifecycle coverage replaces them. Do not restore helper tests for removed APIs (`buf_hl`, `get_file_icons`, `make_relative_path`, `rstrip_slash`, window offsets, or unused OS environment/date wrappers). Exact snippet counts/trigger inventories, README/source substring assertions, formatter constant inventories, Noice icon/format tokens, ambient clock/platform checks, and Tab callback existence checks were removed or replaced with behavior tests. Do not add them back merely to accompany an implementation change.
 
