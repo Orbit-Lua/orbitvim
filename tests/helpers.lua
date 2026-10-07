@@ -2,6 +2,11 @@ local M = {}
 
 local cleanup_paths = {}
 
+-- Compare filesystem identity without requiring platform-specific separators.
+function M.assert_path(expected, actual, message)
+  assert.equals(vim.fs.normalize(expected), vim.fs.normalize(actual), message)
+end
+
 local function test_root()
   local root = vim.g.orbitvim_test_root
   assert(type(root) == "string" and root ~= "", "test bootstrap is not loaded")

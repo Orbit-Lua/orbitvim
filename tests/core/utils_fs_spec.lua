@@ -48,7 +48,7 @@ describe("utils.fs", function()
       else
         test.write_file(root .. "/" .. case.marker, case.content)
       end
-      assert.equals(root, fs.get_root(nested .. "/main.lua"), case.marker)
+      test.assert_path(root, fs.get_root(nested .. "/main.lua"), case.marker)
     end
   end)
 
@@ -71,13 +71,13 @@ describe("utils.fs", function()
       vim.fn.mkdir(root .. "/.git", "p")
       vim.fn.mkdir(nested, "p")
 
-      assert.equals(root, fs.get_root(nested .. "/main.lua"))
+      test.assert_path(root, fs.get_root(nested .. "/main.lua"))
 
       local standalone = test.temp_dir("standalone") .. "/query.sql"
       fs.root_pattern = { "_orbitvim_missing_root_marker_" }
       local fallback = fs.get_root(standalone)
 
-      assert.equals(vim.fs.dirname(standalone), fallback)
+      test.assert_path(vim.fs.dirname(standalone), fallback)
     end
   )
 

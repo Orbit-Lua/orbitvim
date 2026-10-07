@@ -40,7 +40,7 @@ describe("utils.sqlfluff", function()
     vim.fn.mkdir(root .. "/queries", "p")
     write(config, "[sqlfluff]\ndialect = postgres\n")
 
-    assert.same(config, sqlfluff.find_config(filename))
+    test.assert_path(config, sqlfluff.find_config(filename))
     assert.is_false(has_arg(sqlfluff.format_args(filename), "--config"))
     assert.is_false(has_arg(sqlfluff.lint_args(filename), "--config"))
   end)
@@ -63,7 +63,7 @@ describe("utils.sqlfluff", function()
     local filename = root .. "/query.sql"
     write(config, '[tool.sqlfluff.core]\ndialect = "postgres"\n')
 
-    assert.same(config, sqlfluff.find_config(filename))
+    test.assert_path(config, sqlfluff.find_config(filename))
     assert.is_false(has_arg(sqlfluff.format_args(filename), "--config"))
   end)
 
@@ -85,7 +85,7 @@ describe("utils.sqlfluff", function()
         local filename = root .. "/nested/query.sql"
         vim.fn.mkdir(root .. "/nested", "p")
         write(config, content)
-        assert.equals(config, sqlfluff.find_config(filename), name)
+        test.assert_path(config, sqlfluff.find_config(filename), name)
       end
     end
   )
@@ -112,7 +112,7 @@ describe("utils.sqlfluff", function()
       local filename = root .. "/query.sql"
       write(config, vim.fn.readfile(sqlfluff.fallback_config))
 
-      assert.equals(config, sqlfluff.find_config(filename))
+      test.assert_path(config, sqlfluff.find_config(filename))
       local depth
       for _, line in ipairs(vim.fn.readfile(sqlfluff.find_config(filename))) do
         depth = tonumber(line:match("^%s*max_parse_depth%s*=%s*(%d+)%s*$"))
@@ -128,6 +128,6 @@ describe("utils.sqlfluff", function()
     vim.fn.mkdir(root .. "/.git", "p")
     vim.fn.mkdir(root .. "/queries", "p")
 
-    assert.same(root, sqlfluff.cwd(filename))
+    test.assert_path(root, sqlfluff.cwd(filename))
   end)
 end)

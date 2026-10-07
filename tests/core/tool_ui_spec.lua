@@ -307,6 +307,9 @@ describe("Tool Manager Nui sessions", function()
   it(
     "fits narrow layouts and disposes debounced refreshes and wiped buffers",
     function()
+      -- Exercise the real timer without waiting for the user-facing debounce.
+      local config = require("config.tool_manager")
+      config.refresh.debounce_ms = 10
       tool.open()
       press("3")
       select("ruff")
@@ -366,10 +369,15 @@ describe("Tool Manager Nui sessions", function()
         end
       end
       press("<Esc>", buffer_for("ToolManagerDetails"))
-      vim.api.nvim_exec_autocmds("DiagnosticChanged", { buffer = source })
       local count = #snapshots
+      vim.api.nvim_exec_autocmds("DiagnosticChanged", { buffer = source })
+      assert.is_true(vim.wait(100, function()
+        return #snapshots == count + 1
+      end))
+      vim.api.nvim_exec_autocmds("DiagnosticChanged", { buffer = source })
+      count = #snapshots
       vim.api.nvim_buf_delete(body(), { force = true })
-      vim.wait(600)
+      vim.wait(config.refresh.debounce_ms * 2)
       assert.equals(count, #snapshots)
       assert.is_nil(buffer_for("ToolManager"))
       tool.close()
