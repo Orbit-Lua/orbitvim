@@ -73,6 +73,14 @@ In an SDK-style C# workspace, `:DotnetManager` provides startup-project selectio
 
 T-SQL support combines Tree-sitter highlighting, focused syntax fallbacks, SQLFluff formatting/linting adapters, and LuaSnip templates. Read the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md), and [SQL conventions](doc/tsql-conventions.md).
 
+### File explorer
+
+`<C-n>` toggles nvim-tree; `<leader>fe` focuses it. On Windows, filesystem
+watchers are disabled to avoid event storms. The tree refreshes when you save a
+buffer or enter the tree; press `R` inside it to refresh external changes while
+it stays focused. Other platforms retain filesystem watching. Settings live in
+[lua/config/nvimtree.lua](lua/config/nvimtree.lua).
+
 ### AI completion
 
 Minuet/Ollama completion is included but disabled by default. `:MinuetEndpoint` manages endpoint settings; it does not enable the plugin. Its plugin specification is in [lua/plugins/ai.lua](lua/plugins/ai.lua).

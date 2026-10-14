@@ -1,6 +1,5 @@
 local harpoon_utils = require("utils.harpoon")
 local fs = require("utils.fs")
-local icons = require("config.icons")
 local borders = require("config.borders")
 
 ---@type LazySpec[]
@@ -53,49 +52,7 @@ return {
       require("core.theme").load_cache("nvimtree")
     end,
     ---@type nvim_tree.config
-    opts = {
-      filters = { dotfiles = false },
-      disable_netrw = true,
-      hijack_cursor = true,
-      sync_root_with_cwd = true,
-      update_focused_file = {
-        enable = true,
-        update_root = {
-          enable = false,
-        },
-      },
-      view = {
-        width = 40,
-        preserve_window_proportions = true,
-        signcolumn = "no",
-      },
-      renderer = {
-        root_folder_label = false,
-        highlight_git = "all",
-        highlight_diagnostics = "all",
-        indent_markers = { enable = true },
-        icons = {
-          glyphs = {
-            default = icons.fs.default,
-            folder = icons.fs.folder,
-            git = {
-              unstaged = icons.git.unstaged,
-              staged = icons.git.staged,
-              unmerged = icons.git.unmerged,
-            },
-          },
-          diagnostics_placement = "right_align",
-        },
-      },
-      diagnostics = {
-        enable = true,
-        icons = icons.diagnostics,
-      },
-      git = {
-        enable = false,
-        timeout = 200,
-      },
-    },
+    opts = require("config.nvimtree"),
     keys = {
       { "<C-n>", "<cmd>NvimTreeToggle<CR>", desc = "nvimtree toggle window" },
       {
