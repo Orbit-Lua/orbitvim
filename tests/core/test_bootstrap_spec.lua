@@ -1,6 +1,11 @@
 describe("test bootstrap", function()
   it("redirects persistent state and logs below the test root", function()
     local root = vim.fs.normalize(vim.g.orbitvim_test_root)
+    assert.equals(
+      "NONE",
+      vim.o.shadafile,
+      "tests must not read or write user ShaDa"
+    )
     local paths = {
       tool_state = vim.fs.normalize(vim.g.tool_state_path),
       log = vim.fs.normalize(require("utils.logger").get_log_path()),

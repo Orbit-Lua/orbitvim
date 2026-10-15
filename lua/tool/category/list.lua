@@ -89,13 +89,15 @@ function M.new(spec)
       return nil, nil
     end
 
-    local total = #(opts.meta.ft or {})
+    local filetypes = opts.filetype and { opts.filetype }
+      or (opts.meta.ft or {})
+    local total = #filetypes
     if total == 0 then
       return "no ft", "DiagnosticWarn"
     end
 
     local configured = 0
-    for _, ft in ipairs(opts.meta.ft or {}) do
+    for _, ft in ipairs(filetypes) do
       if
         vim.tbl_contains(
           module[spec.field][ft] or {},

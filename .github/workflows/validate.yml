@@ -12,6 +12,9 @@ concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NEOVIM_VERSION: v0.12.5
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -23,9 +26,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Neovim stable
+      - name: Install baseline Neovim
         run: |
-          curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+          curl --fail --location --remote-name "https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux-x86_64.tar.gz"
           sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
           echo "/opt/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
 
@@ -88,3 +91,43 @@ jobs:
 
       - name: Smoke-test startup
         run: nvim --headless "+qall"
+
+  windows-core:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install baseline Neovim and make
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'nvim.zip'
+          Invoke-WebRequest "https://github.com/neovim/neovim/releases/download/$env:NEOVIM_VERSION/nvim-win64.zip" -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
+          Join-Path $env:RUNNER_TEMP 'nvim-win64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+          choco install make --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'make installation failed' }
+
+      - name: Install locked core-test dependencies
+        shell: pwsh
+        run: |
+          $pluginRoot = Join-Path $env:LOCALAPPDATA 'nvim-data/lazy'
+          New-Item -ItemType Directory -Path $pluginRoot -Force | Out-Null
+          $lock = Get-Content -LiteralPath lazy-lock.json -Raw | ConvertFrom-Json
+          $repositories = @{
+            'plenary.nvim' = 'nvim-lua/plenary.nvim'
+            'nui.nvim' = 'MunifTanjim/nui.nvim'
+          }
+          foreach ($name in $repositories.Keys) {
+            $target = Join-Path $pluginRoot $name
+            git clone --filter=blob:none "https://github.com/$($repositories[$name]).git" $target
+            if ($LASTEXITCODE -ne 0) { throw "clone failed: $name" }
+            git -C $target checkout --detach $lock.$name.commit
+            if ($LASTEXITCODE -ne 0) { throw "locked checkout failed: $name" }
+          }
+
+      - name: Run Windows core tests
+        run: make test-core

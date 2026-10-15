@@ -60,21 +60,43 @@ function M.snapshot(opts)
     tools = {},
     groups = scope == "states" and data.build_ft_groups(category)
       or (ft and ft ~= "" and data.build_ft_groups(category, ft) or {}),
-    summary = data.state_summary(category),
+    summary = {
+      total = #entries,
+      enabled = 0,
+      disabled = 0,
+      installed = 0,
+      missing = 0,
+      attention = 0,
+    },
   }
   for _, entry in ipairs(entries) do
-    local status, status_hl =
-      data.entry_status(category, entry.name, entry.meta)
-    if entry.meta.mason and mason.is_installing(entry.meta.mason) then
-      status, status_hl = "installing", "DiagnosticInfo"
-    end
+    local health_status = data.health_status(
+      category,
+      entry.name,
+      entry.meta,
+      scope == "buffer" and ft or nil
+    )
     table.insert(snapshot.tools, {
       name = entry.name,
       meta = vim.deepcopy(entry.meta),
-      status = status,
-      status_hl = status_hl,
+      status = health_status.label,
+      status_hl = health_status.severity,
       enabled = state.is_enabled(category, entry.name),
+      health_status = health_status,
     })
+    if health_status.attention then
+      snapshot.summary.attention = snapshot.summary.attention + 1
+    end
+    if health_status.enabled == true then
+      snapshot.summary.enabled = snapshot.summary.enabled + 1
+    elseif health_status.enabled == false then
+      snapshot.summary.disabled = snapshot.summary.disabled + 1
+    end
+    if health_status.installation == "installed" then
+      snapshot.summary.installed = snapshot.summary.installed + 1
+    elseif health_status.installation == "missing" then
+      snapshot.summary.missing = snapshot.summary.missing + 1
+    end
   end
   return snapshot
 end
@@ -94,11 +116,20 @@ function M.toggle(selection, on_complete)
 
   local enabled = not state.is_enabled(category, name)
   local function apply()
-    state.set_enabled(category, name, enabled)
+    local saved, save_error = state.set_enabled(category, name, enabled)
+    if not saved then
+      done(
+        on_complete,
+        false,
+        "could not save tool state: " .. tostring(save_error)
+      )
+      return false
+    end
     if handler.apply_runtime then
       handler.apply_runtime({ name = name, meta = meta, is_enabled = enabled })
     end
     done(on_complete, true)
+    return true
   end
 
   if enabled and meta.mason then
@@ -122,8 +153,7 @@ function M.toggle(selection, on_complete)
     end
   end
 
-  apply()
-  return true
+  return apply()
 end
 
 ---@param selection { category: ToolCategory, name: string }
@@ -186,7 +216,15 @@ function M.reorder(selection, on_complete)
   end
   names[index], names[index + direction] =
     names[index + direction], names[index]
-  state.set_order(category, ft, names)
+  local saved, save_error = state.set_order(category, ft, names)
+  if not saved then
+    done(
+      on_complete,
+      false,
+      "could not save tool order: " .. tostring(save_error)
+    )
+    return false
+  end
   if handler.apply_order then
     handler.apply_order({
       ft = ft,

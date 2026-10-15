@@ -4,6 +4,7 @@ describe("tool.state", function()
   local state
   local state_path
   local original_state_path
+  local original_rename
   local original_state_module
 
   local function reload()
@@ -12,6 +13,7 @@ describe("tool.state", function()
   end
 
   before_each(function()
+    original_rename = vim.uv.fs_rename
     original_state_path = vim.g.tool_state_path
     original_state_module = package.loaded["tool.state"]
     state_path = test.temp_dir("tool-state") .. "/tools.json"
@@ -20,6 +22,7 @@ describe("tool.state", function()
   end)
 
   after_each(function()
+    vim.uv.fs_rename = original_rename
     vim.g.tool_state_path = original_state_path
     package.loaded["tool.state"] = original_state_module
     test.cleanup_all()
@@ -124,6 +127,33 @@ describe("tool.state", function()
         vim.json.decode(table.concat(vim.fn.readfile(state_path)))
       assert.is_false(persisted.lsp.lua_ls)
       assert.same({ "stylua" }, persisted.formatter_order.lua)
+    end
+  )
+
+  it("rolls back memory when an atomic state replacement fails", function()
+    local destination = test.temp_dir("state-destination")
+    vim.g.tool_state_path = destination
+    local before = state.is_enabled("lsp", "lua_ls")
+
+    local saved, err = state.set_enabled("lsp", "lua_ls", not before)
+
+    assert.is_false(saved)
+    assert.is_truthy(err)
+    assert.equals(before, state.is_enabled("lsp", "lua_ls"))
+  end)
+  it(
+    "preserves existing JSON and cached values when replacement is refused",
+    function()
+      assert.is_true(state.set_enabled("lsp", "lua_ls", false))
+      local before = table.concat(vim.fn.readfile(state_path), "\n")
+      vim.uv.fs_rename = function()
+        return nil, "replacement refused"
+      end
+      local saved = state.set_enabled("lsp", "lua_ls", true)
+      assert.is_false(saved)
+      assert.is_false(state.is_enabled("lsp", "lua_ls"))
+      assert.equals(before, table.concat(vim.fn.readfile(state_path), "\n"))
+      assert.same({}, vim.fn.glob(state_path .. ".orbitvim-*.tmp", false, true))
     end
   )
 end)

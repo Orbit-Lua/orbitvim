@@ -4,11 +4,11 @@ Open `:ToolManager` or `<leader>us`. Repeating the command focuses the existing 
 
 ## Categories and selection
 
-One outer frame contains category navigation, source scope, the tool list, and action hints. The selected category has a filled highlight. Narrow views retain its name; short views omit separators to keep the list usable. Formatter/linter views show priority hints when space permits.
+One outer frame contains category navigation, source scope, the tool list, and action hints. The list keeps `Tool`, `Enabled`, and `Status` columns. The selected category has a filled highlight. Narrow views retain its name; short views omit separators to keep the list usable. Formatter/linter views show priority hints when space permits.
 
-Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand an entry with `o`, Enter, or `za`. Formatter/linter groups expand by default in buffer scope and collapse by default in all-state scope, unless you have explicitly changed that group's expansion.
+Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand a formatter/linter group with `o`, Enter, or `za` in all-state scope. Buffer-scope formatter/linter lists are flat and show ranks inline.
 
-The selected tool stays selected after priority changes and live refreshes. Category and explicit expansion choices survive closing and reopening the manager. Help (`?` or `g?`) suspends tool actions and remains visible during background refreshes. `K` opens and focuses details so they can be scrolled. Close details with `q` or Escape to return to the tool list.
+The selected tool stays selected after priority changes, resize, and live refreshes. Buffer-scope formatter/linter lists are flat and show saved ranks; all-state views retain filetype groups for reordering. Other categories show a flat tool list. Category and explicit expansion choices survive closing and reopening the manager. Help (`?` or `g?`) suspends tool actions and remains visible during background refreshes. A wrapped details preview follows selection without moving focus on wide and medium editors. `K` focuses the details so they can be scrolled; close it with `q` or Escape to return to the tool list. Wide views place details beside the list, medium views below it, and tiny views show details only after `K`.
 
 ## Install and enable
 
@@ -24,24 +24,26 @@ An installation continues if you close Tool Manager. Successful enablement still
 
 | Status | Meaning |
 | --- | --- |
-| `disabled` | Saved enablement is off |
-| `installing` | Its Mason installation is in progress |
-| `not installed` | The managed package/parser is missing |
-| `mason unavailable` / `package missing` | Registry lookup failed |
-| `external` | The tool has no Mason package |
-| `not configured` / `partly configured` | Runtime filetype lists do not fully match supported filetypes |
-| `no binary` | Runtime command resolution found a missing executable |
-| `configured`, `registered`, `ok`, diagnostic counts | Category-specific runtime health |
+| `Disabled` | Saved global enablement is off; details still show installation and runtime facts |
+| `Installing…` | Its Mason installation is in progress |
+| `Not installed` | The managed package/parser is missing |
+| `Unknown` | Availability cannot be confirmed; details show registry/backend failures |
+| `Not configured` / `Partly configured` | Runtime wiring is missing for the current scope |
+| `Missing executable` | Runtime command resolution found a missing executable |
+| `Not active` | Saved enablement is on, but the runtime has not enabled this tool |
+| `Configured`, `Registered…`, `Running…`, `Idle` | Category-specific runtime health |
+| `Diagnostics: …` | Source-code findings, not a failed tool process |
+| `Failed` | A tool operation reported an execution failure |
 
-Installed packages do not guarantee active runtime wiring. The canonical registry describes supported tools and filetypes; initial activation remains in the owning runtime/configuration. For example, SQLFluff's linter adapter can support SQL without being included in the initial linter list. Details include the package, backend name where different, filetypes, notes, and linter errors/diagnostics.
+Installed packages do not guarantee active runtime wiring. The canonical registry describes supported tools and filetypes; initial activation remains in the owning runtime/configuration. For example, SQLFluff's linter adapter can support SQL without being included in the initial linter list. The list uses icons and English status labels; Enabled is On/Off, or N/A for installation-only categories. External management is a source, not a runtime status. Details separate installation, source, runtime status, and enablement; they include filetypes, notes, and linter errors/diagnostics where available.
 
 ## Priority and storage
 
-Select a formatter or linter inside its filetype group and use `[` / `]`. Tool Manager saves the complete logical order, including disabled tools. It applies enabled tools to the runtime and preserves unrelated runtime entries. Re-enabling a tool restores its saved position.
+Select a formatter or linter in buffer scope, or inside an all-state filetype group, and use `[` / `]`. Tool Manager saves the complete logical order, including disabled tools. Enablement applies globally to that tool; priority applies to the selected filetype. It applies enabled tools to the runtime and preserves unrelated runtime entries. Re-enabling a tool restores its saved position.
 
 `lua/config/tools.lua` owns logical identities, supported filetypes, Mason packages, and default priority. A `runtime_name` handles a different backend identifier: the saved YAML formatter key remains `yaml`, while Conform receives `yamlfmt`.
 
-State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists.
+State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists. State writes use an atomic replacement: if saving fails, the previous persisted state remains and the runtime is not updated from the unsaved change.
 
 ## View lifecycle
 

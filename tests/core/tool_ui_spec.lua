@@ -57,6 +57,15 @@ describe("Tool Manager Nui sessions", function()
     error("missing entry: " .. text)
   end
 
+  local function line_for(text)
+    for index, line in ipairs(vim.api.nvim_buf_get_lines(body(), 0, -1, false)) do
+      if line:find(text, 1, true) then
+        return index
+      end
+    end
+    error("missing row: " .. text)
+  end
+
   before_each(function()
     original_runtimepath = vim.o.runtimepath
     original_window = vim.api.nvim_get_current_win()
@@ -112,6 +121,16 @@ describe("Tool Manager Nui sessions", function()
             enabled = true,
             status = "configured",
             status_hl = "DiagnosticOk",
+            health_status = {
+              label = "Configured",
+              icon = "✓",
+              severity = "DiagnosticOk",
+              installation = "installed",
+              source = "Mason",
+              runtime = "Started",
+              enabled = true,
+              attention = false,
+            },
           })
         end
         return {
@@ -185,11 +204,13 @@ describe("Tool Manager Nui sessions", function()
       assert.equals("linter", snapshots[#snapshots].category)
       press("4")
       assert.equals("formatter", snapshots[#snapshots].category)
+      assert.is_true(line_for("ruff_fix") < line_for("ruff_format"))
       select("ruff_fix")
       press("]")
       assert.is_true(vim.wait(100, function()
         return #snapshots >= 7
       end))
+      assert.is_true(line_for("ruff_format") < line_for("ruff_fix"))
       local selected_line = vim.api.nvim_win_get_cursor(window)[1]
       assert.is_truthy(
         vim.api
@@ -197,8 +218,8 @@ describe("Tool Manager Nui sessions", function()
           :find("ruff_fix", 1, true)
       )
       press("o")
-      assert.is_nil(lines():find("ruff_fix", 1, true))
-      assert.is_truthy(vim.api.nvim_get_current_line():find("python", 1, true))
+      assert.is_truthy(lines():find("ruff_fix", 1, true))
+      assert.is_nil(lines():find("ft: python", 1, true))
       press("s")
       assert.equals("states", snapshots[#snapshots].scope)
       assert.is_nil(lines():find("ruff_fix", 1, true))
@@ -209,6 +230,34 @@ describe("Tool Manager Nui sessions", function()
       assert.equals("formatter", snapshots[#snapshots].category)
       assert.equals("buffer", snapshots[#snapshots].scope)
       assert.is_truthy(lines():find("ruff_fix", 1, true))
+      for _, size in ipairs({
+        { 180, 45 },
+        { 120, 40 },
+        { 120, 21 },
+        { 48, 40 },
+      }) do
+        vim.o.columns, vim.o.lines = size[1], size[2]
+        local count = #snapshots
+        vim.api.nvim_exec_autocmds("VimResized", {})
+        assert.is_true(vim.wait(100, function()
+          return #snapshots > count
+        end))
+        assert.equals(body(), vim.api.nvim_get_current_buf())
+        local preview = buffer_for("ToolManagerDetails")
+        if size[1] < 85 or size[2] < 23 then
+          assert.is_nil(preview)
+        else
+          local frame = vim.fn.bufwinid(buffer_for("ToolManagerFrame"))
+          assert.is_not_nil(preview)
+          local preview_window = vim.fn.bufwinid(preview)
+          local fp = vim.api.nvim_win_get_position(frame)
+          local dp = vim.api.nvim_win_get_position(preview_window)
+          assert.is_true(
+            dp[2] >= fp[2] + vim.api.nvim_win_get_width(frame) + 2
+              or dp[1] >= fp[1] + vim.api.nvim_win_get_height(frame) + 2
+          )
+        end
+      end
     end
   )
 
@@ -234,10 +283,22 @@ describe("Tool Manager Nui sessions", function()
       assert.is_truthy(
         lines(buffer_for("ToolManagerDetails")):find("ruff", 1, true)
       )
+      local detail_text = lines(buffer_for("ToolManagerDetails"))
+      assert.is_truthy(detail_text:find("Installation: Installed", 1, true))
+      assert.is_truthy(detail_text:find("Source: Mason", 1, true))
+      assert.is_truthy(detail_text:find("Runtime: Started", 1, true))
+      assert.is_truthy(detail_text:find("Enabled: On", 1, true))
       local detail_buffer = buffer_for("ToolManagerDetails")
       assert.equals(detail_buffer, vim.api.nvim_get_current_buf())
       press("<Esc>", detail_buffer)
       assert.equals(body(), vim.api.nvim_get_current_buf())
+      press("6")
+      select("pyright")
+      press("K")
+      assert.is_truthy(
+        lines(buffer_for("ToolManagerDetails")):find("Enabled: N/A", 1, true)
+      )
+      press("<Esc>", buffer_for("ToolManagerDetails"))
       press("3")
       local maximum = require("config.tool_manager").details.max_messages
       logger.get_entries = function()
@@ -261,11 +322,11 @@ describe("Tool Manager Nui sessions", function()
       assert.is_truthy(lines(detail_buffer):find("+2 more", 1, true))
       local detail_width =
         vim.api.nvim_win_get_width(vim.fn.bufwinid(detail_buffer))
-      for _, line in
-        ipairs(vim.api.nvim_buf_get_lines(detail_buffer, 0, -1, false))
-      do
-        assert.is_true(vim.fn.strdisplaywidth(line) <= detail_width)
-      end
+      assert.is_true(detail_width > 0)
+      assert.is_true(vim.wo[vim.fn.bufwinid(detail_buffer)].wrap)
+      assert.is_truthy(
+        lines(detail_buffer):find(string.rep("診斷", 50), 1, true)
+      )
       local old_buffers = {}
       for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
         if vim.bo[buffer].filetype:match("^ToolManager") then
@@ -314,7 +375,7 @@ describe("Tool Manager Nui sessions", function()
       press("3")
       select("ruff")
       press("K")
-      for _, size in ipairs({ { 120, 40 }, { 48, 14 }, { 24, 9 } }) do
+      for _, size in ipairs({ { 120, 40 }, { 120, 24 }, { 48, 14 }, { 24, 9 } }) do
         vim.o.columns, vim.o.lines = size[1], size[2]
         vim.api.nvim_exec_autocmds("VimResized", {})
         local count = #snapshots
@@ -352,18 +413,28 @@ describe("Tool Manager Nui sessions", function()
             lines(buffer_for("ToolManagerNavigation")):find("Linter", 1, true)
           )
         end
+        if size[1] == 120 then
+          local frame_position = vim.api.nvim_win_get_position(frame)
+          local frame_bottom = frame_position[1]
+            + vim.api.nvim_win_get_height(frame)
+          local details_window =
+            vim.fn.bufwinid(buffer_for("ToolManagerDetails"))
+          local details_position = vim.api.nvim_win_get_position(details_window)
+          assert.is_true(details_position[1] >= frame_bottom)
+        end
         for _, window in ipairs(vim.api.nvim_list_wins()) do
           local buffer = vim.api.nvim_win_get_buf(window)
-          if vim.bo[buffer].filetype:match("^ToolManager") then
+          if
+            vim.bo[buffer].filetype:match("^ToolManager")
+            and vim.bo[buffer].filetype ~= "ToolManagerDetails"
+          then
             assert.is_true(vim.api.nvim_win_get_width(window) <= vim.o.columns)
             for _, line in
               ipairs(vim.api.nvim_buf_get_lines(buffer, 0, -1, false))
             do
-              assert.is_true(
-                vim.fn.strdisplaywidth(line)
-                  <= vim.api.nvim_win_get_width(window),
-                line
-              )
+              assert.is_true(vim.api.nvim_win_call(window, function()
+                return vim.fn.strdisplaywidth(line)
+              end) <= vim.api.nvim_win_get_width(window), line)
             end
           end
         end

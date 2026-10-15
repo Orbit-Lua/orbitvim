@@ -19,13 +19,32 @@ function View:active()
 end
 
 local function dimensions()
-  return {
+  local size = {
     width = math.max(3, math.min(config.width, vim.o.columns - 4)),
     height = math.max(
       5,
       math.min(config.height, vim.o.lines - vim.o.cmdheight - 4)
     ),
   }
+  local position = "50%"
+  local tall = vim.o.lines - vim.o.cmdheight >= 22
+  if tall and vim.o.columns >= 150 then
+    size.width = math.min(size.width, vim.o.columns - config.details.width - 10)
+    position = {
+      row = math.max(1, math.floor((vim.o.lines - size.height) / 2) - 1),
+      col = math.max(
+        1,
+        math.floor((vim.o.columns - size.width - config.details.width - 6) / 2)
+      ),
+    }
+  elseif tall and vim.o.columns >= 85 then
+    size.height = math.min(
+      size.height,
+      math.floor((vim.o.lines - vim.o.cmdheight - 7) * 0.58)
+    )
+    position = { row = 1, col = math.floor((vim.o.columns - size.width) / 2) }
+  end
+  return size, position
 end
 
 local function sections(view, height)
@@ -51,31 +70,49 @@ function View:refresh(first, identity)
   local selected = self:current()
   local selected_id = identity or selected and selected.id
   selected_id = selected_id or self.saved_selection
-  local position = vim.api.nvim_win_get_cursor(self.body.winid)
-  local size = dimensions()
-  self.frame:update_layout({ size = size })
+  local cursor_position = vim.api.nvim_win_get_cursor(self.body.winid)
+  local previous_window = vim.api.nvim_get_current_win()
+  local size, frame_position = dimensions()
+  self.frame:update_layout({ size = size, position = frame_position })
   self.layout:update({}, sections(self, size.height))
   local snapshot = manager.snapshot({
     category = self:category(),
     scope = self.state.scope,
     source = self.source,
   })
-  render.chrome(self, snapshot)
-  if self.state.help then
-    render.help(self)
-  else
-    render.tree(self, snapshot)
-    local selected_line
-    if selected_id then
-      local _, line = self.tree:get_node(selected_id)
-      selected_line = line
+  -- Display-width calculations must use the unwrapped list window even when
+  -- details currently has focus and linebreak enabled.
+  vim.api.nvim_win_call(self.body.winid, function()
+    render.chrome(self, snapshot)
+    if self.state.help then
+      render.help(self)
+      details.close(self)
+    else
+      render.tree(self, snapshot)
+      local selected_line
+      if selected_id then
+        local _, line = self.tree:get_node(selected_id)
+        selected_line = line
+      end
+      local count = vim.api.nvim_buf_line_count(self.body.bufnr)
+      local target_line = first and 2
+        or selected_line
+        or math.min(cursor_position[1], count)
+      vim.api.nvim_win_set_cursor(
+        self.body.winid,
+        { math.min(target_line, count), 0 }
+      )
+      local node = self:current()
+      if node and node.tool then
+        details.preview(self, node.tool)
+      else
+        details.close(self)
+      end
     end
-    local count = vim.api.nvim_buf_line_count(self.body.bufnr)
-    vim.api.nvim_win_set_cursor(
-      self.body.winid,
-      { first and 1 or selected_line or math.min(position[1], count), 0 }
-    )
-  end
+    if self.details and previous_window == self.details.winid then
+      vim.api.nvim_set_current_win(self.details.winid)
+    end
+  end)
 end
 
 function View:schedule_refresh(debounce)
@@ -209,6 +246,7 @@ local function popup(filetype, border)
     buf_options = { filetype = filetype, buflisted = false },
     win_options = {
       wrap = false,
+      linebreak = false,
       number = false,
       relativenumber = false,
       signcolumn = "no",
@@ -219,10 +257,10 @@ end
 function View.new(source, state, on_close)
   local self =
     setmetatable({ source = source, state = state, on_close = on_close }, View)
-  local size = dimensions()
+  local size, position = dimensions()
   self.frame = Popup({
     relative = "editor",
-    position = "50%",
+    position = position,
     size = size,
     border = require("config.borders").default,
     focusable = false,
@@ -325,7 +363,8 @@ function View.new(source, state, on_close)
     group = self.group,
     buffer = self.body.bufnr,
     callback = function()
-      details.close(self)
+      local node = self:current()
+      details.preview(self, node and node.tool)
     end,
   })
   self:refresh(true)

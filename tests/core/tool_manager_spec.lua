@@ -111,6 +111,32 @@ describe("tool.manager", function()
     end
   )
 
+  it("does not apply a toggle when state persistence fails", function()
+    state.set_enabled("formatter", "prisma_fmt", false)
+    local blocking_file = test.temp_dir("manager-state-destination") .. "/file"
+    test.write_file(blocking_file, "not a directory")
+    vim.g.tool_state_path = blocking_file .. "/tools.json"
+    local applied = false
+    categories.formatter.apply_runtime = function()
+      applied = true
+    end
+    local result
+
+    assert.is_false(
+      manager.toggle(
+        { category = "formatter", name = "prisma_fmt" },
+        function(ok, err)
+          result = { ok, err }
+        end
+      )
+    )
+
+    assert.is_false(result[1])
+    assert.is_truthy(result[2])
+    assert.is_false(applied)
+    assert.is_false(state.is_enabled("formatter", "prisma_fmt"))
+  end)
+
   it(
     "installs missing Mason packages before enabling and enables only on success",
     function()

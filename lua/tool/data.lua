@@ -51,68 +51,118 @@ function M.state_summary(category)
   return { total = total, enabled = enabled, disabled = total - enabled }
 end
 
-local function with_install_state(status_text, installed)
-  if installed == true then
-    return status_text .. " · installed"
-  elseif installed == nil then
-    return status_text .. " · external"
+local runtime_labels = {
+  ["no binary"] = "Missing executable",
+  ["missing definition"] = "Missing definition",
+  ["error"] = "Failed",
+  ["ok"] = "Configured",
+  ["no ft"] = "No filetypes",
+}
+
+local function runtime_label(value)
+  if type(value) ~= "string" then
+    return "Unknown"
   end
-  return status_text
+  return runtime_labels[value] or value:gsub("^%l", string.upper)
 end
 
+---Read installation and runtime independently; saved enablement only selects the
+---primary label, never hides the underlying facts in details.
 ---@param category ToolCategory
 ---@param name string
 ---@param meta Tool.Definition
----@return string status_text, string highlight_group
-function M.entry_status(category, name, meta)
+---@param filetype? string
+---@return table
+function M.health_status(category, name, meta, filetype)
   local handler = category_handlers[category]
-  if category == "parser" or category == "package" then
-    return handler.entry_status({ name = name, meta = meta })
+  local toggleable = handler.capabilities.toggle
+  local enabled
+  if toggleable then
+    enabled = state_mod.is_enabled(category, name)
   end
-
-  if not state_mod.is_enabled(category, name) then
-    return "disabled", "Comment"
+  local source = category == "parser" and "Tree-sitter"
+    or (meta.mason and "Mason")
+    or meta.source
+    or "External"
+  local installed, install_error
+  if category == "parser" then
+    installed, install_error = handler.installation_status(name)
+  elseif meta.mason or category == "package" then
+    installed, install_error = mason.package_status(meta.mason or name)
   end
-
-  local installed
-  local install_error
-  if meta.mason then
-    installed, install_error = mason.package_status(meta.mason)
-  end
-
-  local status_text, highlight_group
-  if install_error then
-    if install_error:match("registry") then
-      status_text = "mason unavailable"
-    else
-      status_text = "package missing"
-    end
-    highlight_group = "DiagnosticWarn"
-  elseif not meta.mason then
-    status_text, highlight_group = "external", "DiagnosticInfo"
-  elseif installed == nil then
-    status_text, highlight_group = "unknown", "DiagnosticWarn"
-  elseif installed then
-    status_text, highlight_group = "installed", "DiagnosticOk"
+  local installing = (meta.mason or category == "package")
+      and mason.is_installing(meta.mason or name)
+    or false
+  local installation
+  if installing then
+    installation = "installing"
+  elseif install_error then
+    installation = "unavailable"
+  elseif installed == true then
+    installation = "installed"
+  elseif installed == false then
+    installation = "missing"
+  elseif category ~= "parser" and not meta.mason and category ~= "package" then
+    installation = "external"
   else
-    status_text, highlight_group = "not installed", "DiagnosticError"
+    installation = "unknown"
   end
 
-  if not install_error and installed ~= false then
-    if handler then
-      local refined_text, refined_hl = handler.entry_status({
-        name = name,
-        meta = meta,
-        installed = installed,
-      })
-      if refined_text then
-        status_text = with_install_state(refined_text, installed)
-        highlight_group = refined_hl
-      end
-    end
+  local runtime, runtime_highlight, facts
+  if toggleable then
+    runtime, runtime_highlight, facts = handler.entry_status({
+      name = name,
+      meta = meta,
+      filetype = filetype,
+    })
   end
-
-  return status_text, highlight_group
+  local runtime_text = toggleable and runtime_label(runtime) or "Not applicable"
+  local label, severity = runtime_text, runtime_highlight or "DiagnosticWarn"
+  local glyphs = require("config.icons").tool_manager
+  local icon = glyphs.enabled
+  if facts and facts.diagnostics then
+    local diagnostics = facts.diagnostics
+    label = string.format(
+      "Diagnostics: %d errors, %d warnings",
+      diagnostics.error_count,
+      diagnostics.warn_count
+    )
+    runtime_text = label
+    severity = "DiagnosticInfo"
+    icon = glyphs.info
+  elseif runtime == "no binary" then
+    severity = "DiagnosticWarn"
+  end
+  if installing then
+    label, severity, icon = "Installing…", "DiagnosticInfo", glyphs.installing
+  elseif enabled == false then
+    label, severity, icon = "Disabled", "Comment", glyphs.disabled
+  elseif installation == "missing" then
+    label, severity, icon = "Not installed", "DiagnosticWarn", glyphs.warning
+  elseif installation == "unavailable" or installation == "unknown" then
+    label, severity, icon = "Unknown", "DiagnosticWarn", glyphs.unknown
+  elseif not toggleable then
+    label, severity = "Installed", "Comment"
+  elseif runtime == "disabled" then
+    label, severity, icon = "Not active", "DiagnosticWarn", glyphs.warning
+  elseif runtime == "idle" then
+    icon, severity = glyphs.idle, "Comment"
+  elseif severity == "DiagnosticError" then
+    icon = glyphs.error
+  elseif severity == "DiagnosticWarn" then
+    icon = glyphs.warning
+  end
+  return {
+    label = label,
+    severity = severity,
+    icon = icon,
+    enabled = enabled,
+    installation = installation,
+    source = source,
+    runtime = runtime_text,
+    reason = install_error,
+    attention = severity == "DiagnosticError" or severity == "DiagnosticWarn",
+  }
 end
 
 ---@param category ToolCategory

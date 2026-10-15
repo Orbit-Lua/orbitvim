@@ -4,6 +4,7 @@ describe("AI completion endpoint", function()
   local state_path
   local original_minuet
   local original_endpoint
+  local original_rename
   local original_path
 
   local function write_state(content)
@@ -14,6 +15,7 @@ describe("AI completion endpoint", function()
 
   before_each(function()
     state_path = test.temp_dir("ai-endpoint") .. "/state.json"
+    original_rename = vim.uv.fs_rename
     original_path = vim.g.minuet_endpoint_state_path
     original_endpoint = package.loaded["ai.endpoint"]
     vim.g.minuet_endpoint_state_path = state_path
@@ -23,6 +25,7 @@ describe("AI completion endpoint", function()
   end)
 
   after_each(function()
+    vim.uv.fs_rename = original_rename
     vim.g.minuet_endpoint_state_path = original_path
     package.loaded.minuet = original_minuet
     package.loaded["ai.endpoint"] = original_endpoint
@@ -145,4 +148,19 @@ describe("AI completion endpoint", function()
     )
     assert.is_nil(endpoint.transform_request(local_request).headers.Host)
   end)
+  it(
+    "retains endpoint selection and disk state when replacement fails",
+    function()
+      local previous = assert(endpoint.set("prior-host:11434"))
+      local before = table.concat(vim.fn.readfile(state_path), "\n")
+      vim.uv.fs_rename = function()
+        return nil, "replacement refused"
+      end
+      local selected, err = endpoint.set("next-host:11434")
+      assert.is_nil(selected)
+      assert.is_truthy(err)
+      assert.equals(previous, endpoint.current())
+      assert.equals(before, table.concat(vim.fn.readfile(state_path), "\n"))
+    end
+  )
 end)

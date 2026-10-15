@@ -23,11 +23,11 @@ flowchart TD
 
 `lua/config/tools.lua` is the single registry for logical tool identities, supported filetypes, backend aliases, installers, and ordered defaults. `config.packages` derives sorted, unique package/server/parser lists. Supported filetypes do not imply initial runtime activation; explicit configured lists and conditions retain that responsibility.
 
-`tool.manager` accepts selections by category, logical name, and optional filetype. It validates capabilities before changing state or invoking installers. Snapshots contain tool status, filetype groups, and summary data. They contain no Nui nodes, cursor positions, or highlight offsets.
+`tool.manager` accepts selections by category, logical name, and optional filetype. It validates capabilities before changing state or invoking installers. Snapshots contain tool status, structured health, filetype groups, and summary data. They contain no Nui nodes, cursor positions, or highlight offsets.
 
 `tool.state` reads compatible current/legacy JSON and persists logical identities. `tool.order` reconciles saved/default order with current candidates. Formatter/linter adapters translate backend identifiers at their runtime boundary and preserve unrelated runtime entries. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
 
-`tool.ui.view` owns one session: Nui Layout/Popup components, view mode, source context, stable selection, mappings, event subscriptions, and timers. `tool.ui.render` builds Nui Tree/Line content; `tool.ui.details` renders selected-tool information. Mappings and help descriptions come from `config.tool_manager`.
+`tool.ui.view` owns one session: Nui Layout/Popup components, view mode, source context, stable selection, mappings, event subscriptions, timers, and the selection-following details preview. `tool.ui.render` builds Nui Tree/Line content; `tool.ui.details` renders wrapped health and selected-tool information. Shared glyphs come from `config.icons`; mappings and help descriptions come from `config.tool_manager`.
 
 Tool operations can outlive the view. Completion changes legitimate state/runtime behavior but only refreshes the session that initiated the operation if it is still active. Every subscription/timer is disposed when that session closes; a later view cannot inherit an earlier callback.
 

@@ -28,7 +28,7 @@ Missing language tools are installed separately from plugins. Select a tool and 
 
 ## Tool Manager
 
-The navigation, source scope, tool list, and action hints share one outer frame. The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter entries are grouped by filetype, with their priority visible in the expanded group.
+The navigation, source scope, tool list, and action hints share one outer frame. The list uses Tool, Enabled, and Status columns. The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter ranks appear inline in buffer scope and stay grouped by filetype in all-state scope.
 
 | Key | Action |
 | --- | --- |
@@ -39,9 +39,11 @@ The navigation, source scope, tool list, and action hints share one outer frame.
 | `i` | Install its package or parser |
 | `[` / `]` | Move a formatter or linter earlier / later |
 | `o` / `<CR>` / `za` | Expand or collapse an entry |
-| `K` | Open details, including linter errors and diagnostics |
+| `K` | Focus scrollable details, including linter errors and diagnostics |
 | `?` / `g?` | Toggle help |
 | `q` / `<Esc>` | Close the view |
+
+Wrapped details follow the selection without moving focus on wide and medium editors. Press `K` to focus and scroll the details, then `q` or Escape to return to the list. Narrow editors open details only after `K`.
 
 Parsers and dependency packages can be installed but cannot be toggled or reordered. Enabling a tool and installing its package are separate operations: `i` alone does not change enablement. A failed automatic installation leaves the tool disabled.
 

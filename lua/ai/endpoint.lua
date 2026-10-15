@@ -185,32 +185,11 @@ end
 
 function M.save()
   local path = state_path()
-  local parent = vim.fn.fnamemodify(path, ":h")
-  if vim.fn.isdirectory(parent) == 0 then
-    local ok = vim.fn.mkdir(parent, "p")
-    if ok == 0 then
-      return false, "failed to create state directory: " .. parent
-    end
-  end
-
-  local file, open_error = io.open(path, "w")
-  if not file then
-    return false, open_error
-  end
-
   local ok, encoded = pcall(vim.json.encode, M.get())
   if not ok then
-    file:close()
     return false, encoded
   end
-
-  local write_ok, write_error = file:write(encoded)
-  file:close()
-  if not write_ok then
-    return false, write_error
-  end
-
-  return true
+  return require("utils.fs").atomic_write(path, encoded)
 end
 
 function M.set(value)

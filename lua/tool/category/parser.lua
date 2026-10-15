@@ -28,13 +28,22 @@ local function installed_set()
   return result
 end
 
+---Availability query shared by snapshots and the category status.
+function M.installation_status(name)
+  local installed = installed_set()
+  if not installed then
+    return nil, "Tree-sitter is unavailable"
+  end
+  return installed[name] == true
+end
+
 ---@param opts Tool.StatusOpts
 ---@return string, string
 function M.entry_status(opts)
-  local installed = installed_set()
-  if not installed then
+  local installed = M.installation_status(opts.name)
+  if installed == nil then
     return "treesitter unavailable", "DiagnosticWarn"
-  elseif installed[opts.name] then
+  elseif installed then
     return "installed", "DiagnosticOk"
   end
   return "not installed", "DiagnosticError"

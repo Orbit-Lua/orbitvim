@@ -91,13 +91,11 @@ end
 
 function M.save()
   local path = state_path()
-  local file = io.open(path, "w")
-  if not file then
-    vim.notify("ToolManager: cannot write " .. path, vim.log.levels.WARN)
-    return
+  local ok, encoded = pcall(vim.json.encode, M.get())
+  if not ok then
+    return false, encoded
   end
-  file:write(vim.json.encode(M.get()))
-  file:close()
+  return require("utils.fs").atomic_write(path, encoded)
 end
 
 function M.is_enabled(cat, name)
@@ -112,9 +110,15 @@ end
 function M.set_enabled(cat, name, enabled)
   local state = M.get()
   if state[cat] then
+    local previous = state[cat][name]
     state[cat][name] = enabled
-    M.save()
+    local ok, err = M.save()
+    if not ok then
+      state[cat][name] = previous
+      return false, err
+    end
   end
+  return true
 end
 
 ---@param kind "formatter"|"linter"
@@ -124,8 +128,15 @@ end
 
 ---@param kind "formatter"|"linter"
 function M.set_order(kind, ft, order)
-  M.get()[kind .. "_order"][ft] = order
-  M.save()
+  local orders = M.get()[kind .. "_order"]
+  local previous = orders[ft]
+  orders[ft] = order
+  local ok, err = M.save()
+  if not ok then
+    orders[ft] = previous
+    return false, err
+  end
+  return true
 end
 
 return M

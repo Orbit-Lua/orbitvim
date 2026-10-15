@@ -16,6 +16,7 @@
 ---@field name string
 ---@field meta Tool.Definition
 ---@field installed boolean?
+---@field filetype string?
 ---@class Tool.ApplyOrderOpts
 ---@field ft string
 ---@field enabled_names string[]
@@ -33,15 +34,7 @@ return {
     parser = "Parser",
     package = "Package",
   },
-  icons = {
-    enabled = "",
-    disabled = "",
-    warning = "",
-    error = "",
-    expanded = "",
-    collapsed = "",
-  },
-  details = { width = 70, max_messages = 8 },
+  details = { width = 54, max_messages = 8 },
   refresh = { debounce_ms = 500 },
   -- The view installs these mappings and renders the same descriptions in help.
   mappings = {

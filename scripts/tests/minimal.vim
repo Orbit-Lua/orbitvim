@@ -1,4 +1,5 @@
 set noswapfile
+set shadafile=NONE
 
 let s:plugin_data_path = stdpath('data')
 let s:test_root = tempname()

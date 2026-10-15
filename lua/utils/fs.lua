@@ -1,5 +1,50 @@
 local M = {}
 
+local atomic_write_sequence = 0
+
+---Write a complete file beside its destination, then atomically replace it.
+---@param path string
+---@param contents string
+---@return boolean, string?
+function M.atomic_write(path, contents)
+  local parent = vim.fn.fnamemodify(path, ":h")
+  if vim.fn.isdirectory(parent) == 0 then
+    local mkdir_ok, created = pcall(vim.fn.mkdir, parent, "p")
+    if not mkdir_ok then
+      return false, tostring(created)
+    end
+    if created == 0 and vim.fn.isdirectory(parent) == 0 then
+      return false, "failed to create state directory: " .. parent
+    end
+  end
+
+  atomic_write_sequence = atomic_write_sequence + 1
+  local temporary = string.format(
+    "%s.orbitvim-%s-%d.tmp",
+    path,
+    tostring(vim.uv.hrtime()),
+    atomic_write_sequence
+  )
+  local file, open_error = io.open(temporary, "wb")
+  if not file then
+    return false, open_error
+  end
+
+  local write_ok, write_error = file:write(contents)
+  local close_ok, close_error = file:close()
+  if not write_ok or not close_ok then
+    os.remove(temporary)
+    return false, write_error or close_error or "failed to write temporary file"
+  end
+
+  local rename_ok, rename_error = vim.uv.fs_rename(temporary, path)
+  if not rename_ok then
+    os.remove(temporary)
+    return false, rename_error
+  end
+  return true
+end
+
 ---@param path? string
 ---@param opts? {length?: integer, only_cwd?: boolean, transform_home?: boolean}
 ---@return string

@@ -31,7 +31,16 @@ M.register_servers = function(opts)
 
     local server_ok, server_err = pcall(vim.lsp.config, server, server_opts)
     if server_ok and state_mod.is_enabled("lsp", server) then
-      pcall(vim.lsp.enable, server)
+      local enable_ok, enable_err = pcall(vim.lsp.enable, server)
+      if not enable_ok then
+        vim.notify(
+          "[lsp] "
+            .. server
+            .. " could not be enabled: "
+            .. tostring(enable_err),
+          vim.log.levels.WARN
+        )
+      end
     elseif not server_ok then
       vim.notify(
         "[lsp] " .. server .. ": " .. tostring(server_err),
@@ -46,33 +55,20 @@ end
 M.configure_diagnostics = function(opts)
   local icons = require("config.icons")
 
-  if vim.fn.has("nvim-0.10.0") < 1 then
-    if type(opts.diagnostics.signs) ~= "boolean" then
-      for severity, icon in pairs(opts.diagnostics.signs.text) do
-        local name =
-          vim.diagnostic.severity[severity]:lower():gsub("^%l", string.upper)
-        name = "DiagnosticSign" .. name
-        vim.fn.sign_define(name, { text = icon, texthl = name, numhl = "" })
-      end
-    end
-  end
-
   if
     type(opts.diagnostics.virtual_text) == "table"
     and opts.diagnostics.virtual_text.prefix == "icons"
   then
-    opts.diagnostics.virtual_text.prefix = vim.fn.has("nvim-0.10.0") < 1
-        and "●"
-      or function(diagnostic)
-        for severity_name, icon in pairs(icons.diagnostics) do
-          if
-            diagnostic.severity
-            == vim.diagnostic.severity[severity_name:upper()]
-          then
-            return icon
-          end
+    opts.diagnostics.virtual_text.prefix = function(diagnostic)
+      for severity_name, icon in pairs(icons.diagnostics) do
+        if
+          diagnostic.severity
+          == vim.diagnostic.severity[severity_name:upper()]
+        then
+          return icon
         end
       end
+    end
   end
 
   vim.diagnostic.config(vim.deepcopy(opts.diagnostics))
@@ -109,13 +105,9 @@ M.install_diagnostic_filter = function()
   end
 end
 
----Activates optional LSP features (inlay hints, code lens). Requires Neovim >= 0.10.
+---Activates optional LSP features (inlay hints, code lens).
 ---@param opts Lsp.Config.Spec
 M.activate_features = function(opts)
-  if vim.fn.has("nvim-0.10") < 1 then
-    return
-  end
-
   local utils_lsp = require("utils.lsp")
 
   if opts.inlay_hints.enabled then

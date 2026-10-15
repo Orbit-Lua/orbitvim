@@ -21,29 +21,18 @@ return {
     ---@module "nvim-treesitter"
     ---@type TSConfig
     ---@diagnostic disable-next-line
-    opts = {
-      install_dir = vim.fn.stdpath("data") .. "/site",
-      ensure_installed = require("config.packages").treesitter_ensure_installed,
-    },
+    opts = function()
+      return require("config.editor").treesitter
+    end,
   },
 
   {
     "nvim-treesitter/nvim-treesitter-context",
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     event = { "BufReadPost", "BufWritePost", "BufNewFile" },
-    opts = {
-      enable = true,
-      multiwindow = false,
-      max_lines = 3,
-      min_window_height = 0,
-      line_numbers = true,
-      multiline_threshold = 20,
-      trim_scope = "outer",
-      mode = "cursor",
-      separator = nil,
-      zindex = 20,
-      on_attach = nil,
-    },
+    opts = function()
+      return require("config.editor").context
+    end,
   },
 
   -- https://www.reddit.com/r/neovim/comments/1agjong/html_tags/
@@ -71,22 +60,9 @@ return {
     event = { "BufReadPre", "BufNewFile" },
     ---@type nvim-ts-autotag.PluginSetup
     ---@diagnostic disable-next-line
-    opts = {
-      opts = {
-        enable_close = true,
-        enable_rename = true,
-        enable_close_on_slash = false,
-      },
-      aliases = {
-        pubxml = "xml",
-        csproj = "xml",
-
-        -- ref:
-        -- luacheck: ignore
-        -- https://github.com/windwp/nvim-ts-autotag/blob/88c1453db4ba7dd24131086fe51fdf74e587d275/lua/nvim-ts-autotag/config/plugin.lua#L162
-        jsx = "typescriptreact",
-      },
-    },
+    opts = function()
+      return require("config.editor").autotag
+    end,
     config = function(_, opts)
       require("nvim-ts-autotag").setup(opts)
     end,
@@ -97,10 +73,9 @@ return {
     main = "ibl",
     event = "User FilePost",
     ---@type ibl.config
-    opts = {
-      indent = { char = "│", highlight = "IblChar" },
-      scope = { char = "│", highlight = "IblScopeChar" },
-    },
+    opts = function()
+      return require("config.editor").indent
+    end,
     config = function(_, opts)
       theme.load_cache("blankline")
 

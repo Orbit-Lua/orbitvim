@@ -2,11 +2,28 @@ describe("tool.data", function()
   local data = require("tool.data")
   local tools = require("config.tools")
 
+  local mason = require("tool.mason")
+  local state = require("tool.state")
+  local prior_conform, prior_status, prior_formatter, prior_lint, diagnostic_buffer
+  before_each(function()
+    prior_conform = package.loaded.conform
+    prior_lint = package.loaded.lint
+    prior_status = mason.package_status
+    prior_formatter = vim.deepcopy(state.get().formatter)
+  end)
+
   after_each(function()
     tools.formatter._test_default_a = nil
     tools.formatter._test_default_b = nil
     tools.formatter_defaults._test_default_order = nil
-    package.loaded.conform = nil
+    package.loaded.conform = prior_conform
+    package.loaded.lint = prior_lint
+    if diagnostic_buffer and vim.api.nvim_buf_is_valid(diagnostic_buffer) then
+      vim.api.nvim_buf_delete(diagnostic_buffer, { force = true })
+    end
+    diagnostic_buffer = nil
+    mason.package_status = prior_status
+    state.get().formatter = prior_formatter
   end)
 
   it(
@@ -89,15 +106,116 @@ describe("tool.data", function()
     assert.equals(summary.total, summary.enabled + summary.disabled)
   end)
 
-  it("combines runtime health with external installation state", function()
-    package.loaded.conform = {
-      formatters_by_ft = { prisma = { "prisma_fmt" } },
+  it("keeps external installation separate from configured runtime", function()
+    package.loaded.conform =
+      { formatters_by_ft = { prisma = { "prisma_fmt" } } }
+    local health =
+      data.health_status("formatter", "prisma_fmt", tools.formatter.prisma_fmt)
+    assert.equals("external", health.installation)
+    assert.equals("Configured", health.runtime)
+    assert.equals("Configured", health.label)
+    assert.is_false(health.attention)
+  end)
+
+  it(
+    "prioritizes installation blockers without losing runtime or saved enablement",
+    function()
+      package.loaded.conform = { formatters_by_ft = { lua = { "stylua" } } }
+      for _, case in ipairs({
+        {
+          installed = true,
+          enabled = true,
+          label = "Configured",
+          installation = "installed",
+          attention = false,
+        },
+        {
+          installed = false,
+          enabled = true,
+          label = "Not installed",
+          installation = "missing",
+          attention = true,
+        },
+        {
+          enabled = true,
+          label = "Unknown",
+          installation = "unknown",
+          attention = true,
+        },
+        {
+          installed = false,
+          enabled = false,
+          label = "Disabled",
+          installation = "missing",
+          attention = false,
+        },
+        {
+          error = "registry unavailable",
+          enabled = true,
+          label = "Unknown",
+          installation = "unavailable",
+          attention = true,
+        },
+      }) do
+        mason.package_status = function()
+          return case.installed, case.error
+        end
+        state.get().formatter.stylua = case.enabled
+        local health =
+          data.health_status("formatter", "stylua", tools.formatter.stylua)
+        assert.equals(case.label, health.label)
+        assert.equals(case.installation, health.installation)
+        assert.equals(case.enabled, health.enabled)
+        assert.equals(case.attention, health.attention)
+        assert.equals("Configured", health.runtime)
+      end
+    end
+  )
+
+  it("reports runtime wiring for the requested scope", function()
+    package.loaded.conform = { formatters_by_ft = { lua = { "stylua" } } }
+    mason.package_status = function()
+      return true
+    end
+    local meta = { mason = "stylua", ft = { "lua", "python" } }
+    assert.equals(
+      "Configured",
+      data.health_status("formatter", "stylua", meta, "lua").label
+    )
+    assert.equals(
+      "Not configured",
+      data.health_status("formatter", "stylua", meta, "python").label
+    )
+    assert.equals(
+      "Partly configured 1/2",
+      data.health_status("formatter", "stylua", meta).label
+    )
+  end)
+  it("keeps source diagnostics distinct from a failed linter", function()
+    package.loaded.lint = {
+      linters_by_ft = { lua = { "luacheck" } },
+      linters = { luacheck = { cmd = vim.v.progpath } },
     }
-
-    local status, highlight =
-      data.entry_status("formatter", "prisma_fmt", tools.formatter.prisma_fmt)
-
-    assert.equals("configured · external", status)
-    assert.equals("DiagnosticOk", highlight)
+    mason.package_status = function()
+      return true
+    end
+    diagnostic_buffer = vim.api.nvim_create_buf(false, false)
+    local namespace = vim.api.nvim_create_namespace("luacheck")
+    vim.diagnostic.set(namespace, diagnostic_buffer, {
+      {
+        lnum = 0,
+        col = 0,
+        message = "Source error",
+        severity = vim.diagnostic.severity.ERROR,
+      },
+    })
+    local health =
+      data.health_status("linter", "luacheck", tools.linter.luacheck)
+    assert.equals("Diagnostics: 1 errors, 0 warnings", health.label)
+    assert.is_false(health.attention)
+    package.loaded.lint.linters.luacheck.cmd = "__orbitvim_missing_linter__"
+    health = data.health_status("linter", "luacheck", tools.linter.luacheck)
+    assert.equals("Missing executable", health.label)
+    assert.is_true(health.attention)
   end)
 end)

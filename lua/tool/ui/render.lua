@@ -1,6 +1,7 @@
 local Line = require("nui.line")
 local Tree = require("nui.tree")
 local config = require("config.tool_manager")
+local icons = require("config.icons").tool_manager
 local str = require("utils.str")
 
 local M = {}
@@ -70,6 +71,15 @@ function M.chrome(view, snapshot)
       "Comment"
     )
   end
+  if snapshot.summary and (snapshot.summary.attention or 0) > 0 then
+    context:append(
+      str.trunc(
+        " · " .. snapshot.summary.attention .. " need attention",
+        math.max(0, width - context:width())
+      ),
+      "DiagnosticWarn"
+    )
+  end
   local function separator()
     local line = Line()
     line:append(string.rep("─", width), "FloatBorder")
@@ -92,7 +102,12 @@ function M.chrome(view, snapshot)
       { "?", "help" },
       { "q", "close" },
     }
-  if width >= 100 and (category == "formatter" or category == "linter") then
+  if category == "parser" or category == "package" then
+    actions = vim.tbl_filter(function(action)
+      return action[1] ~= "Space"
+    end, actions)
+  end
+  if width >= 75 and (category == "formatter" or category == "linter") then
     table.insert(actions, 1, { "[/]", "priority" })
   end
   for _, action in ipairs(actions) do
@@ -115,12 +130,14 @@ local function node_line(node, width)
   local line = Line()
   local indent = string.rep("  ", node:get_depth() - 1)
   local arrow = node:has_children()
-      and (node:is_expanded() and config.icons.expanded or config.icons.collapsed)
+      and (node:is_expanded() and icons.expanded or icons.collapsed)
     or " "
-  line:append(
-    indent .. arrow .. " ",
-    node.kind == "detail" and "Comment" or "Title"
-  )
+  if node.kind ~= "columns" then
+    line:append(
+      indent .. arrow .. " ",
+      node.kind == "detail" and "Comment" or "Title"
+    )
+  end
   if node.kind == "group" then
     line:append(
       str.trunc(
@@ -129,32 +146,58 @@ local function node_line(node, width)
       ),
       "Title"
     )
+  elseif node.kind == "columns" then
+    local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
+    local tool_width =
+      math.max(1, math.min(math.floor(width * 0.48), width - enabled_width - 5))
+    local status_width = math.max(1, width - tool_width - enabled_width - 4)
+    line:append(str.rpad("Tool", tool_width), "Title")
+    line:append("  " .. str.rpad("Enabled", enabled_width), "Title")
+    line:append("  " .. str.trunc("Status", status_width), "Title")
   elseif node.kind == "detail" then
+    line:append(
+      str.trunc(node.text, math.max(1, width - line:width())),
+      "Comment"
+    )
+  elseif node.kind == "empty" then
     line:append(
       str.trunc(node.text, math.max(1, width - line:width())),
       "Comment"
     )
   else
     local tool = node.tool
-    local icon = tool.enabled and config.icons.enabled or config.icons.disabled
-    if tool.enabled and tool.status_hl == "DiagnosticError" then
-      icon = config.icons.error
-    elseif tool.enabled and tool.status_hl == "DiagnosticWarn" then
-      icon = config.icons.warning
+    local health = tool.health_status
+    local status = health and health.label or tool.status or "Unknown"
+    local severity = health and health.severity or tool.status_hl
+    local icon = health and health.icon
+      or (tool.enabled and icons.enabled or icons.disabled)
+    if not health and tool.enabled and severity == "DiagnosticError" then
+      icon = icons.error
+    elseif not health and tool.enabled and severity == "DiagnosticWarn" then
+      icon = icons.warning
     end
-    line:append(icon .. " ", tool.enabled and tool.status_hl or "Comment")
     local name = node.rank and (node.rank .. ". " .. tool.name) or tool.name
-    local remaining = math.max(1, width - line:width())
-    local name_width =
-      math.min(remaining, 32, math.max(8, math.floor(remaining * 0.48)))
-    line:append(str.rpad(str.trunc(name, name_width), name_width), "Normal")
-    local status_width = width - line:width() - 2
-    if status_width > 0 then
-      line:append(
-        "  " .. str.trunc(tool.status or "", status_width),
-        tool.status_hl
-      )
-    end
+    local enabled_text = (
+      node.category == "parser" or node.category == "package"
+    )
+        and "N/A"
+      or (tool.enabled and "On" or "Off")
+    local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
+    local available = math.max(1, width - line:width())
+    local tool_width = math.max(
+      1,
+      math.min(math.floor(width * 0.48), available - enabled_width - 5)
+    )
+    local status_width = math.max(1, available - tool_width - enabled_width - 4)
+    line:append(
+      str.rpad(str.trunc(icon .. " " .. name, tool_width), tool_width),
+      tool.enabled and "Normal" or "Comment"
+    )
+    line:append(
+      "  " .. str.rpad(str.trunc(enabled_text, enabled_width), enabled_width),
+      tool.enabled and "Normal" or "Comment"
+    )
+    line:append("  " .. str.trunc(status, status_width), severity)
   end
   return line
 end
@@ -171,56 +214,72 @@ function M.tree(view, snapshot)
       .. ":"
       .. tool.name
       .. (filetype and ":" .. filetype or "")
-    local children = {}
-    if not filetype then
-      for _, ft in ipairs(tool.meta.ft or {}) do
-        table.insert(
-          children,
-          Tree.Node({
-            id = id .. ":ft:" .. ft,
-            kind = "detail",
-            text = "ft: " .. ft,
-            tool = tool,
-            filetype = ft,
-          })
-        )
-      end
-    end
-    local node = Tree.Node(
-      { id = id, kind = "tool", tool = tool, filetype = filetype, rank = rank },
-      children
-    )
+    local node = Tree.Node({
+      id = id,
+      kind = "tool",
+      category = category,
+      tool = tool,
+      filetype = filetype,
+      rank = rank,
+    })
     if view.state.expanded[id] then
       node:expand()
     end
     return node
   end
   if category == "formatter" or category == "linter" then
-    for _, group in ipairs(snapshot.groups) do
-      local children = {}
-      for rank, name in ipairs(group.names) do
-        if by_name[name] then
-          table.insert(children, tool_node(by_name[name], group.ft, rank))
+    if view.state.scope == "buffer" then
+      for _, group in ipairs(snapshot.groups) do
+        for rank, name in ipairs(group.names) do
+          if by_name[name] then
+            table.insert(nodes, tool_node(by_name[name], group.ft, rank))
+          end
         end
       end
-      local id = category .. ":ft:" .. group.ft
-      local node = Tree.Node(
-        { id = id, kind = "group", filetype = group.ft, names = group.names },
-        children
-      )
-      local expanded = view.state.expanded[id]
-      if
-        expanded == true or (expanded == nil and view.state.scope == "buffer")
-      then
-        node:expand()
+    else
+      for _, group in ipairs(snapshot.groups) do
+        local children = {}
+        for rank, name in ipairs(group.names) do
+          if by_name[name] then
+            table.insert(children, tool_node(by_name[name], group.ft, rank))
+          end
+        end
+        local id = category .. ":ft:" .. group.ft
+        local node = Tree.Node({
+          id = id,
+          kind = "group",
+          filetype = group.ft,
+          names = group.names,
+        }, children)
+        if view.state.expanded[id] then
+          node:expand()
+        end
+        table.insert(nodes, node)
       end
-      table.insert(nodes, node)
     end
   else
     for _, tool in ipairs(snapshot.tools) do
       table.insert(nodes, tool_node(tool))
     end
   end
+  if #snapshot.tools == 0 then
+    table.insert(
+      nodes,
+      Tree.Node({
+        id = category .. ":empty",
+        kind = "empty",
+        text = "No managed tools for this "
+          .. (
+            view.state.scope == "buffer" and "buffer filetype." or "category."
+          ),
+      })
+    )
+  end
+  table.insert(
+    nodes,
+    1,
+    Tree.Node({ id = category .. ":columns", kind = "columns" })
+  )
   vim.bo[view.body.bufnr].readonly = false
   vim.bo[view.body.bufnr].modifiable = true
   vim.api.nvim_buf_clear_namespace(view.body.bufnr, view.body.ns_id, 0, -1)
@@ -238,22 +297,6 @@ function M.tree(view, snapshot)
     end,
   })
   view.tree:render()
-  if #nodes == 0 then
-    vim.bo[view.body.bufnr].readonly = false
-    vim.bo[view.body.bufnr].modifiable = true
-    local empty = Line()
-    empty:append(
-      str.trunc(
-        " No managed tools for this "
-          .. (
-            view.state.scope == "buffer" and "buffer filetype." or "category."
-          ),
-        width
-      ),
-      "Comment"
-    )
-    empty:render(view.body.bufnr, view.body.ns_id, 1)
-  end
   vim.bo[view.body.bufnr].modifiable = false
 end
 

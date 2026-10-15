@@ -1,4 +1,6 @@
 local M = {}
+local active_timers = {}
+local setup_generation = 0
 
 local health = require("tool.health")
 
@@ -46,99 +48,102 @@ local function apply_tool_order(linters_by_ft)
   end
 end
 
-local function debounce(ms, fn)
-  local timer = vim.uv.new_timer()
-  return function(...)
-    local captured_args = { ... }
-    if timer ~= nil then
-      timer:start(ms, 0, function()
-        timer:stop()
-        vim.schedule_wrap(fn)(unpack(captured_args))
-      end)
-    end
-  end
-end
-
 local function build_runner(lint)
   local logger = require("utils.logger")
 
-  return function()
-    if vim.bo.buftype ~= "" then
+  return function(bufnr)
+    if
+      not vim.api.nvim_buf_is_valid(bufnr)
+      or not vim.api.nvim_buf_is_loaded(bufnr)
+    then
       return
     end
 
-    -- Use nvim-lint's logic first:
-    -- * checks if linters exist for the full filetype first
-    -- * otherwise will split filetype by "." and add all those linters
-    -- * this differs from conform.nvim which only uses the first filetype that has a formatter
-    local linter_names = lint._resolve_linter_by_ft(vim.bo.filetype)
-
-    -- Create a copy of the names table to avoid modifying the original.
-    linter_names = vim.list_extend({}, linter_names)
-
-    -- Add fallback linters.
-    if #linter_names == 0 then
-      vim.list_extend(linter_names, lint.linters_by_ft["_"] or {})
-    end
-
-    -- Add global linters.
-    vim.list_extend(linter_names, lint.linters_by_ft["*"] or {})
-
-    -- Clear previous run errors for all candidate linters before this run.
-    for _, linter_name in ipairs(linter_names) do
-      logger.clear_source("linter", linter_name)
-    end
-
-    -- Filter out linters that don't exist or don't match the condition.
-    local ctx = { filename = vim.api.nvim_buf_get_name(0) }
-    ctx.dirname = vim.fn.fnamemodify(ctx.filename, ":h")
-    linter_names = vim.tbl_filter(function(linter_name)
-      ---@type Linter
-      local linter = lint.linters[linter_name]
-      if not linter then
-        vim.notify("Linter not found: " .. linter_name, vim.log.levels.WARN)
-        logger.write(
-          "linter",
-          "ERROR",
-          linter_name,
-          "linter definition not found",
-          { kind = "definition_not_found" }
-        )
+    vim.api.nvim_buf_call(bufnr, function()
+      if vim.bo.buftype ~= "" then
+        return
       end
-      return linter
-        and not (
-          type(linter) == "table"
-          and linter.condition
-          and not linter.condition(ctx)
-        )
-    end, linter_names)
 
-    -- Pre-flight executable check for each resolved linter.
-    for _, linter_name in ipairs(linter_names) do
-      local linter = lint.linters[linter_name]
-      local err = health.executable_error(linter)
-      if err then
-        logger.write("linter", "ERROR", linter_name, err, {
-          kind = "binary_not_found",
-        })
+      -- Use nvim-lint's logic first:
+      -- * checks if linters exist for the full filetype first
+      -- * otherwise will split filetype by "." and add all those linters
+      -- * this differs from conform.nvim which only uses the first filetype that has a formatter
+      local linter_names = lint._resolve_linter_by_ft(vim.bo.filetype)
+
+      -- Create a copy of the names table to avoid modifying the original.
+      linter_names = vim.list_extend({}, linter_names)
+
+      -- Add fallback linters.
+      if #linter_names == 0 then
+        vim.list_extend(linter_names, lint.linters_by_ft["_"] or {})
       end
-    end
 
-    -- Run linters and notify listeners so the Tool Manager can refresh
-    -- run-error state. NvimLintRunPost only fires when a run actually happens
-    -- to avoid spurious re-renders on buffers with no linters.
-    if #linter_names > 0 then
-      vim.api.nvim_exec_autocmds(
-        "User",
-        { pattern = "NvimLintRunPost", modeline = false }
-      )
-      lint.try_lint(linter_names)
-    end
+      -- Add global linters.
+      vim.list_extend(linter_names, lint.linters_by_ft["*"] or {})
+
+      -- Clear previous run errors for all candidate linters before this run.
+      for _, linter_name in ipairs(linter_names) do
+        logger.clear_source("linter", linter_name)
+      end
+
+      -- Filter out linters that don't exist or don't match the condition.
+      local ctx = { filename = vim.api.nvim_buf_get_name(0) }
+      ctx.dirname = vim.fn.fnamemodify(ctx.filename, ":h")
+      linter_names = vim.tbl_filter(function(linter_name)
+        ---@type Linter
+        local linter = lint.linters[linter_name]
+        if not linter then
+          vim.notify("Linter not found: " .. linter_name, vim.log.levels.WARN)
+          logger.write(
+            "linter",
+            "ERROR",
+            linter_name,
+            "linter definition not found",
+            { kind = "definition_not_found" }
+          )
+        end
+        return linter
+          and not (
+            type(linter) == "table"
+            and linter.condition
+            and not linter.condition(ctx)
+          )
+      end, linter_names)
+
+      -- Pre-flight executable check for each resolved linter.
+      for _, linter_name in ipairs(linter_names) do
+        local linter = lint.linters[linter_name]
+        local err = health.executable_error(linter)
+        if err then
+          logger.write("linter", "ERROR", linter_name, err, {
+            kind = "binary_not_found",
+          })
+        end
+      end
+
+      -- Run linters and notify listeners so the Tool Manager can refresh
+      -- run-error state. NvimLintRunPost only fires when a run actually happens
+      -- to avoid spurious re-renders on buffers with no linters.
+      if #linter_names > 0 then
+        vim.api.nvim_exec_autocmds(
+          "User",
+          { pattern = "NvimLintRunPost", modeline = false }
+        )
+        lint.try_lint(linter_names)
+      end
+    end)
   end
 end
 
 ---@param opts Linter.Opts
 function M.setup(opts)
+  setup_generation = setup_generation + 1
+  local generation = setup_generation
+  for bufnr, timer in pairs(active_timers) do
+    timer:stop()
+    timer:close()
+    active_timers[bufnr] = nil
+  end
   local lint = require("lint")
 
   merge_linters(lint, opts.linters)
@@ -147,9 +152,54 @@ function M.setup(opts)
 
   lint.linters_by_ft = opts.linters_by_ft
 
+  local group = vim.api.nvim_create_augroup("nvim-lint", { clear = true })
+  local run = build_runner(lint)
+  local buffer_tokens = {}
   vim.api.nvim_create_autocmd(opts.events, {
-    group = vim.api.nvim_create_augroup("nvim-lint", { clear = true }),
-    callback = debounce(200, build_runner(lint)),
+    group = group,
+    callback = function(args)
+      local bufnr = args.buf
+      buffer_tokens[bufnr] = (buffer_tokens[bufnr] or 0) + 1
+      local token = buffer_tokens[bufnr]
+      if generation ~= setup_generation then
+        return
+      end
+      local timer = active_timers[bufnr]
+      if not timer then
+        timer = vim.uv.new_timer()
+        active_timers[bufnr] = timer
+      end
+      if timer then
+        timer:stop()
+        timer:start(200, 0, function()
+          timer:stop()
+          vim.schedule(function()
+            if
+              generation ~= setup_generation or buffer_tokens[bufnr] ~= token
+            then
+              return
+            end
+            if active_timers[bufnr] == timer then
+              active_timers[bufnr] = nil
+              timer:close()
+            end
+            run(bufnr)
+          end)
+        end)
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd("BufWipeout", {
+    group = group,
+    callback = function(args)
+      local timer = active_timers[args.buf]
+      if timer then
+        timer:stop()
+        timer:close()
+        active_timers[args.buf] = nil
+      end
+      buffer_tokens[args.buf] = nil
+    end,
   })
 end
 

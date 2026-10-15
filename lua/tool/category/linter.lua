@@ -4,7 +4,6 @@ local M = require("tool.category.list").new({
   category = "linter",
 })
 
-local state_mod = require("tool.state")
 local logger = require("utils.logger")
 local health = require("tool.health")
 
@@ -94,11 +93,7 @@ end
 ---@param opts Tool.StatusOpts
 ---@return string, string
 function M.entry_status(opts)
-  local name, meta = opts.name, opts.meta
-  if not state_mod.is_enabled("linter", name) then
-    return "disabled", "Comment"
-  end
-
+  local name = opts.name
   local wire_text, wire_hl = M.wiring_status(opts)
   if wire_text then
     return wire_text, wire_hl
@@ -128,9 +123,12 @@ function M.entry_status(opts)
   local summary = M.get_linter_diagnostics(name)
   if summary.error_count > 0 then
     return summary.error_count .. "E " .. summary.warn_count .. "W",
-      "DiagnosticError"
+      "DiagnosticError",
+      { diagnostics = summary }
   elseif summary.warn_count > 0 then
-    return summary.warn_count .. "W", "DiagnosticWarn"
+    return summary.warn_count .. "W",
+      "DiagnosticWarn",
+      { diagnostics = summary }
   else
     return "ok", "DiagnosticOk"
   end

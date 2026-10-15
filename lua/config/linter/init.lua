@@ -2,6 +2,22 @@ local fs = require("utils.fs")
 local os_util = require("utils.os")
 local sqlfluff_util = require("utils.sqlfluff")
 
+local function luacheck_command()
+  if os_util.is_win() then
+    return "luacheck.bat"
+  end
+
+  if os_util.is_linux() then
+    local home = os.getenv("HOME") or ""
+    local luarocks = home .. "/.luarocks/bin/luacheck"
+    if vim.fn.executable(luarocks) == 1 then
+      return luarocks
+    end
+  end
+
+  return "luacheck"
+end
+
 ---@class LinterExtend
 ---@field condition? boolean
 
@@ -41,9 +57,7 @@ return {
     -- for-loop variables <const>. Point directly at the luarocks-installed 1.2.0
     -- binary (lua5.4) which is already on PATH but shadowed by Mason's bin dir.
     luacheck = {
-      cmd = os_util.is_linux()
-          and (os.getenv("HOME") or "") .. "/.luarocks/bin/luacheck"
-        or "luacheck.bat",
+      cmd = luacheck_command(),
       stdin = true,
       args = {
         "--globals",
