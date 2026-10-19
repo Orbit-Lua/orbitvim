@@ -110,7 +110,8 @@ describe("utils.sqlfluff", function()
       local root = temp_dir()
       local config = root .. "/.sqlfluff"
       local filename = root .. "/query.sql"
-      write(config, vim.fn.readfile(sqlfluff.fallback_config))
+      -- The checkout need not be installed in stdpath('config'), as on CI.
+      write(config, vim.fn.readfile("lua/config/db/template/sqlfluff.cfg"))
 
       test.assert_path(config, sqlfluff.find_config(filename))
       local depth
