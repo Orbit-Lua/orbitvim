@@ -83,6 +83,10 @@ buffer or enter the tree; press `R` inside it to refresh external changes while
 it stays focused. Other platforms retain filesystem watching. Settings live in
 [lua/config/nvimtree.lua](lua/config/nvimtree.lua).
 
+Terminal image previews are disabled to avoid overlapping images and terminal
+instability. Select an image in nvim-tree and press `s` to open it with the
+system viewer.
+
 ### AI completion
 
 Minuet/Ollama completion is included but disabled by default. `:MinuetEndpoint` manages endpoint settings; it does not enable the plugin. Its plugin specification is in [lua/plugins/ai.lua](lua/plugins/ai.lua).
