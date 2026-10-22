@@ -114,6 +114,12 @@ Windows CI exposed an incomplete runtimepath in the test bootstrap: changing to 
 
 Runtime paths are deduplicated by filesystem identity without changing their order, so configuration symlinks cannot duplicate injection queries. A throwaway Windows junction check exercises the existing injection suite through an alias. Windows builds retain the runner's native Git instead of installing a second Git through MSYS. The bootstrap assertion includes child output when startup fails before executing the fixture.
 
+## Cross-platform validation
+
+Linux and Windows run the same complete suites, formatting/lint, locked native dependency builds and startup. The Windows recipes accept both LuaRocks batch launchers and the official Luacheck executable; Markdown build verification selects the host executable. Plugin restoration verifies every installed revision against the bundled lockfile on either platform.
+
+`validation` integration executes the real `just` validation and smoke recipes in fixture repositories. Valid inputs succeed; a skipped test or startup error must fail the process. Throwaway mutations replacing each recipe with a `-c`/`qall` invocation masked Lua errors and produced assertion failures in the corresponding case. Both recipes were restored byte-for-byte afterward. These cases cover failure propagation at the command seam rather than inspecting recipe source.
+
 ## Fresh installation acceptance
 
 Acceptance used separate XDG configuration, data, state and cache directories. It downloaded plugins, compiled the integration parsers, installed JSON LSP through Mason and verified all 43 installed plugin revisions against the bundled lockfile. Both suites also passed against these newly installed dependencies.

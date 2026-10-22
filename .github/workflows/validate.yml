@@ -15,11 +15,20 @@ concurrency:
 
 env:
   NEOVIM_VERSION: v0.12.5
+  TREE_SITTER_VERSION: 0.26.11
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
       - name: Check out repository
@@ -29,9 +38,17 @@ jobs:
 
       - name: Install baseline Neovim
         run: |
-          curl --fail --location --remote-name "https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux-x86_64.tar.gz"
-          sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-          echo "/opt/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+          $name = if ($IsWindows) { 'nvim-win64' } else { 'nvim-linux-x86_64' }
+          $extension = if ($IsWindows) { '.zip' } else { '.tar.gz' }
+          $archive = Join-Path $env:RUNNER_TEMP ($name + $extension)
+          Invoke-WebRequest "https://github.com/neovim/neovim/releases/download/$env:NEOVIM_VERSION/$name$extension" -OutFile $archive
+          if ($IsWindows) {
+            Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
+          } else {
+            tar -C $env:RUNNER_TEMP -xzf $archive
+            if ($LASTEXITCODE -ne 0) { throw 'Neovim extraction failed' }
+          }
+          Join-Path $env:RUNNER_TEMP "$name/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install just
         uses: extractions/setup-just@v3
@@ -43,61 +60,102 @@ jobs:
           version: 2.4.0
           args: false
 
-      - name: Install validation tools
+      - name: Install Linux validation tools
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y luarocks unzip
-          sudo luarocks install luacheck
-          pipx install sqlfluff==4.2.2
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          sudo apt-get install -y luarocks
+          sudo luarocks install luacheck 1.2.0-1
 
-      - name: Install JSON language server
+      - name: Install Windows Luacheck
+        if: runner.os == 'Windows'
         run: |
-          npm install --prefix "$RUNNER_TEMP/json-lsp" --no-audit --no-fund vscode-langservers-extracted@4.10.0
-          echo "$RUNNER_TEMP/json-lsp/node_modules/.bin" >> "$GITHUB_PATH"
+          $directory = Join-Path $env:RUNNER_TEMP 'luacheck'
+          New-Item -ItemType Directory -Path $directory -Force | Out-Null
+          $executable = Join-Path $directory 'luacheck.exe'
+          Invoke-WebRequest 'https://github.com/lunarmodules/luacheck/releases/download/v1.2.0/luacheck.exe' -OutFile $executable
+          if ((Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash -ne '0f1c69c4d09f1ebb4d8df14c215e4553e2e639bd4cb7bf3c639b0daa6198317b') {
+            throw 'Luacheck checksum mismatch'
+          }
+          $directory | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Prepare Windows native build tools
+        if: runner.os == 'Windows'
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          install: make mingw-w64-ucrt-x86_64-gcc
+
+      - name: Expose Windows native build tools
+        if: runner.os == 'Windows'
+        run: |
+          $toolRoot = '${{ steps.msys2.outputs.msys2-location }}'
+          Join-Path $toolRoot 'ucrt64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+          Join-Path $toolRoot 'usr/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install integration services
+        run: |
+          python -m pip install sqlfluff==4.2.2
+          if ($LASTEXITCODE -ne 0) { throw 'SQLFluff installation failed' }
+          $serverRoot = Join-Path $env:RUNNER_TEMP 'json-lsp'
+          npm install --prefix $serverRoot --no-audit --no-fund vscode-langservers-extracted@4.10.0
+          if ($LASTEXITCODE -ne 0) { throw 'JSON language server installation failed' }
+          Join-Path $serverRoot 'node_modules/.bin' | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install Tree-sitter CLI
-        env:
-          TREE_SITTER_VERSION: 0.26.11
-          TREE_SITTER_SHA256: ff1b7f9863f2faafd78dc0e66d902ee85b37f709b314b22c009f51caf233eebd
         run: |
-          archive="$RUNNER_TEMP/tree-sitter-cli.zip"
-          install_dir="$RUNNER_TEMP/tree-sitter-cli"
-          curl --fail --location \
-            --output "$archive" \
-            "https://github.com/tree-sitter/tree-sitter/releases/download/v${TREE_SITTER_VERSION}/tree-sitter-cli-linux-x64.zip"
-          echo "${TREE_SITTER_SHA256}  ${archive}" | sha256sum --check -
-          unzip -q "$archive" -d "$install_dir"
-          sudo install -m 0755 "$install_dir/tree-sitter" /usr/local/bin/tree-sitter
-          tree-sitter --version
+          $platform = if ($IsWindows) { 'windows-x64' } else { 'linux-x64' }
+          $checksum = if ($IsWindows) { 'd40e158839062803a5182ecefca76f809b89464146625d303ef779ed8ceb0f73' } else { 'ff1b7f9863f2faafd78dc0e66d902ee85b37f709b314b22c009f51caf233eebd' }
+          $archive = Join-Path $env:RUNNER_TEMP 'tree-sitter-cli.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'tree-sitter-cli'
+          Invoke-WebRequest "https://github.com/tree-sitter/tree-sitter/releases/download/v$env:TREE_SITTER_VERSION/tree-sitter-cli-$platform.zip" -OutFile $archive
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $checksum) { throw 'Tree-sitter checksum mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath $directory
+          if (!$IsWindows) {
+            chmod +x (Join-Path $directory 'tree-sitter')
+            if ($LASTEXITCODE -ne 0) { throw 'Tree-sitter permission setup failed' }
+          }
+          $directory | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Link the configuration
         run: |
-          mkdir -p "$HOME/.config"
-          ln -s "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
+          $config = if ($IsWindows) { Join-Path $env:LOCALAPPDATA 'nvim' } else { Join-Path $HOME '.config/nvim' }
+          $data = if ($IsWindows) { Join-Path $env:LOCALAPPDATA 'nvim-data' } else { Join-Path $HOME '.local/share/nvim' }
+          New-Item -ItemType Directory -Path (Split-Path -Parent $config) -Force | Out-Null
+          $linkType = if ($IsWindows) { 'Junction' } else { 'SymbolicLink' }
+          New-Item -ItemType $linkType -Path $config -Target $env:GITHUB_WORKSPACE | Out-Null
+          "NVIM_DATA_PATH=$data" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Cache plugins and parsers
-        id: nvim-cache
         uses: actions/cache@v4
         with:
           path: |
-            ~/.local/share/nvim/lazy
-            ~/.local/share/nvim/site
-          key: nvim-linux-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/install_parsers.lua') }}
+            ${{ env.NVIM_DATA_PATH }}/lazy
+            ${{ env.NVIM_DATA_PATH }}/site
+          key: nvim-${{ runner.os }}-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/restore_plugins.lua', 'scripts/tests/install_parsers.lua', '.github/workflows/validate.yml') }}
 
-      # restore checks out the lockfile commits; sync would update past them.
-      - name: Install plugins from the lockfile
-        if: steps.nvim-cache.outputs.cache-hit != 'true'
+      - name: Restore and verify locked plugins
         run: |
-          lazy_dir="$HOME/.local/share/nvim/lazy/lazy.nvim"
-          git clone --filter=blob:none https://github.com/folke/lazy.nvim.git "$lazy_dir"
-          git -C "$lazy_dir" checkout --detach "$(jq -r '."lazy.nvim".commit' lazy-lock.json)"
-          nvim --headless -u NONE \
-            --cmd "set rtp^=$GITHUB_WORKSPACE" \
-            --cmd "set rtp^=$lazy_dir" \
-            -c "lua require('lazy').setup({ { import = 'plugins' } }, require('config.lazy'))" \
-            -c "Lazy! restore" \
-            -c "qall"
+          nvim --headless -u NORC -l scripts/tests/restore_plugins.lua
+          if ($LASTEXITCODE -ne 0) { throw 'Locked plugin installation failed' }
+          git diff --exit-code -- lazy-lock.json
+          if ($LASTEXITCODE -ne 0) { throw 'Plugin installation changed the lockfile' }
+
+      - name: Build and execute native dependencies
+        run: just test-build
 
       - name: Install integration parsers
         run: nvim --headless -u init.lua -l scripts/tests/install_parsers.lua
@@ -109,93 +167,4 @@ jobs:
         run: just test-integration
 
       - name: Smoke-test startup
-        run: nvim --headless "+qall"
-
-  windows-validation:
-    runs-on: windows-latest
-    timeout-minutes: 15
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Install baseline Neovim
-        shell: pwsh
-        run: |
-          $archive = Join-Path $env:RUNNER_TEMP 'nvim.zip'
-          Invoke-WebRequest "https://github.com/neovim/neovim/releases/download/$env:NEOVIM_VERSION/nvim-win64.zip" -OutFile $archive
-          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
-          Join-Path $env:RUNNER_TEMP 'nvim-win64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Install JSON language server
-        shell: pwsh
-        run: |
-          $serverRoot = Join-Path $env:RUNNER_TEMP 'json-lsp'
-          npm install --prefix $serverRoot --no-audit --no-fund vscode-langservers-extracted@4.10.0
-          if ($LASTEXITCODE -ne 0) { throw 'JSON language server installation failed' }
-          Join-Path $serverRoot 'node_modules/.bin' | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Prepare native build tools
-        id: msys2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          path-type: inherit
-          install: make mingw-w64-ucrt-x86_64-gcc
-
-      - name: Expose native build tools
-        shell: pwsh
-        run: |
-          $toolRoot = '${{ steps.msys2.outputs.msys2-location }}'
-          Join-Path $toolRoot 'ucrt64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
-          Join-Path $toolRoot 'usr/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Cache test dependencies
-        id: nvim-cache
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\nvim-data\lazy
-          key: nvim-windows-validation-${{ hashFiles('lazy-lock.json', '.github/workflows/validate.yml') }}
-
-      - name: Install locked test dependencies
-        if: steps.nvim-cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $pluginRoot = Join-Path $env:LOCALAPPDATA 'nvim-data/lazy'
-          New-Item -ItemType Directory -Path $pluginRoot -Force | Out-Null
-          $lock = Get-Content -LiteralPath lazy-lock.json -Raw | ConvertFrom-Json
-          $repositories = @{
-            'plenary.nvim' = 'nvim-lua/plenary.nvim'
-            'nui.nvim' = 'MunifTanjim/nui.nvim'
-            'LuaSnip' = 'L3MON4D3/LuaSnip'
-            'markdown-preview.nvim' = 'iamcco/markdown-preview.nvim'
-          }
-          foreach ($name in $repositories.Keys) {
-            $target = Join-Path $pluginRoot $name
-            git clone --filter=blob:none "https://github.com/$($repositories[$name]).git" $target
-            if ($LASTEXITCODE -ne 0) { throw "clone failed: $name" }
-            git -C $target checkout --detach $lock.$name.commit
-            if ($LASTEXITCODE -ne 0) { throw "locked checkout failed: $name" }
-          }
-
-      - name: Run Windows core tests
-        run: just test-core
-
-      - name: Build locked LuaSnip jsregexp
-        shell: pwsh
-        run: nvim --headless -u NONE -l scripts/tests/build_luasnip.lua
-
-      - name: Install locked Markdown preview executable
-        run: nvim --headless -u NONE -l scripts/tests/build_markdown_preview.lua
-
-      - name: Run Windows integration contracts
-        shell: pwsh
-        run: |
-          foreach ($spec in @('settings_schema', 'plugin_build', 'bootstrap')) {
-            nvim --headless --noplugin -u scripts/tests/minimal.vim -c "lua require('plenary.busted').run('tests/integration/${spec}_spec.lua')" -c qall
-            if ($LASTEXITCODE -ne 0) { throw "Integration failed: $spec" }
-          }
+        run: just smoke

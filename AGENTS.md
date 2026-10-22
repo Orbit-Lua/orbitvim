@@ -67,7 +67,9 @@ Read the [settings guide](doc/settings.md) before changing schema defaults, merg
 
 ## Validation
 
-Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open Neovim once so Lazy installs Plenary and Nui, which core specs load from Lazy's data directory. Integration specs also need `:TSInstallAll`, LuaSnip, Markdown preview, SQLFluff and `json-lsp` (Mason) or `vscode-json-language-server` on PATH. Build integration requires Git, GNU Make, a C compiler (GCC or Clang), and Bash; Windows also needs Windows PowerShell.
+Support Linux and Windows with the same validation recipes, complete test suites, native build checks and startup checks. Keep CI platform branches limited to dependency installation and filesystem setup.
+
+Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open Neovim once so Lazy installs Plenary and Nui, which core specs load from Lazy's data directory. Integration specs also need `:TSInstallAll`, LuaSnip, Markdown preview, SQLFluff and `json-lsp` (Mason) or `vscode-json-language-server` on PATH. Build integration requires Git, GNU Make, a C compiler (GCC or Clang), and Bash; Windows also needs Windows PowerShell. Windows accepts LuaRocks' Luacheck batch launcher or the official standalone executable.
 
 | Command | Effect |
 | --- | --- |
@@ -75,7 +77,9 @@ Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open
 | `just lint` | Luacheck |
 | `just test-core` | Hermetic core specs |
 | `just test-integration` | Parser, snippet and executable integration specs |
+| `just test-build` | Build and execute locked LuaSnip and Markdown preview dependencies |
 | `just all` | `fmt-check`, `lint`, `test-core` |
+| `just smoke` | Execute startup and propagate Lua errors |
 | `nvim --headless "+qall"` | Startup smoke test with installed plugins and user state |
 
 One core spec:
@@ -87,7 +91,7 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
 ```
 
 - Run `just all` before finishing. Add `just test-integration` for Tree-sitter queries, parsers or runtime, LuaSnip collections, SQLFluff behaviour, JSON schema language-server behaviour, or their adapters, and the smoke test for startup or plugin-loading changes. Report the checks run and any missing dependency.
-- On Windows the `justfile` runs recipes through PowerShell. MSYS `make` dropped `LOCALAPPDATA`, so Plenary was not found and the headless runner hung on E492; a headless suite that never exits means that kind of startup error.
+- The `justfile` uses `sh` on Linux and native `cmd.exe` on Windows; batch launchers work without changing PowerShell execution policy. Keep native Git on Windows when adding MSYS2 compiler and Make directories to PATH. Running Neovim through MSYS Make can drop `LOCALAPPDATA` and hang Plenary on E492.
 
 ## Docs
 

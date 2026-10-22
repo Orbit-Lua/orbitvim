@@ -4,7 +4,8 @@ local sqlfluff_util = require("utils.sqlfluff")
 
 local function luacheck_command()
   if os_utils.is_win() then
-    return "luacheck.bat"
+    local executable = vim.fn.exepath("luacheck")
+    return executable ~= "" and executable or "luacheck"
   end
 
   if os_utils.is_linux() then

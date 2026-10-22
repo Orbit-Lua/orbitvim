@@ -1,7 +1,5 @@
-local M = {}
-
 ---@param root string
-function M.check(root)
+local function check(root)
   local handle = assert(vim.uv.fs_scandir(root), "missing test suite: " .. root)
   local count = 0
 
@@ -32,4 +30,7 @@ function M.check(root)
   assert(count > 0, "test suite contains no specs: " .. root)
 end
 
-return M
+assert(#arg > 0, "provide at least one test suite")
+for _, root in ipairs(arg) do
+  check(root)
+end

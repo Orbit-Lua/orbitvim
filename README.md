@@ -10,7 +10,7 @@ A Lua Neovim configuration for C#, Python, JavaScript, TypeScript, Go, SQL and M
 Requirements:
 
 - Neovim 0.12 or newer, Git, and network access for the first plugin installation.
-- A C compiler and Tree-sitter CLI 0.26.1 or newer to build parsers, plus GNU Make for LuaSnip's native extension.
+- A C compiler and Tree-sitter CLI 0.26.1 or newer to build parsers, plus GNU Make and Bash for native plugin builds.
 - The runtimes and package managers for your languages; `:checkhealth mason` lists the installers it can use.
 
 Clone into Neovim's configuration directory, after moving any existing configuration aside:
@@ -20,7 +20,7 @@ git clone https://github.com/Orbit-Lua/orbitvim.git ~/.config/nvim
 nvim
 ```
 
-On Windows, clone into the path printed by `:echo stdpath('config')`.
+Linux and Windows are validated in CI with the same full test suites and native build checks. On Windows, clone into the path printed by `:echo stdpath('config')`.
 
 Lazy installs the locked plugin versions on first start. Language tools are installed separately: open Tool Manager and press `i` on a tool, or run `:TSInstallAll` to build every configured parser.
 
@@ -72,7 +72,7 @@ T-SQL uses Tree-sitter highlighting, SQLFluff formatting and linting, and LuaSni
 
 nvim-tree's filesystem watchers are off on Windows to avoid event storms: the tree refreshes on save or when entered, and `R` refreshes it in place. Terminal image previews are off on every platform; press `s` on an image in nvim-tree to open the system viewer.
 
-Shell setup preserves an explicitly configured shell and `CC`. Otherwise it selects an available PowerShell and C compiler. LuaSnip's optional jsregexp build needs `make`, a C compiler and a Unix-compatible shell on PATH.
+Shell setup preserves an explicitly configured shell and `CC`. Otherwise it selects an available PowerShell and C compiler. Use native Windows Git. MSYS2's UCRT64 compiler and `usr/bin` provide GCC, Make and Bash; put these directories on PATH without replacing Git with its MSYS build.
 
 ## Configuration
 

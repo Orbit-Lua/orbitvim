@@ -5,9 +5,13 @@ for _, plugin in ipairs(require("plugins.editor")) do
     plugin.build({ dir = directory })
   end
 end
+local platform = vim.fn.has("win32") == 1 and "win.exe" or "linux"
+if vim.fn.has("mac") == 1 then
+  platform = vim.uv.os_uname().machine == "arm64" and "macos-arm64" or "macos"
+end
 local result = vim
   .system(
-    { directory .. "/app/bin/markdown-preview-win.exe", "--version" },
+    { directory .. "/app/bin/markdown-preview-" .. platform, "--version" },
     { text = true }
   )
   :wait(10000)

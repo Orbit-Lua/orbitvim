@@ -1,6 +1,5 @@
-set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+set windows-shell := ["cmd.exe", "/d", "/c"]
 
-luacheck := if os_family() == "windows" { "luacheck.bat" } else { "luacheck" }
 lua_paths := "init.lua lua luasnippets tests scripts/tests"
 minimal_init := "scripts/tests/minimal.vim"
 
@@ -17,10 +16,10 @@ fmt-check:
 
 # Run Luacheck
 lint:
-    {{ luacheck }} {{ lua_paths }} --globals vim
+    luacheck {{ lua_paths }} --globals vim
 
 validate-test-suites:
-    nvim --headless --clean --cmd "set rtp^=." -c "lua dofile('scripts/tests/validate.lua').check('tests/core')" -c "lua dofile('scripts/tests/validate.lua').check('tests/integration')" -c "qall"
+    nvim --headless --clean -l scripts/tests/validate.lua tests/core tests/integration
 
 # Alias of test-core
 test: test-core
@@ -35,3 +34,12 @@ test-integration: validate-test-suites
 
 # Run both suites
 test-all: test-core test-integration
+
+# Build and execute the locked native plugin dependencies
+test-build:
+    nvim --headless -u NONE -l scripts/tests/build_luasnip.lua
+    nvim --headless -u NONE -l scripts/tests/build_markdown_preview.lua
+
+# Execute startup with errors propagated to the caller
+smoke:
+    nvim --headless -u NORC -l scripts/tests/smoke.lua
