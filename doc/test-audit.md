@@ -108,7 +108,9 @@ The Pyright spec exceeds 80 lines because it owns command selection, process cal
 
 Two test corrections preserve existing contracts: repeated failed `require` calls may return Lua's previous-load error, so the DAP assertion checks the owning availability error; root-marker cases restrict their marker list so an enclosing repository's `.git` cannot mask the fixture marker. Neither change alters product root-selection policy.
 
-Validation passed `just all` (145 core cases), `just test-integration` (50 integration cases) and the standard startup smoke command without sandbox adapters. The Windows CI build/schema/bootstrap steps still require a remote CI run to confirm their runner environment.
+Validation passed `just all` (145 core cases), `just test-integration` (50 integration cases) and the standard startup smoke command without sandbox adapters.
+
+Windows CI exposed an incomplete runtimepath in the test bootstrap: changing to a fixture directory made uncached application modules unavailable when the repository was outside Neovim's default configuration path. The bootstrap now captures absolute repository and `after` paths. Existing Python regeneration, Harpoon selection and parser cases reproduce the failures with an empty configuration home and pass with the fix; no test expectation changed. Replacing the absolute entry with `.` breaks module loading; omitting `after` loses the production parser queries.
 
 ## Fresh installation acceptance
 

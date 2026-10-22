@@ -24,7 +24,8 @@ augroup OrbitVimTestCleanup
   autocmd VimLeavePre * call <SID>cleanup_test_root()
 augroup END
 
-set rtp^=.
+execute 'set rtp^=' . fnameescape(getcwd())
+execute 'set rtp+=' . fnameescape(getcwd() . '/after')
 lua package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
 execute 'set rtp+=' . fnameescape(s:plugin_data_path . '/lazy/plenary.nvim')
 runtime! plugin/plenary.vim
