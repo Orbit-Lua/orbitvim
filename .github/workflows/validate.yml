@@ -16,6 +16,7 @@ concurrency:
 env:
   NEOVIM_VERSION: v0.12.5
   TREE_SITTER_VERSION: 0.26.11
+  STYLUA_VERSION: 2.4.0
 
 jobs:
   validate:
@@ -54,11 +55,19 @@ jobs:
         uses: extractions/setup-just@v3
 
       - name: Install StyLua
-        uses: JohnnyMorganz/stylua-action@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: 2.4.0
-          args: false
+        run: |
+          $platform = if ($IsWindows) { 'windows-x86_64' } else { 'linux-x86_64' }
+          $checksum = if ($IsWindows) { '3803853280cb524560c6ce0d4140f6d9f02e03f55e1ce50bb4f5e51e07565794' } else { 'f9c84c210712061cb03ab8354a34a5d4f5fcf1f369d2ce916bea3ab9f7addac8' }
+          $archive = Join-Path $env:RUNNER_TEMP 'stylua.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'stylua'
+          Invoke-WebRequest "https://github.com/JohnnyMorganz/StyLua/releases/download/v$env:STYLUA_VERSION/stylua-$platform.zip" -OutFile $archive
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $checksum) { throw 'StyLua checksum mismatch' }
+          Expand-Archive -LiteralPath $archive -DestinationPath $directory
+          if (!$IsWindows) {
+            chmod +x (Join-Path $directory 'stylua')
+            if ($LASTEXITCODE -ne 0) { throw 'StyLua permission setup failed' }
+          }
+          $directory | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install Linux validation tools
         if: runner.os == 'Linux'
