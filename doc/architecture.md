@@ -1,50 +1,52 @@
 # Architecture
 
-OrbitVim separates declarative configuration from runtime activation. `init.lua` applies editor options and settings before Lazy, imports the plugin specs, then registers commands and finishes theme, shell, highlight and general-key setup. A fresh Lazy clone checks out the revision in `lazy-lock.json` before it loads.
+`init.lua` applies editor options and settings, bootstraps the locked Lazy revision and imports plugin specs, then registers commands and finishes theme, shell, highlights and general mappings. Plugin imports describe loading; their lifecycle callbacks delegate activation to feature owners.
 
-Plugin specs declare identity, dependencies, loading triggers, keys and lifecycle callbacks. Editable options live in `lua/config/`; activation lives in `lua/runtime/` or the feature's owner, which the lifecycle callbacks call.
+Editable options live under `lua/config/`, Lazy metadata under `lua/plugins/`, and backend activation under `lua/runtime/`. Shared helpers expose concrete local interfaces without forwarding facades.
 
 ## Settings
 
-`config.settings` resolves `settings.json` against the bundled schema before plugin setup and validates tool and server IDs against the registry. `core.settings` applies live changes transactionally and observes saves to the exact settings path; restart-only changes stay pending. `commands.settings` registers `:OrbitSettings`. The [settings guide](settings.md) defines scope, precedence and recovery.
+`config.settings` validates personal JSON against the bundled schema and registry before plugins load. `core.settings` applies live changes with rollback and observes saves to the exact configured path. `commands.settings` exposes the settings editor and effective-value view. [Settings](settings.md) defines precedence and recovery.
 
 ## Tool Manager
 
 ```mermaid
 flowchart TD
-    Commands[User commands] --> Public[tool.open / tool.close]
+    Command[User command] --> Public[tool.open / tool.close]
     Public --> View[Nui view session]
-    View --> Render[Render and details]
-    View --> Manager[Tool operations and snapshots]
-    Manager --> Registry[Canonical tool registry]
-    Manager --> State[Persisted enablement and order]
-    Manager --> Categories[Category adapters]
+    View --> Render[Rendering and details]
+    View --> Manager[tool.manager operations]
+    Manager --> Registry[config.tools registry]
+    Manager --> State[tool.state persistence]
+    Manager --> Category[Category adapters]
     Manager --> Mason[Mason installation seam]
-    Categories --> Runtime[Runtime backends]
-    Registry --> Packages[Derived packages, servers and parsers]
-    Runtime --> State
+    Category --> Runtime[Runtime backends]
+    Registry --> Derived[config.packages derived lists]
 ```
 
-`config.tools` is the single registry of logical tool IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique package, server and parser lists from it.
+`config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists.
 
-`tool.manager` takes selections by category, logical name and optional filetype, and checks capabilities before changing state or calling installers. Its snapshots carry tool status, structured health, filetype groups and summaries, never Nui nodes, cursor positions or highlight offsets.
+`tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before state changes or installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
 
-`tool.state` reads current and legacy JSON and persists logical IDs. Each write takes an exclusive lock and rereads disk state before merging its field. `tool.order` reconciles saved and default order with the current candidates. Category adapters translate backend identifiers at the runtime boundary and preserve unrelated runtime entries. Formatter and linter adapters re-enable a tool only on filetypes that `config.formatter` / `config.linter` activate initially, matching startup. Health checks use the captured source buffer. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
+`tool.state` reads current or legacy JSON. Writes lock and reread current disk state before merging one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases at the runtime boundary and retain unrelated backend entries. Re-enabling formatters and linters respects initial activation in `config.formatter` and `config.linter`, rather than activating all supported filetypes.
 
-`tool.ui.view` owns one session: Nui layout and popups, view mode, source context, selection, mappings, subscriptions, timers and the details preview. `tool.ui.render` builds Nui tree content; `tool.ui.details` renders health and selected-tool information. Glyphs come from `config.icons`; mappings and help text come from `config.tool_manager`.
+`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`; mappings and help come from `config.tool_manager`.
 
-An operation can outlive its view. Its completion updates state and runtime but refreshes only the session that started it, and only while that session is open.
+An asynchronous operation can outlive the view. Completion updates state and runtime, then refreshes only its originating session if still open. See [Tool Manager](tool-manager.md) for user-visible behaviour.
 
-## Runtime owners
+## Runtime boundaries
 
-- `runtime.lsp` registers servers, diagnostics and optional features, and merges client capabilities from Blink; `runtime.lsp.client` owns client lifecycle and capability events, with private method-tracking state and idempotent setup.
-- `runtime.completion.blink` owns Blink setup and resize subscriptions; `utils.cmp` holds completion and snippet actions and their dispatch order.
-- `runtime.treesitter` owns parser start, SQL predicates and SQL syntax fallback.
-- `runtime.harpoon` owns list items, selection highlighting and setup; `runtime.ui` coordinates Snacks and Trouble setup.
-- `runtime.completion` builds LuaSnip, linking the running Neovim's directory on Windows; `runtime.markdown` waits for the preview installer and checks its executable version. Both run argument lists directly, independent of the interactive shell.
-- `runtime.notes` installs one Markdown highlight override from `lua/config/notes/markdown.scm` that keeps code fences visible at `conceallevel=2`. Upstream query changes need review against it.
-- `core.shell` chooses Windows shell and compiler defaults while keeping explicit choices.
+| Owner | Responsibility |
+| --- | --- |
+| `runtime.lsp` / `runtime.lsp.client` | Server setup, Blink capabilities, diagnostics, client lifecycle and capability events |
+| `runtime.completion.blink` / `utils.cmp` | Blink setup and resize subscriptions / completion and snippet action order |
+| `runtime.treesitter` | Parser startup, SQL injection predicates and syntax fallback |
+| `runtime.dap` | Shared debugger activation |
+| `runtime.harpoon` / `runtime.ui` | Harpoon list state / Snacks and Trouble setup |
+| `runtime.completion` / `runtime.markdown` | Native LuaSnip build / preview installer and executable validation |
+| `runtime.notes` | Markdown highlight override that preserves fences at `conceallevel=2` |
+| `core.shell` | Windows shell and compiler defaults while preserving explicit choices |
 
-UI options live in `lua/config/ui/`; navigation, completion, Git and notes options have their own `lua/config/` modules.
+Native build owners execute argument lists independently of the interactive shell. LuaSnip links the running Neovim directory on Windows. Review the notes highlight override against upstream query changes.
 
-The separation of state, actions and rendering follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) supplies the UI components.
+The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason); [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.

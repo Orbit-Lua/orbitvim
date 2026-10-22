@@ -1,30 +1,10 @@
 # T-SQL highlighting
 
-OrbitVim extends the generic `tree-sitter-sql` highlighter for Microsoft SQL
-Server while keeping the standard Neovim `sql` filetype. The implementation
-uses two complementary layers:
+SQL buffers keep the `sql` filetype and the generic SQL parser. OrbitVim extends Tree-sitter queries for stable T-SQL nodes and uses a bounded Vim syntax fallback where the parser recovers through unusable `ERROR` nodes. Both apply inside Markdown `sql` fences.
 
-1. `after/queries/sql/highlights.scm` extends the upstream Tree-sitter query
-   for constructs that the parser exposes as stable syntax nodes.
-2. `syntax/tsql.vim` supplies a deliberately small legacy syntax fallback for
-   T-SQL constructs that the generic parser reduces to unusable `ERROR` nodes.
+## Configuration
 
-Both layers also apply to fenced `sql` blocks in Markdown. Tree-sitter injects
-the SQL parser into each fence, while Neovim's Markdown syntax includes the
-`tsql` fallback only inside the same fenced regions.
-
-Tree-sitter stays responsible for SQL structure, so no separate T-SQL grammar
-is maintained.
-
-## Runtime behavior
-
-Every `FileType` event calls `require("runtime.treesitter").start(buf)`. The
-module starts Tree-sitter first. For an `sql` buffer, it then selects the
-configured legacy SQL dialect and enables Vim syntax alongside Tree-sitter. For
-a Markdown buffer, it maps the `sql` fence label to the configured dialect and
-enables the contained fallback.
-
-The default configuration is declared in `lua/config/treesitter.lua`:
+`runtime.treesitter.start(buf)` starts Tree-sitter on filetype events, then enables SQL syntax or the contained Markdown fallback. Defaults live in `lua/config/treesitter.lua`:
 
 ```lua
 sql = {
@@ -34,120 +14,40 @@ sql = {
 }
 ```
 
-The filetype remains `sql`; `tsql` is only the legacy syntax dialect selected
-by Neovim's `syntax/sql.vim` dispatcher. Consequently, the SQL Tree-sitter
-parser, SQLFluff, formatter and linter mappings, and the T-SQL LuaSnip
-collection continue to use their existing SQL integration.
-
-## Dialect precedence
-
-Neovim's SQL syntax dispatcher recognizes a buffer-local override and a global
-default. OrbitVim follows the same precedence:
-
-1. An existing `b:sql_type_override` wins.
-2. Otherwise, an existing `g:sql_type_default` wins.
-3. When neither exists, OrbitVim sets `b:sql_type_override` to the configured
-   `sql.dialect`, which defaults to `tsql`.
-
-This means project or user configuration is not overwritten. For example, an
-individual buffer can select Oracle syntax before the highlighting starter
-runs:
+Dialect precedence is buffer-local `b:sql_type_override`, global `g:sql_type_default`, then the configured default. Existing choices are preserved. For example, select Oracle before startup with:
 
 ```lua
 vim.b.sql_type_override = "sqloracle"
 ```
 
-To disable all legacy syntax fallback while retaining Tree-sitter highlighting:
+Disable all legacy fallback while retaining Tree-sitter:
 
 ```lua
 require("config.treesitter").sql.syntax_fallback = false
 ```
 
-To retain the fallback in SQL buffers but disable it in Markdown fences:
+Or disable it only in Markdown:
 
 ```lua
 require("config.treesitter").sql.markdown_fenced_fallback = false
 ```
 
-OrbitVim adds `sql=tsql` to `g:markdown_fenced_languages` without replacing
-other configured languages. An explicit SQL mapping such as `sql=sqloracle`
-wins and is left unchanged.
+OrbitVim adds a dialect mapping to `g:markdown_fenced_languages` while preserving other languages and explicit SQL mappings such as `sql=sqloracle`. LuaSnip and SQLFluff continue using `sql`.
 
-## Tree-sitter query extension
+## Query corrections
 
-The query file begins with `; extends`, so Neovim appends it to the installed
-`queries/sql/highlights.scm` instead of replacing upstream SQL highlighting.
-It currently covers semantic cases for which the parser provides reliable
-nodes:
+[`after/queries/sql/highlights.scm`](../after/queries/sql/highlights.scm) begins with `; extends`, preserving upstream captures. It corrects omitted keywords, `TOP`, surviving `NOCOUNT` / `XACT_ABORT` identifiers, built-in calls, local/system variables and SQL Server types in stable definition or cast positions.
 
-- `ENABLE` and `DISABLE`, whose keyword nodes are omitted by the upstream
-  highlights query.
-- `TOP`, which the parser currently classifies as a function invocation.
-- `NOCOUNT` and `XACT_ABORT`, which survive error recovery as object-reference
-  identifiers in `SET` statements.
-- `CAST` and unqualified SQL Server built-in calls such as `OPENJSON`,
-  `SYSUTCDATETIME`, and `XACT_STATE`, which the generic query can identify only
-  as ordinary function calls.
-- local variables represented as fields and system variables represented as
-  unary expressions, correcting the generic member/operator captures.
-- SQL Server built-in types such as `HIERARCHYID`, `ROWVERSION`, `SYSNAME`, and
-  `UNIQUEIDENTIFIER` when they occur in stable column-definition or `CAST`
-  type positions.
+Corrections use higher priority to override generic captures. Built-in function/type corrections exclude schema-qualified names so user-defined objects keep their original classification. Use `:InspectTree` to establish stable structure before extending the query.
 
-The corrective captures use a higher query priority so that they win over an
-incorrect generic capture on the same range. Function and custom-type
-corrections exclude schema-qualified names so user-defined objects with the
-same name retain the generic capture.
+## Lexical fallback
 
-Add a construct to the query when its parser node is stable and its context can
-be matched without classifying unrelated identifiers. Inspect the syntax tree
-with `:InspectTree`, then prefer a structural pattern over a global identifier
-name match.
+[`syntax/tsql.vim`](../syntax/tsql.vim) covers batch separators, control-flow keywords, variables, bracketed identifiers, built-in types and functions that error recovery can discard. Strings and comments shield their contents from keyword matches.
 
-## Legacy syntax fallback
+Markdown loads the fallback in a contained cluster; it must not affect prose, inline code or other languages. Keep patterns lexical and bounded. Model stable syntax with queries, and avoid Vim regions for nested procedures, transactions or dynamic SQL. An overlap is justified only where parser recovery can remove the queryable node.
 
-The fallback handles lexical constructs for which `tree-sitter-sql` currently
-does not expose a useful node:
+## Validation contract
 
-- standalone `GO` batch separators and optional repeat counts;
-- T-SQL control-flow and statement keywords such as `TRY`, `CATCH`, `THROW`,
-  `EXEC`, `OUTPUT`, and `APPLY`;
-- `NOCOUNT` and `XACT_ABORT` when parser error recovery drops their otherwise
-  query-highlightable identifier nodes;
-- commonly used SQL Server types not recognized by the generic grammar;
-- SQL Server built-in functions when error recovery drops their invocation
-  nodes;
-- local variables, system variables, and bracket-delimited identifiers.
+The integration suite executes queries and syntax groups to verify precedence, opt-outs, containment, corrections and string/comment shielding. Every `sql` fence in [the conventions](tsql-conventions.md) also runs through Markdown injection and highlighting coverage, including each fallback category.
 
-The syntax file also defines SQL strings and comments. These regions shield
-fallback keywords and variables from matching inside quoted text or comments;
-Tree-sitter remains the primary source of their visible highlighting.
-
-In Markdown, Neovim loads the same syntax file through a contained syntax
-cluster. Fallback matches therefore stay within fenced `sql` blocks and cannot
-leak into headings, prose, inline code, or other fenced languages.
-
-Keep fallback patterns lexical and bounded. A lexical fallback may overlap a
-query correction when the node sometimes disappears during parser error
-recovery. Do not model procedure bodies, transactions, dynamic SQL, or nested
-control flow with Vim syntax regions. Those patterns are difficult to
-synchronize and are likely to conflict with Tree-sitter. When the upstream
-parser exposes a construct reliably, retain its query capture and remove the
-redundant legacy rule.
-
-## Validation
-
-Focused coverage lives in `tests/integration/treesitter_tsql_spec.lua`. It verifies
-the query corrections, dialect precedence, opt-out behavior, syntax groups,
-Markdown containment, and protection of strings and comments.
-
-`tests/integration/treesitter_tsql_corpus_spec.lua` treats every `sql` fence in
-`doc/tsql-conventions.md` as an executable highlighting corpus. It verifies
-that every fence receives a SQL injection, every uppercase SQL/T-SQL lexeme is
-covered by either a Tree-sitter capture or a contained fallback group, and the
-document exercises every fallback category. New convention examples are
-included automatically; do not pin the test to a fixed fence count.
-
-The corpus deliberately does not require error-free parse trees. The generic
-SQL grammar may recover T-SQL constructs through `ERROR` nodes; the relevant
-contract is complete visual highlighting through the two layers.
+The corpus checks visible coverage rather than requiring error-free SQL parse trees. Adding an example changes that input; existing integration tests must pass with the example in place.

@@ -1,56 +1,50 @@
 # Tool Manager
 
-Tool operations save intent before applying runtime changes. If a backend raises or returns a failure, the operation reports failure and the tool's details retain the error. The saved choice remains available for the next startup. A later successful operation clears the error.
+Open `:ToolManager` or `<leader>us`. Reopening focuses the existing view. A new session captures the source buffer's filetype and filename; `s` switches between that buffer and all registered tools.
 
-Open `:ToolManager` or `<leader>us`. Repeating the command focuses the existing view. A new view captures the source buffer's filename and filetype and starts in buffer scope; `s` switches between that scope and all registered tool states.
+## Navigation
 
-## Categories and selection
+Use `1`–`6` or Tab / Shift-Tab to select LSP, DAP, Linter, Formatter, Parser or Package. Buffer-scope formatter and linter lists show saved ranks; all-state lists group by filetype. Expand a group with `o`, Enter or `za`.
 
-One outer frame contains category navigation, source scope, the tool list, and action hints. The list keeps `Tool`, `Enabled`, and `Status` columns. The selected category has a filled highlight. Narrow views retain its name; short views omit separators to keep the list usable. Formatter/linter views show priority hints when space permits.
-
-Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand a formatter/linter group with `o`, Enter, or `za` in all-state scope.
-
-The selected tool stays selected after priority changes, resize, and live refreshes. Buffer-scope formatter/linter lists are flat and show saved ranks; all-state views retain filetype groups for reordering. Other categories show a flat tool list. Category and explicit expansion choices survive closing and reopening the manager. Help (`?` or `g?`) suspends tool actions and remains visible during background refreshes. A wrapped details preview follows selection without moving focus on wide and medium editors. `K` focuses the details so they can be scrolled; close it with `q` or Escape to return to the tool list. Wide views place details beside the list, medium views below it, and tiny views show details only after `K`.
+Logical selection survives reordering, resizing and refreshes. Category and expansion choices survive reopening. Help (`?` or `g?`) suspends tool actions and stays visible during refresh. `K` focuses scrollable details; `q` or Escape returns to the list. Details appear beside the list, below it, or on demand as space permits.
 
 ## Install and enable
 
-`i` installs the selected Mason package or Tree-sitter parser. It does not enable a disabled runtime tool. Parsers and dependency packages support installation only; Space cannot toggle them.
+`i` installs a Mason package or parser without enabling a disabled runtime tool. Parsers and dependency packages support installation only.
 
-Space toggles LSP, DAP, formatter, and linter tools. An already installed or external tool updates saved state and its runtime adapter immediately. With the default `missing_package_policy = "auto"`, enabling a missing Mason-backed tool first installs its package and enables it only after success. Concurrent requests for the same package share one installation. Failure leaves enablement unchanged.
+Space toggles an LSP, DAP, formatter or linter. Installed and externally managed tools update saved intent and runtime immediately. With `missing_package_policy = "auto"`, a missing Mason package installs first and enables only after success. Concurrent requests share one installation; failure preserves enablement.
 
-Set `tool_manager.missing_package_policy` to `"manual"` in `settings.json` to require `i` before enabling a missing package. An unavailable registry or unknown package reports an error and does not enable the tool. External tools, such as Python's environment-provided debugpy, require preparation outside Mason.
+Set `tool_manager.missing_package_policy = "manual"` in settings to require explicit installation before enabling a missing package. An unknown package or unavailable registry reports failure. External dependencies such as environment-provided debugpy require setup outside Mason.
 
-An installation continues if you close Tool Manager. Successful enablement still updates saved state and the runtime. Its completion callback cannot redraw a closed session or a later session.
+Operations persist intent before runtime changes. A backend failure remains in details until a successful operation clears it; saved intent remains available at startup. Installations continue after the view closes, but callbacks cannot redraw a closed or replacement session.
 
-## Understand status
+## Status
 
 | Status | Meaning |
 | --- | --- |
-| `Disabled` | Saved global enablement is off; details still show installation and runtime facts |
-| `Installing…` | Its Mason installation is in progress |
-| `Not installed` | The managed package/parser is missing |
-| `Unknown` | Availability cannot be confirmed; details show registry/backend failures |
-| `Not configured` / `Partly configured` | Runtime wiring is missing for the current scope |
-| `Missing executable` | Runtime command resolution found a missing executable |
-| `Not active` | Saved enablement is on, but the runtime has not enabled this tool |
+| `Disabled` | Global saved enablement is off |
+| `Installing…` | Mason installation is running |
+| `Not installed` | Required package or parser is absent |
+| `Unknown` | Registry or backend availability cannot be confirmed |
+| `Not configured` / `Partly configured` | Runtime wiring is missing for part or all of the selected scope |
+| `Missing executable` | Command resolution failed |
+| `Not active` | Saved enablement is on but runtime activation is absent |
 | `Configured`, `Registered…`, `Running…`, `Idle` | Category-specific runtime health |
-| `Diagnostics: …` | Source-code findings, not a failed tool process |
-| `Failed` | A tool operation reported an execution failure |
+| `Diagnostics: …` | Findings in source code |
+| `Failed` | An operation failed to execute |
 
-Installed packages do not guarantee active runtime wiring. The canonical registry describes supported tools and filetypes; initial activation lives in `config.formatter` and `config.linter`. Enabling a tool wires it only where that configuration activates it: Deno supports Markdown but formats only the web filetypes it is configured for. The list uses icons and English status labels; Enabled is On/Off, or N/A for installation-only categories. External management is a source, not a runtime status. Details separate installation, source, runtime status, and enablement; they include filetypes, notes, and linter errors/diagnostics where available.
+Installation, management source, runtime health and enablement are distinct facts in details. Installation alone does not activate a tool. Registry support lists do not override initial formatter/linter activation: a tool may support Markdown while being configured only for web filetypes.
 
-## Priority and storage
+## Priority and persistence
 
-Select a formatter or linter in buffer scope, or inside an all-state filetype group, and use `[` / `]`. Tool Manager saves the complete logical order, including disabled tools. Enablement applies globally to that tool; priority applies to the selected filetype. Reordering changes the priority of currently configured tools and preserves unrelated runtime entries; it does not activate every supported tool. Re-enabling a tool restores its saved position.
+Use `[` / `]` on a formatter or linter in buffer scope or an expanded filetype group. Priority is per filetype; enablement is global to the tool. Saved order includes disabled tools and is restored when they are enabled again. Reordering preserves unrelated runtime entries.
 
-`lua/config/tools.lua` owns logical identities, supported filetypes, Mason packages, and default priority. A `runtime_name` handles a different backend identifier: the saved YAML formatter key remains `yaml`, while Conform receives `yamlfmt`.
+The canonical registry uses logical IDs; adapters translate backend aliases such as `yaml` to Conform's `yamlfmt` at runtime.
 
-State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists. State writes lock, reread the latest disk values, merge the selected change and replace the file atomically. Separate instances therefore retain each other's unrelated changes. A refused replacement preserves the previous persisted state and does not apply the unsaved change to the runtime.
+State is stored in `stdpath('data')/tools.json`. A missing file permits migration from legacy `service.json`; malformed current state falls back to defaults. Valid values merge with current definitions, excluding removed tools and stale or duplicate order entries.
 
-A busy `tools.json.lock` reports an error instead of overwriting another writer; retry after the other operation completes. A lock that outlives any write was left by a process that exited mid-write and is replaced. Other instances' writes do not automatically refresh an already open manager or its runtime.
+Writes take an exclusive lock, reread disk state, merge the selected change and replace the file atomically, preserving unrelated changes from another instance. Refused replacement preserves old disk state and leaves the requested runtime change unapplied. Retry a busy lock after its writer finishes; abandoned locks are replaced. Another instance's write does not refresh an already open manager automatically.
 
-## View lifecycle
+## Session lifetime
 
-Nui owns mounting, layout updates, and popup buffers/windows. Each OrbitVim view session owns its event subscriptions, debounce timer, selection, and details. Normal close, external window closure, and buffer deletion dispose the session. Resize fits the layout to the available editor area; lists and details remain scrollable.
-
-[Architecture](architecture.md) describes the module boundaries.
+Nui owns windows and mounting. Each view owns subscriptions, debounce timers, source context and selection. Normal close, external window closure and buffer deletion dispose the session. Lists and details stay scrollable when the layout shrinks. See [architecture](architecture.md) for module boundaries.

@@ -1,4 +1,4 @@
-name: Validate
+name: Neovim validation
 
 on:
   push:
@@ -20,7 +20,7 @@ env:
 
 jobs:
   validate:
-    name: Validate (${{ matrix.os }})
+    name: Validate Neovim on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -165,11 +165,11 @@ jobs:
       - name: Install integration parsers
         run: just parsers
 
-      - name: Run core validation
+      - name: Check Lua and run core tests
         run: just all
 
-      - name: Run integration tests
+      - name: Test parsers, snippets and language services
         run: just test-integration
 
-      - name: Smoke-test startup
+      - name: Verify locked-plugin startup
         run: just smoke

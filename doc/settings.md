@@ -1,34 +1,33 @@
 # Settings
 
-`:OrbitSettings` and `<leader>uc` open `settings.json` in Neovim's configuration directory. `:OrbitSettings reload` loads the saved file; `:OrbitSettings info` opens a read-only view of active values, their sources, the last error and pending restart changes. A missing file uses defaults and is created only by the command. An existing file is never rewritten, even when invalid.
+`:OrbitSettings` or `<leader>uc` opens the configuration directory's `settings.json`, creating it only if absent. `:OrbitSettings reload` rereads saved input. `:OrbitSettings info` shows active values, their sources, the last error and restart-pending changes. Existing input is never rewritten, including invalid files.
 
-`settings.schema.json` defines supported keys, types, bounds, descriptions, restart annotations and defaults. JSON language servers use its `$schema` reference for completion and validation. The loader interprets the keywords used by this bundled schema; it is not a validator for arbitrary external schemas. It also validates tool IDs, supported filetypes and LSP server IDs against the canonical registry.
+`settings.schema.json` owns keys, types, bounds, defaults and restart annotations. The loader supports the schema keywords used here and validates tool, filetype and server references against the registry. It does not interpret arbitrary external schemas.
 
-OrbitVim also associates the configured file path with this schema in `jsonls`, so completion still works when the file contains only `{}`. Windows drive letters are normalized to the JSON service's matching convention. Other editors can use the `$schema` reference created by the command.
+The command adds a `$schema` reference. jsonls also associates the exact settings path with the bundled schema, including normalized Windows drive letters, so an empty object still receives completion.
 
 ## Merge and precedence
 
-Objects merge by field. Arrays replace the previous array, including an empty array. `false` remains a boolean override. Removing a field restores its default. Unknown fields, wrong types, invalid ranges and null values in typed fields reject the entire input before changes are applied. Server-specific `settings` may contain arbitrary JSON values.
+Objects merge by field; arrays replace previous arrays, including when empty. Boolean `false` is preserved. Removing a field restores its default. Unknown keys, wrong types, invalid ranges and typed null values reject the complete input before application. Server-specific `settings` accept arbitrary JSON.
 
-`tools.formatter_defaults` and `tools.linter_defaults` specify initial priority lists by filetype, using logical IDs such as `yaml`, rather than backend aliases such as `yamlfmt`. Built-in priorities come from `config.tools`; user defaults override them on startup. Valid saved order in the data directory's `tools.json` takes precedence. Reloading user settings never writes tool enablement or saved order. Supported filetypes continue to be distinct from initial runtime activation.
+`tools.formatter_defaults` and `tools.linter_defaults` set initial filetype order using logical IDs such as `yaml`, not backend aliases such as `yamlfmt`. They override registry defaults at startup; valid saved order in `tools.json` overrides both. Reload never changes saved enablement or order. Supported filetypes do not imply initial activation.
 
 ## Live updates
 
-| Section | Effect |
+| Section | Application |
 | --- | --- |
-| `editor` | Applies changed fields to global defaults, loaded normal buffers and normal editing splits. Unchanged fields retain local overrides. Special buffers retain their buffer options; floating windows retain their window options. Filetype plugins may apply their own values to subsequently opened files. |
-| `tool_manager` | Updates the loaded options table and refreshes the open session, retaining help and logical selection. |
-| `lsp.inlay_hints` | Updates attached clients that support inlay hints and the policy used for future attachments. |
-| `lsp.codelens`, `lsp.servers` | Requires a restart. Server settings merge into the existing Lua server options. |
-| `tools` | Requires a restart. Saved tool state retains precedence. |
-| `notes` | Requires a restart. |
+| `editor` | Changed fields update global defaults and normal loaded buffers/splits. Unchanged fields keep local overrides; special buffers and floating windows keep their local options. Filetype plugins may customize new files. |
+| `tool_manager` | Update loaded options and refresh the open view while preserving help and logical selection |
+| `lsp.inlay_hints` | Apply to supported attached clients and future attachments |
+| `lsp.codelens`, `lsp.servers` | Restart required; server settings merge into Lua configuration |
+| `tools`, `notes` | Restart required; persisted tool state keeps precedence |
 
-Only a write to the configured settings path triggers automatic reload. Reload calls feature owners directly and preserves plugin loading state. Repeat setup replaces the same autocmd group.
+Automatic reload observes only writes to the configured file. It calls feature owners directly without changing plugin loading state; repeated setup replaces its autocmd group.
 
-The whole file is decoded and validated first. Live option changes capture previous values; an apply error restores those values and leaves the accepted settings unchanged. Inlay hint updates perform their own rollback. A rollback failure reports both errors and requests a restart because runtime values may differ from the accepted snapshot. Restart-only sections retain their active values until the next startup; they can be saved alongside live changes. Invalid startup input warns and uses defaults so the settings command remains available for repair.
+Validation precedes every live update. Application failures restore captured values and keep the accepted settings snapshot. Inlay hints handle their own rollback. If restoration fails, the error reports both failures and requests a restart. Restart-only values remain active until startup even when new values are saved.
+
+Invalid startup settings warn and fall back to defaults so the editor remains available for repair.
 
 ## Ownership
 
-`config.settings` reads the schema, resolves overrides, validates registry references and stores detached accepted values. `core.settings` owns editor application, save observation, rollback and effective-value reporting. `commands.settings` owns command registration and the settings/info views. `runtime.lsp` owns inlay hint changes. `tool.state` merges initial priorities before loading saved tool state.
-
-Changes to defaults belong in the schema; changes to available tools belong in `config.tools`.
+Change public defaults in the schema and available tools in `config.tools`. `config.settings` decodes and validates detached values; `core.settings` owns application, rollback and save observation. `commands.settings` owns commands and information views, `runtime.lsp` owns inlay hints, and `tool.state` merges initial priorities before saved state.

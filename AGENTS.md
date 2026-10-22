@@ -1,5 +1,7 @@
 # AGENTS Instructions
 
+OrbitVim supports Linux and Windows. Preserve commands, mappings and persisted state unless the task changes their contracts.
+
 ## Git
 
 - Write commits in [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) format.
@@ -12,7 +14,7 @@
 
 ## Contracts
 
-`init.lua` runs three phases in order: editor setup, Lazy bootstrap and spec import, then commands and final UI setup. Preserve user-visible commands, mappings and persisted state unless the task changes them.
+`init.lua` runs three phases in order: editor setup, Lazy bootstrap and spec import, then commands and final UI setup. Keep settings available even when personal input is invalid.
 
 Tool Manager's UI interface is `require("tool").open()` / `.close()`. Its operation interface, `tool.manager`, takes logical selections, never cursor positions, Nui objects or render callbacks. Read [architecture](doc/architecture.md) before moving these boundaries and the [Tool Manager guide](doc/tool-manager.md) before changing its workflows.
 
@@ -59,7 +61,7 @@ Linux and Windows are equal targets: the same recipes, complete suites, native b
 - Code under `lua/` detects the platform through `utils.os`; standalone scripts and test bootstraps may not load it. Name platform-specific executables explicitly (`.cmd`, `.exe`, `Scripts/` versus `bin/`) and build paths with `/`, which Neovim accepts on Windows. Values handed to the operating system, such as `PATH` entries, use the native separator.
 - Start external programs from argument lists, never shell strings: Windows users may select PowerShell. Only terminals use the interactive shell.
 - The `justfile` runs recipes with `sh` on Linux and native `cmd.exe` on Windows, so batch launchers work without changing PowerShell execution policy. Recipe bodies must use quoting both shells accept: double quotes outside, single quotes inside.
-- Every CI step that validates behaviour calls a `just` recipe. CI platform branches only install dependencies and set up the filesystem.
+- Every CI step that validates behaviour calls a `just` recipe. Platform branches prepare dependencies and filesystem state; both platforms run the complete suites.
 - Windows builds use MSYS2's UCRT64 GCC and Make with the runner's native Git. Do not add an MSYS Git to PATH. Running Neovim through MSYS Make can drop `LOCALAPPDATA` and hang Plenary on E492.
 - Keep the Windows `ClearShada` rule that skips `main.shada`. Resolve exact targets before destructive filesystem operations.
 
@@ -73,6 +75,7 @@ Linux and Windows are equal targets: the same recipes, complete suites, native b
 - Never change an expected value just to pass: state whether the contract changed, the test was wrong, or production regressed. Explain in the report and commit message any single change that needs more than three cases or about 80 lines of test.
 - Core specs are hermetic: no network, Mason installs, plugin updates or external executables. Mock at the owning seam; use the installed Nui without mocking its window API. Restore buffers, windows, globals, options, mappings, runtimepath, timers and `package.loaded`/`package.preload` entries even after a failed assertion. Write fixtures and state only below `vim.g.orbitvim_test_root` via `tests.helpers`.
 - Integration specs fail when a dependency is missing; pending or skipped tests are rejected by `scripts/tests/validate.lua`.
+- Keep snippet triggers unique and lowercase, placeholders useful, complete statements semicolon-terminated and `$0` as the final cursor. Update the catalog when changing expansions; protect transaction ownership, identifier validation and value parameterization rather than trigger inventories.
 - `tests/integration/treesitter_tsql_corpus_spec.lua` executes every `sql` fence in `doc/tsql-conventions.md`; a fence edit there changes test input.
 - End each report with `Tests added`, `Tests updated` or `No tests added` and the contract protected.
 
@@ -86,6 +89,13 @@ Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open
 - Add `just test-integration` for Tree-sitter queries, parsers, LuaSnip collections, SQLFluff, JSON schema language-server behaviour, or their adapters.
 - Add `just test-build` for LuaSnip or Markdown preview build changes, and `just smoke` for startup or plugin-loading changes.
 - Report the checks run and any missing dependency.
+
+## CI
+
+- Keep a CI check only when it catches a concrete failure no existing check covers; identify that failure before adding or retaining it. Apply the test admission rule to CI too.
+- Run repository entry points against real inputs or isolated fixtures. Reject duplicate checks, source-text assertions, copied inventories and checks that only prove a command or file exists.
+- Name workflows, jobs and steps by their target and action. Propagate command failures; missing prerequisites and skipped required coverage cannot count as success.
+- After changing these rules, audit the repository against them. Validate locally, then verify required CI on the pushed commit; report any uncovered contract or unavailable check.
 
 ## Docs
 

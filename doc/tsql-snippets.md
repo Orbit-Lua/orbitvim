@@ -2,17 +2,11 @@
 
 # T-SQL snippets
 
-OrbitVim provides project-local LuaSnip templates for Microsoft SQL Server.
-They follow the practices in the
-[T-SQL conventions](tsql-conventions.md) and replace the generic SQL collection
-from `friendly-snippets`.
-
-The source of truth is [`luasnippets/tsql.lua`](../luasnippets/tsql.lua).
+[Local LuaSnip templates](../luasnippets/tsql.lua) replace friendly-snippets' generic SQL collection and follow the [T-SQL conventions](tsql-conventions.md).
 
 ## Using a snippet
 
-Open a `.sql` file, enter a trigger such as `sel`, and select the snippet from
-the completion menu.
+In a `.sql` buffer, type `sel` and choose the snippet from completion.
 
 | Key | Action |
 | --- | --- |
@@ -20,17 +14,13 @@ the completion menu.
 | `<Tab>` | Move to the next placeholder |
 | `<S-Tab>` | Move to the previous placeholder |
 
-Placeholders start with useful defaults. Repeated placeholders stay linked, so
-changing an object name such as `Entity` also updates its related constraint
-names. The final cursor position is represented by `$0` in the source.
+Repeated placeholders stay linked: changing `Entity` also updates related constraint names. `$0` marks the final cursor position.
 
-SQL buffers keep Neovim's `sql` filetype. LuaSnip internally extends it with
-the `tsql` collection, so Tree-sitter and SQLFluff continue to use the normal
-SQL toolchain.
+LuaSnip extends the `sql` filetype with `tsql` templates; Tree-sitter and SQLFluff retain their normal SQL integration.
 
 ## Choosing a trigger
 
-Triggers use short, predictable prefixes:
+Prefixes describe the operation; suffixes distinguish joined and output variants:
 
 | Prefix or suffix | Meaning |
 | --- | --- |
@@ -121,7 +111,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `denserank` | Add `DENSE_RANK` |
 | `lag` | Read the previous ordered value with `LAG` |
 | `lead` | Read the next ordered value with `LEAD` |
-| `opensym` | Query inside decrypted `SYMMETRIC KEY` |
+| `opensym` | Open a symmetric key, query decrypted values and close the key |
 
 ### Data modification
 
@@ -137,7 +127,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `del` | Delete through an explicit table alias |
 | `delj` | Delete with a join |
 | `delo` | Delete and return removed values with `OUTPUT` |
-| `upsert` | Update then insert inside a guarded transaction |
+| `upsert` | Update then insert inside a transaction; add the required concurrency control |
 
 ### Control flow, temporary storage, and transactions
 
@@ -220,30 +210,3 @@ parameterized, so `dynident` validates the identifier before applying
   strategy; the template does not make an unsafe data model race-free.
 - Index templates are starting points. Choose keys, includes, and filters from
   real predicates, ordering needs, and execution plans.
-
-## Maintaining the collection
-
-Add snippets to `luasnippets/tsql.lua` with the local helper:
-
-```lua
-snippet("trigger", "Completion menu name", [[
-SELECT
-    ${1:e.EntityId}
-FROM ${2:dbo}.${3:Entity} AS ${4:e}
-WHERE ${5:e.EntityId = @EntityId};
-$0
-]]),
-```
-
-Keep triggers unique and lowercase, give every placeholder a useful default,
-terminate complete T-SQL statements with semicolons, and retain `$0` as the
-final cursor position. Update the catalog and protect meaningful expansion,
-transaction, identifier-validation, and parameterization behavior in
-`tests/integration/tsql_snippets_spec.lua`. Do not add fixed trigger inventories
-or collection-size assertions. Then run:
-
-```bash
-just all
-just test-integration
-nvim --headless "+qall"
-```

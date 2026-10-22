@@ -1,141 +1,27 @@
-<!-- markdownlint-disable MD013 -->
+# T-SQL conventions and templates
 
-# T-SQL Conventions and Templates
+SQL Server conventions used by [OrbitVim snippets](tsql-snippets.md). Examples are templates or syntax fragments, not a migration to execute as one script. Each `sql` fence also exercises Markdown SQL injection and highlighting.
 
-Conventions and templates for Microsoft SQL Server objects, queries, migrations and stored procedures. The [snippets](tsql-snippets.md) follow them, and every `sql` fence here is part of the highlighting test corpus.
+## Common rules
 
----
+Use explicit schemas, target columns and meaningful aliases. Terminate statements with semicolons, prefer ANSI joins and set-based operations, and order results when order affects their meaning. Use `CREATE OR ALTER` for supported programmable objects and `SET NOCOUNT ON` in procedures and triggers.
 
-## 1. General Principles
+Keep transactions short and define whether a procedure owns or joins its caller's transaction. Use `XACT_ABORT`, `TRY`/`CATCH` and `THROW` for transaction-owning code. Parameterize dynamic values and allowlist identifiers before `QUOTENAME`.
 
-Use the following conventions across the project:
+## Names and data types
 
-```text
-- Always specify the schema explicitly.
-- Always specify column names explicitly.
-- Prefer ANSI JOIN syntax.
-- Terminate statements with semicolons.
-- Use CREATE OR ALTER for supported programmable objects.
-- Use SET NOCOUNT ON in stored procedures and triggers.
-- Use SET XACT_ABORT ON when a stored procedure owns a transaction.
-- Use TRY...CATCH + THROW for error propagation.
-- Prefer THROW over RAISERROR for new code.
-- Prefer set-based operations over loops.
-- Parameterize dynamic SQL with sys.sp_executesql.
-- Whitelist dynamic identifiers and wrap them with QUOTENAME.
-- Avoid SELECT * in application and production queries.
-- Do not rely on implicit row ordering.
-- Prefer UTC timestamps for persisted system timestamps.
-- Use Unicode string literals when working with NVARCHAR/NCHAR.
-```
+| Resource | Convention |
+| --- | --- |
+| Schema | Explicit domain such as `app`, `auth`, `reporting`, or consistent `dbo` |
+| Table | Domain name such as `Entity` or `RelatedEntity` |
+| View | `v_ActiveEntity` |
+| Procedure / function | Operation name such as `GetEntity` or `CreateEntity` |
+| Trigger | `TR_<Table>_<Operation>` |
+| Constraint | `PK_<Table>`, `FK_<Table>_<ReferencedTable>`, `UQ_<Table>_<Column>`, `CK_<Table>_<Column>`, `DF_<Table>_<Column>` |
+| Index | `IX_<Table>_<Columns>`; `UX_` for unique indexes |
+| Parameter / variable | Descriptive PascalCase prefixed with `@` |
 
----
-
-## 2. Naming Conventions
-
-### 2.1 Database Objects
-
-Recommended naming:
-
-```text
-Schema:
-    dbo
-    app
-    auth
-    reporting
-
-Tables:
-    Entity
-    RelatedEntity
-    ParentEntity
-
-Views:
-    v_Entity
-    v_ActiveEntity
-
-Stored Procedures:
-    GetEntity
-    CreateEntity
-    UpdateEntity
-    DeleteEntity
-
-Functions:
-    GetEntityValue
-    GetEntitiesByStatus
-
-Triggers:
-    TR_Entity_Update
-    TR_Entity_Delete
-```
-
-Avoid object names that depend on temporary implementation details.
-
-Prefer domain-oriented names.
-
----
-
-### 2.2 Constraints
-
-Use explicit constraint names.
-
-Recommended pattern:
-
-```text
-PK_<Table>
-FK_<Table>_<ReferencedTable>
-UQ_<Table>_<Column>
-CK_<Table>_<Column>
-DF_<Table>_<Column>
-```
-
-Example:
-
-```sql
-CONSTRAINT PK_Entity
-CONSTRAINT FK_RelatedEntity_Entity
-CONSTRAINT UQ_Entity_Code
-CONSTRAINT CK_Entity_Status
-CONSTRAINT DF_Entity_Status
-```
-
----
-
-### 2.3 Indexes
-
-Recommended pattern:
-
-```text
-IX_<Table>_<Columns>
-UX_<Table>_<Columns>
-```
-
-Examples:
-
-```sql
-IX_Entity_Status
-IX_Entity_Status_CreatedAt
-UX_Entity_Code
-```
-
-Use `UX_` when the index is unique.
-
----
-
-### 2.4 Parameters and Variables
-
-Use descriptive PascalCase names prefixed with `@`.
-
-```sql
-@EntityId
-@EntityCode
-@Status
-@StartAt
-@EndAt
-@Page
-@PageSize
-```
-
-Prefer one declaration per line:
+Declare one variable per line. Choose key types for domain and scale rather than habit:
 
 ```sql
 DECLARE @EntityId BIGINT;
@@ -143,271 +29,44 @@ DECLARE @Name NVARCHAR(100);
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 ```
 
----
+| Data | Choice |
+| --- | --- |
+| Identifier | `INT`, `BIGINT` or `UNIQUEIDENTIFIER` according to domain |
+| Unicode text | Sized `NVARCHAR`, using `N'...'` literals; avoid implicit conversion from `VARCHAR` |
+| Date/time | `DATE`, `TIME`, `DATETIME2` or `DATETIMEOFFSET`; prefer UTC for persisted system timestamps |
+| Decimal | Explicit precision and scale, such as `DECIMAL(18, 2)` |
+| Boolean-like column | `BIT` |
 
-### 2.5 Table Aliases
+Convert UTC to presentation time at the application boundary unless the domain requires local civil time.
 
-Use short, meaningful aliases.
+## Schema objects
 
-```sql
-FROM dbo.Entity AS e
-INNER JOIN dbo.RelatedEntity AS r
-    ON r.EntityId = e.EntityId
-```
+### Database
 
-Avoid arbitrary aliases such as:
-
-```sql
-FROM dbo.Entity AS a1
-```
-
-unless generated SQL makes this necessary.
-
----
-
-## 3. Formatting Conventions
-
-### 3.1 SELECT Layout
-
-Recommended order:
-
-```sql
-SELECT
-    ...
-FROM ...
-INNER JOIN ...
-    ON ...
-LEFT JOIN ...
-    ON ...
-WHERE ...
-GROUP BY
-    ...
-HAVING ...
-ORDER BY
-    ...
-OFFSET ...
-FETCH ...;
-```
-
-Example:
-
-```sql
-SELECT
-    e.EntityId,
-    e.Name,
-    COUNT(r.RelatedEntityId) AS RelatedCount
-FROM dbo.Entity AS e
-LEFT JOIN dbo.RelatedEntity AS r
-    ON r.EntityId = e.EntityId
-WHERE e.Status = @Status
-    AND e.CreatedAt >= @StartAt
-    AND e.CreatedAt < @EndAt
-GROUP BY
-    e.EntityId,
-    e.Name
-HAVING COUNT(r.RelatedEntityId) >= 1
-ORDER BY
-    RelatedCount DESC,
-    e.EntityId;
-```
-
----
-
-### 3.2 Column Lists
-
-Place one column per line for non-trivial statements.
-
-Preferred:
-
-```sql
-SELECT
-    e.EntityId,
-    e.Code,
-    e.Name,
-    e.Status
-FROM dbo.Entity AS e;
-```
-
-Avoid:
-
-```sql
-SELECT e.EntityId, e.Code, e.Name, e.Status FROM dbo.Entity e;
-```
-
----
-
-### 3.3 INSERT Column Lists
-
-Always specify inserted columns.
-
-Preferred:
-
-```sql
-INSERT INTO dbo.Entity
-(
-    Code,
-    Name,
-    Status
-)
-VALUES
-(
-    @Code,
-    @Name,
-    @Status
-);
-```
-
-Avoid:
-
-```sql
-INSERT INTO dbo.Entity
-VALUES (...);
-```
-
----
-
-## 4. Recommended Data Types
-
-### 4.1 Identifiers
-
-Typical choices:
-
-```text
-INT
-BIGINT
-UNIQUEIDENTIFIER
-```
-
-For identity-based keys:
-
-```sql
-EntityId BIGINT IDENTITY(1, 1) NOT NULL
-```
-
-Choose the key type based on the domain and expected scale rather than habit.
-
----
-
-### 4.2 Strings
-
-Prefer Unicode types for application data:
-
-```sql
-NVARCHAR(100)
-NVARCHAR(255)
-NVARCHAR(MAX)
-```
-
-Use Unicode literals:
-
-```sql
-N'Value'
-```
-
-Avoid relying on implicit conversion between `VARCHAR` and `NVARCHAR`.
-
----
-
-### 4.3 Date and Time
-
-Prefer:
-
-```sql
-DATE
-TIME
-DATETIME2(3)
-DATETIME2(7)
-DATETIMEOFFSET
-```
-
-For system timestamps:
-
-```sql
-SYSUTCDATETIME()
-```
-
-Prefer `DATETIME2` over legacy `DATETIME` for new schema design.
-
----
-
-### 4.4 Decimal Values
-
-Use explicit precision and scale:
-
-```sql
-DECIMAL(18, 2)
-DECIMAL(19, 4)
-```
-
-Do not rely on unspecified decimal precision.
-
----
-
-### 4.5 Boolean-Like Values
-
-SQL Server has no native Boolean data type for regular table columns.
-
-Use:
-
-```sql
-BIT
-```
-
-Example:
-
-```sql
-IsActive BIT NOT NULL
-```
-
----
-
-## 5. CREATE DATABASE
-
-Basic template:
+Let deployment or DBA-managed scripts choose production files, recovery mode and collation. `GO` is a client batch separator.
 
 ```sql
 CREATE DATABASE ApplicationDatabase;
 GO
 ```
 
-Switch database:
-
 ```sql
 USE ApplicationDatabase;
 GO
 ```
 
-Production database files, filegroups, recovery mode, and collation should normally be handled explicitly by deployment or DBA-managed scripts.
+### Schema
 
----
-
-## 6. CREATE SCHEMA
+Use domain schemas when useful; consistent `dbo` also suits smaller systems.
 
 ```sql
 CREATE SCHEMA app;
 GO
 ```
 
-Possible organization:
+### Table
 
-```text
-app.Entity
-app.RelatedEntity
-
-auth.Account
-auth.Role
-auth.Permission
-
-reporting.EntitySummary
-```
-
-For smaller systems, using `dbo` consistently is also acceptable.
-
----
-
-## 7. CREATE TABLE
-
-Recommended base template:
+Name primary, unique and default constraints explicitly.
 
 ```sql
 CREATE TABLE dbo.Entity
@@ -434,9 +93,9 @@ CREATE TABLE dbo.Entity
 );
 ```
 
----
+### Foreign key
 
-## 8. FOREIGN KEY
+Enable cascading actions only when the domain requires them.
 
 ```sql
 CREATE TABLE dbo.RelatedEntity
@@ -457,10 +116,6 @@ CREATE TABLE dbo.RelatedEntity
 );
 ```
 
-Use cascading actions only when they accurately model domain behavior.
-
-Example:
-
 ```sql
 CONSTRAINT FK_ChildEntity_ParentEntity
     FOREIGN KEY (ParentEntityId)
@@ -468,18 +123,9 @@ CONSTRAINT FK_ChildEntity_ParentEntity
     ON DELETE CASCADE
 ```
 
-Do not enable cascading deletes merely for convenience.
+### Check constraint
 
----
-
-## 9. CHECK CONSTRAINT
-
-```sql
-CONSTRAINT CK_Entity_Status
-    CHECK (Status IN (0, 1, 2))
-```
-
-Example:
+Represent valid domain values as named constraints.
 
 ```sql
 CREATE TABLE dbo.Item
@@ -495,9 +141,9 @@ CREATE TABLE dbo.Item
 );
 ```
 
----
+### Computed column
 
-## 10. COMPUTED COLUMN
+Persist an expression only when its storage and query behaviour fit the workload.
 
 ```sql
 CREATE TABLE dbo.LineItem
@@ -510,32 +156,24 @@ CREATE TABLE dbo.LineItem
 );
 ```
 
----
+### Alter table
 
-## 11. ALTER TABLE
-
-Add column:
+Review existing rows and dependent objects before changing or dropping columns and constraints.
 
 ```sql
 ALTER TABLE dbo.Entity
 ADD Notes NVARCHAR(500) NULL;
 ```
 
-Alter column:
-
 ```sql
 ALTER TABLE dbo.Entity
 ALTER COLUMN Name NVARCHAR(200) NOT NULL;
 ```
 
-Drop column:
-
 ```sql
 ALTER TABLE dbo.Entity
 DROP COLUMN Notes;
 ```
-
-Add constraint:
 
 ```sql
 ALTER TABLE dbo.Entity
@@ -543,50 +181,36 @@ ADD CONSTRAINT UQ_Entity_Name
     UNIQUE (Name);
 ```
 
-Drop constraint:
-
 ```sql
 ALTER TABLE dbo.Entity
 DROP CONSTRAINT UQ_Entity_Name;
 ```
 
----
+### Drop and truncate
 
-## 12. DROP AND TRUNCATE
-
-Drop a table safely:
+`IF EXISTS` suppresses a missing-object error; it does not make deletion safe. Review data loss and foreign-key dependencies before execution.
 
 ```sql
 DROP TABLE IF EXISTS dbo.Entity;
 ```
 
-Remove all rows:
-
 ```sql
 TRUNCATE TABLE dbo.EntityLog;
 ```
-
-Delete selected rows:
 
 ```sql
 DELETE FROM dbo.EntityLog
 WHERE CreatedAt < @ExpiredAt;
 ```
 
----
+### Indexes
 
-## 13. INDEXES
-
-### 13.1 Basic Nonclustered Index
+Choose key order from predicates and sorting. Includes can cover queries without extending the key; filtered indexes suit stable queried subsets.
 
 ```sql
 CREATE INDEX IX_Entity_Name
 ON dbo.Entity(Name);
 ```
-
----
-
-### 13.2 Composite Index
 
 ```sql
 CREATE INDEX IX_Entity_Status_CreatedAt
@@ -596,12 +220,6 @@ ON dbo.Entity
     CreatedAt
 );
 ```
-
-Index column order should be driven by actual query predicates and sorting requirements.
-
----
-
-### 13.3 Included Columns
 
 ```sql
 CREATE INDEX IX_Entity_Status
@@ -614,20 +232,10 @@ INCLUDE
 );
 ```
 
-Use included columns when they help cover common queries without unnecessarily increasing the index key.
-
----
-
-### 13.4 Unique Index
-
 ```sql
 CREATE UNIQUE INDEX UX_Entity_Name
 ON dbo.Entity(Name);
 ```
-
----
-
-### 13.5 Filtered Index
 
 ```sql
 CREATE INDEX IX_Entity_Active
@@ -635,11 +243,9 @@ ON dbo.Entity(Code)
 WHERE Status = 1;
 ```
 
-Use filtered indexes when a stable subset is queried frequently.
+### Sequence
 
----
-
-## 14. SEQUENCE
+A sequence supplies identifiers independently of a table identity column.
 
 ```sql
 CREATE SEQUENCE dbo.EntityIdSequence
@@ -648,17 +254,13 @@ CREATE SEQUENCE dbo.EntityIdSequence
     INCREMENT BY 1;
 ```
 
-Use:
-
 ```sql
 SELECT NEXT VALUE FOR dbo.EntityIdSequence;
 ```
 
----
+### View
 
-## 15. VIEW
-
-Prefer `CREATE OR ALTER`.
+Use a view for a reusable query contract.
 
 ```sql
 CREATE OR ALTER VIEW dbo.v_ActiveEntity
@@ -673,20 +275,9 @@ AS
 GO
 ```
 
-Usage:
+### Read procedure
 
-```sql
-SELECT
-    e.EntityId,
-    e.Name
-FROM dbo.v_ActiveEntity AS e;
-```
-
-Do not use views merely to hide poorly structured joins.
-
----
-
-## 16. READ-ONLY STORED PROCEDURE
+Use parameters and explicit result columns; suppress informational row counts.
 
 ```sql
 CREATE OR ALTER PROCEDURE dbo.GetEntity
@@ -706,11 +297,9 @@ END;
 GO
 ```
 
----
+### Write procedure
 
-## 17. WRITE STORED PROCEDURE
-
-Recommended transaction template:
+This template owns its transaction. A caller-owned transaction needs a separate ownership design.
 
 ```sql
 CREATE OR ALTER PROCEDURE dbo.CreateEntity
@@ -749,11 +338,9 @@ END;
 GO
 ```
 
-Use this template when the procedure owns the transaction.
+### Output parameter
 
----
-
-## 18. STORED PROCEDURE OUTPUT PARAMETER
+Return an inserted identity through a typed output parameter.
 
 ```sql
 CREATE OR ALTER PROCEDURE dbo.CreateEntity
@@ -781,8 +368,6 @@ END;
 GO
 ```
 
-Usage:
-
 ```sql
 DECLARE @EntityId BIGINT;
 
@@ -794,9 +379,9 @@ EXEC dbo.CreateEntity
 SELECT @EntityId;
 ```
 
----
+### Scalar function
 
-## 19. SCALAR FUNCTION
+Use a scalar function when the abstraction earns its runtime cost.
 
 ```sql
 CREATE OR ALTER FUNCTION dbo.FormatEntityName
@@ -812,19 +397,13 @@ END;
 GO
 ```
 
-Usage:
-
 ```sql
 SELECT dbo.FormatEntityName(N'Prefix', N'Value');
 ```
 
-Do not create scalar functions for trivial expressions unless abstraction provides real value.
+### Inline table-valued function
 
----
-
-## 20. INLINE TABLE-VALUED FUNCTION
-
-Prefer inline TVFs over multi-statement TVFs when possible.
+Prefer inline TVFs when a reusable table-valued expression fits.
 
 ```sql
 CREATE OR ALTER FUNCTION dbo.GetEntitiesByStatus
@@ -846,18 +425,35 @@ RETURN
 GO
 ```
 
-Usage:
+## Queries
+
+### Select layout
+
+List nontrivial projections one column per line. Keep join predicates beside their joins, then filter, group, filter aggregates and order.
 
 ```sql
 SELECT
     e.EntityId,
+    e.Name,
+    COUNT(r.RelatedEntityId) AS RelatedCount
+FROM dbo.Entity AS e
+LEFT JOIN dbo.RelatedEntity AS r
+    ON r.EntityId = e.EntityId
+WHERE e.Status = @Status
+    AND e.CreatedAt >= @StartAt
+    AND e.CreatedAt < @EndAt
+GROUP BY
+    e.EntityId,
     e.Name
-FROM dbo.GetEntitiesByStatus(1) AS e;
+HAVING COUNT(r.RelatedEntityId) >= 1
+ORDER BY
+    RelatedCount DESC,
+    e.EntityId;
 ```
 
----
+### Explicit projection
 
-## 21. BASIC SELECT
+Avoid application `SELECT *`: schema changes should not silently change a result contract.
 
 ```sql
 SELECT
@@ -871,16 +467,9 @@ ORDER BY
     e.EntityId;
 ```
 
-Avoid:
+### Distinct
 
-```sql
-SELECT *
-FROM dbo.Entity;
-```
-
----
-
-## 22. DISTINCT
+Remove duplicates only when distinctness is required. Repair incorrect joins and cardinality separately.
 
 ```sql
 SELECT DISTINCT
@@ -888,11 +477,9 @@ SELECT DISTINCT
 FROM dbo.Entity AS e;
 ```
 
-Use `DISTINCT` because duplicates are logically unwanted, not as a repair for an incorrect join.
+### Top
 
----
-
-## 23. TOP
+Use `ORDER BY` and a unique tie-breaker when the selected rows must be deterministic.
 
 ```sql
 SELECT TOP (10)
@@ -903,13 +490,9 @@ ORDER BY
     e.EntityId DESC;
 ```
 
-Use `ORDER BY` with `TOP` whenever the selected rows must be deterministic.
+### Predicates
 
----
-
-## 24. WHERE
-
-Common predicates:
+Choose predicates for the required equality, range, membership, text or null semantics.
 
 ```sql
 WHERE e.EntityId = @EntityId
@@ -929,31 +512,18 @@ WHERE e.Email IS NULL
 WHERE e.Email IS NOT NULL
 ```
 
----
+### Date ranges
 
-## 25. DATE RANGE FILTERING
-
-Prefer half-open intervals:
+Use half-open ranges: start inclusive, end exclusive. Avoid precision-dependent end-of-day values.
 
 ```sql
 WHERE e.CreatedAt >= @StartAt
     AND e.CreatedAt < @EndAt;
 ```
 
-For one calendar day:
+### Case
 
-```sql
-WHERE e.CreatedAt >= '2026-01-01'
-    AND e.CreatedAt < '2026-01-02';
-```
-
-Avoid constructing `23:59:59.xxx` end-of-day boundaries.
-
----
-
-## 26. CASE
-
-Simple form:
+Use simple `CASE` for value matching and searched `CASE` for conditions.
 
 ```sql
 SELECT
@@ -967,8 +537,6 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-Conditional form:
-
 ```sql
 CASE
     WHEN Score >= 90 THEN N'A'
@@ -978,13 +546,9 @@ CASE
 END
 ```
 
----
+### Inner join
 
-## 27. JOIN CONVENTIONS
-
-Use ANSI JOIN syntax.
-
-Preferred:
+Match related rows through explicit ANSI join predicates.
 
 ```sql
 SELECT
@@ -996,31 +560,9 @@ INNER JOIN dbo.RelatedEntity AS r
     ON r.EntityId = e.EntityId;
 ```
 
-Avoid legacy comma joins:
+### Left join
 
-```sql
-FROM dbo.Entity AS e,
-     dbo.RelatedEntity AS r
-WHERE r.EntityId = e.EntityId;
-```
-
----
-
-## 28. INNER JOIN
-
-```sql
-SELECT
-    e.EntityId,
-    e.Name,
-    r.RelatedEntityId
-FROM dbo.Entity AS e
-INNER JOIN dbo.RelatedEntity AS r
-    ON r.EntityId = e.EntityId;
-```
-
----
-
-## 29. LEFT JOIN
+Preserve left rows without a match. Prefer reversing a right join into this form for consistent reading direction.
 
 ```sql
 SELECT
@@ -1032,35 +574,9 @@ LEFT JOIN dbo.RelatedEntity AS r
     ON r.EntityId = e.EntityId;
 ```
 
-Use when rows from the left side must be preserved even if no match exists.
+### Full outer join
 
----
-
-## 30. RIGHT JOIN
-
-`RIGHT JOIN` is valid, but prefer rewriting it as `LEFT JOIN` when practical.
-
-Instead of:
-
-```sql
-FROM dbo.Entity AS e
-RIGHT JOIN dbo.RelatedEntity AS r
-    ON r.EntityId = e.EntityId;
-```
-
-Prefer:
-
-```sql
-FROM dbo.RelatedEntity AS r
-LEFT JOIN dbo.Entity AS e
-    ON e.EntityId = r.EntityId;
-```
-
-This keeps join direction more consistent across a codebase.
-
----
-
-## 31. FULL OUTER JOIN
+Retain unmatched rows from both sources for reconciliation.
 
 ```sql
 SELECT
@@ -1071,11 +587,9 @@ FULL OUTER JOIN dbo.TargetEntity AS b
     ON b.EntityId = a.EntityId;
 ```
 
-Useful for reconciliation and comparison queries.
+### Cross join
 
----
-
-## 32. CROSS JOIN
+Use only for an intentional Cartesian product.
 
 ```sql
 SELECT
@@ -1085,11 +599,9 @@ FROM dbo.Entity AS e
 CROSS JOIN dbo.Period AS p;
 ```
 
-Use only when a Cartesian product is intentional.
+### Apply
 
----
-
-## 33. CROSS APPLY
+Use `CROSS APPLY` for a correlated relation; use `OUTER APPLY` when unmatched left rows must remain. Add a unique ordering tie-breaker when selecting one row.
 
 ```sql
 SELECT
@@ -1104,17 +616,14 @@ CROSS APPLY
     FROM dbo.RelatedEntity AS r
     WHERE r.EntityId = e.EntityId
     ORDER BY
-        r.CreatedAt DESC
+        r.CreatedAt DESC,
+        r.RelatedEntityId DESC
 ) AS x;
 ```
 
-Use `OUTER APPLY` when the left-side row must remain even if the applied query returns no rows.
+### Exists
 
----
-
-## 34. EXISTS
-
-For existence checks:
+Test existence without projecting related rows.
 
 ```sql
 SELECT
@@ -1129,11 +638,9 @@ WHERE EXISTS
 );
 ```
 
----
+### Not exists
 
-## 35. NOT EXISTS
-
-Preferred anti-join pattern:
+Use an anti-join when matching related rows must be absent.
 
 ```sql
 SELECT
@@ -1148,22 +655,9 @@ WHERE NOT EXISTS
 );
 ```
 
----
+### Grouping and having
 
-## 36. GROUP BY
-
-```sql
-SELECT
-    r.EntityId,
-    COUNT(*) AS RelatedCount
-FROM dbo.RelatedEntity AS r
-GROUP BY
-    r.EntityId;
-```
-
----
-
-## 37. HAVING
+`WHERE` filters input rows; `GROUP BY` forms groups; `HAVING` filters the aggregates.
 
 ```sql
 SELECT
@@ -1175,17 +669,9 @@ GROUP BY
 HAVING COUNT(*) >= 10;
 ```
 
-Conceptually:
+### Aggregates
 
-```text
-WHERE    -> filters rows
-GROUP BY -> forms groups
-HAVING   -> filters groups
-```
-
----
-
-## 38. AGGREGATE FUNCTIONS
+`COUNT(*)` counts rows; `COUNT(column)` excludes null values.
 
 ```sql
 SELECT
@@ -1198,9 +684,9 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
----
+### Common table expression
 
-## 39. CTE
+Terminate the preceding statement before `WITH`; a leading semicolon makes a standalone fragment safe to append.
 
 ```sql
 ;WITH ActiveEntity AS
@@ -1217,11 +703,9 @@ SELECT
 FROM ActiveEntity AS e;
 ```
 
-If all preceding statements are already terminated with semicolons, the leading semicolon is not required.
+### Multiple CTEs
 
----
-
-## 40. MULTIPLE CTEs
+Separate related CTE definitions with commas.
 
 ```sql
 ;WITH ActiveEntity AS
@@ -1250,9 +734,9 @@ LEFT JOIN RelatedCount AS r
     ON r.EntityId = e.EntityId;
 ```
 
----
+### Recursive CTE
 
-## 41. RECURSIVE CTE
+Combine anchor and recursive members for hierarchy traversal; production recursion needs a termination and depth policy.
 
 ```sql
 ;WITH EntityTree AS
@@ -1284,9 +768,9 @@ SELECT
 FROM EntityTree;
 ```
 
----
+### Subquery
 
-## 42. SUBQUERY
+Use a subquery for membership; prefer `EXISTS` when only existence matters.
 
 ```sql
 SELECT
@@ -1300,11 +784,9 @@ WHERE e.EntityId IN
 );
 ```
 
-Prefer `EXISTS` when the actual requirement is only existence testing.
+### Derived table
 
----
-
-## 43. DERIVED TABLE
+Name the derived relation and expose only the required columns.
 
 ```sql
 SELECT
@@ -1322,13 +804,9 @@ FROM
 WHERE x.RelatedCount >= 3;
 ```
 
----
+### Set operators
 
-## 44. SET OPERATORS
-
-## UNION
-
-Removes duplicates:
+`UNION` removes duplicates, `UNION ALL` preserves them, `INTERSECT` returns common rows and `EXCEPT` subtracts rows. Avoid duplicate elimination when it is not required.
 
 ```sql
 SELECT EntityId
@@ -1340,12 +818,6 @@ SELECT EntityId
 FROM dbo.TargetEntity;
 ```
 
----
-
-## UNION ALL
-
-Preserves duplicates:
-
 ```sql
 SELECT EntityId
 FROM dbo.SourceEntity
@@ -1355,12 +827,6 @@ UNION ALL
 SELECT EntityId
 FROM dbo.TargetEntity;
 ```
-
-Prefer `UNION ALL` unless duplicate elimination is part of the requirement.
-
----
-
-## INTERSECT
 
 ```sql
 SELECT EntityId
@@ -1372,10 +838,6 @@ SELECT EntityId
 FROM dbo.TargetEntity;
 ```
 
----
-
-## EXCEPT
-
 ```sql
 SELECT EntityId
 FROM dbo.SourceEntity
@@ -1386,11 +848,9 @@ SELECT EntityId
 FROM dbo.TargetEntity;
 ```
 
-Useful for data reconciliation and migration validation.
+### Ordering
 
----
-
-## 45. ORDER BY
+Add a unique tie-breaker when values can tie. Physical row order is not a result guarantee.
 
 ```sql
 SELECT
@@ -1402,11 +862,9 @@ ORDER BY
     e.EntityId DESC;
 ```
 
-Never assume row order without `ORDER BY`.
+### Pagination
 
----
-
-## 46. PAGINATION
+Validate page arguments. Consider keyset pagination for deep pages instead of large offsets.
 
 ```sql
 DECLARE @Page INT = 1;
@@ -1422,28 +880,9 @@ OFFSET (@Page - 1) * @PageSize ROWS
 FETCH NEXT @PageSize ROWS ONLY;
 ```
 
-For large datasets and deep pages, consider keyset pagination instead of large `OFFSET` values.
+### Latest row per group
 
----
-
-## 47. ROW_NUMBER
-
-```sql
-SELECT
-    ROW_NUMBER() OVER
-    (
-        ORDER BY e.EntityId
-    ) AS RowNo,
-    e.EntityId,
-    e.Name
-FROM dbo.Entity AS e;
-```
-
----
-
-## 48. ROW_NUMBER WITH PARTITION
-
-Common latest-row-per-group pattern:
+Use a deterministic order within each partition.
 
 ```sql
 ;WITH RankedEntity AS
@@ -1455,21 +894,23 @@ Common latest-row-per-group pattern:
         ROW_NUMBER() OVER
         (
             PARTITION BY r.EntityId
-            ORDER BY r.CreatedAt DESC
+            ORDER BY
+                r.CreatedAt DESC,
+                r.RelatedEntityId DESC
         ) AS RowNo
     FROM dbo.RelatedEntity AS r
 )
 SELECT
-    RelatedEntityId,
-    EntityId,
-    CreatedAt
-FROM RankedEntity
-WHERE RowNo = 1;
+    r.RelatedEntityId,
+    r.EntityId,
+    r.CreatedAt
+FROM RankedEntity AS r
+WHERE r.RowNo = 1;
 ```
 
----
+### Ranking
 
-## 49. RANK AND DENSE_RANK
+`RANK` leaves gaps after ties; `DENSE_RANK` does not.
 
 ```sql
 SELECT
@@ -1482,19 +923,13 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-Use:
-
 ```sql
 DENSE_RANK()
 ```
 
-when gaps between ranking numbers are not desired.
+### Previous and next values
 
----
-
-## 50. LAG AND LEAD
-
-Previous value:
+`LAG` and `LEAD` read adjacent values in the declared order.
 
 ```sql
 SELECT
@@ -1507,8 +942,6 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-Next value:
-
 ```sql
 LEAD(e.Amount) OVER
 (
@@ -1516,11 +949,11 @@ LEAD(e.Amount) OVER
 )
 ```
 
-Useful for trend, temporal, and sequential comparisons.
+## Data modification
 
----
+### Insert
 
-## 51. INSERT
+Specify target columns.
 
 ```sql
 INSERT INTO dbo.Entity
@@ -1537,11 +970,9 @@ VALUES
 );
 ```
 
-Always specify target columns.
+### Multiple rows
 
----
-
-## 52. MULTI-ROW INSERT
+List each row explicitly.
 
 ```sql
 INSERT INTO dbo.Entity
@@ -1555,9 +986,9 @@ VALUES
     (N'E003', N'Value C');
 ```
 
----
+### Insert from query
 
-## 53. INSERT SELECT
+Keep target and source projections aligned.
 
 ```sql
 INSERT INTO dbo.EntityArchive
@@ -1574,9 +1005,9 @@ FROM dbo.Entity AS e
 WHERE e.Status = 0;
 ```
 
----
+### Inserted values
 
-## 54. INSERT OUTPUT
+Use `OUTPUT` to return generated values.
 
 ```sql
 INSERT INTO dbo.Entity
@@ -1595,11 +1026,9 @@ VALUES
 );
 ```
 
-Prefer `OUTPUT` when the application needs inserted identifiers or generated values immediately.
+### Update
 
----
-
-## 55. UPDATE
+Alias-based updates extend naturally to joined modifications.
 
 ```sql
 UPDATE e
@@ -1610,11 +1039,9 @@ FROM dbo.Entity AS e
 WHERE e.EntityId = @EntityId;
 ```
 
-For non-trivial updates, this alias-based form keeps syntax consistent with joined updates.
+### Joined update
 
----
-
-## 56. UPDATE WITH JOIN
+Review join cardinality and the affected-row predicate.
 
 ```sql
 UPDATE e
@@ -1626,9 +1053,9 @@ INNER JOIN dbo.EntityState AS s
 WHERE s.IsInactive = 1;
 ```
 
----
+### Changed values
 
-## 57. UPDATE OUTPUT
+`deleted` supplies prior values and `inserted` supplies new values.
 
 ```sql
 UPDATE e
@@ -1641,9 +1068,9 @@ FROM dbo.Entity AS e
 WHERE e.EntityId = @EntityId;
 ```
 
----
+### Delete
 
-## 58. DELETE
+Scope deletions with an explicit predicate.
 
 ```sql
 DELETE e
@@ -1651,9 +1078,9 @@ FROM dbo.Entity AS e
 WHERE e.EntityId = @EntityId;
 ```
 
----
+### Joined delete
 
-## 59. DELETE WITH JOIN
+Name the alias whose rows are removed.
 
 ```sql
 DELETE r
@@ -1663,9 +1090,9 @@ INNER JOIN dbo.Entity AS e
 WHERE e.Status = 0;
 ```
 
----
+### Deleted values
 
-## 60. DELETE OUTPUT
+Return removed values through `OUTPUT`.
 
 ```sql
 DELETE e
@@ -1677,11 +1104,9 @@ FROM dbo.Entity AS e
 WHERE e.EntityId = @EntityId;
 ```
 
----
+### Update then insert
 
-## 61. UPSERT
-
-For ordinary application CRUD, prefer an explicit transaction instead of defaulting to `MERGE`.
+This template owns the transaction but still needs a unique constraint and an appropriate isolation or locking strategy. An existence check alone does not prevent concurrent insertion races.
 
 ```sql
 SET XACT_ABORT ON;
@@ -1722,13 +1147,11 @@ BEGIN CATCH
 END CATCH;
 ```
 
-Concurrency-sensitive upserts must also rely on proper uniqueness constraints and an appropriate isolation/locking strategy.
+## Control flow and temporary storage
 
-Do not assume `IF EXISTS` alone makes an upsert race-free.
+### If and else
 
----
-
-## 62. IF / ELSE
+Keep branches in explicit blocks.
 
 ```sql
 IF @Status = 1
@@ -1741,9 +1164,9 @@ BEGIN
 END;
 ```
 
----
+### Conditional existence
 
-## 63. IF EXISTS
+Use `EXISTS` when a branch depends on related data.
 
 ```sql
 IF EXISTS
@@ -1757,15 +1180,13 @@ BEGIN
 END;
 ```
 
----
+### Assignment
 
-## 64. SET
+Use `SET` for one value and `SELECT` for related query results.
 
 ```sql
 SET @EntityId = 1;
 ```
-
-Assigning multiple variables from a query:
 
 ```sql
 SELECT
@@ -1775,9 +1196,9 @@ FROM dbo.Entity AS e
 WHERE e.Code = @Code;
 ```
 
----
+### Iteration
 
-## 65. WHILE
+Prefer set-based changes; use loops only for sequential state.
 
 ```sql
 DECLARE @Index INT = 1;
@@ -1790,13 +1211,9 @@ BEGIN
 END;
 ```
 
-Prefer set-based operations whenever practical.
+### Temporary table
 
-Use loops only when iteration is genuinely required.
-
----
-
-## 66. TEMP TABLE
+Declare the shape explicitly when indexes or constraints matter.
 
 ```sql
 CREATE TABLE #Entity
@@ -1823,9 +1240,9 @@ FROM #Entity;
 DROP TABLE IF EXISTS #Entity;
 ```
 
----
+### Select into temporary table
 
-## 67. SELECT INTO TEMP TABLE
+Add indexes after population when appropriate.
 
 ```sql
 SELECT
@@ -1836,16 +1253,14 @@ FROM dbo.Entity AS e
 WHERE e.Status = 1;
 ```
 
-Indexes may be added afterward:
-
 ```sql
 CREATE INDEX IX_Entity_EntityId
 ON #Entity(EntityId);
 ```
 
----
+### Table variable
 
-## 68. TABLE VARIABLE
+Choose table variables or temporary tables using execution plans, statistics, indexing, reuse, volume and SQL Server version.
 
 ```sql
 DECLARE @Entity TABLE
@@ -1865,62 +1280,15 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-Do not rely on a simplistic rule such as:
+## Transactions and errors
 
-```text
-small data -> table variable
-large data -> temp table
-```
+The write-procedure template above shows transaction ownership with `XACT_ABORT`, `TRY`/`CATCH`, rollback and `THROW`. Keep only the atomic database unit inside that transaction; exclude user interaction, network calls and unrelated reports.
 
-Choose based on query plans, statistics, indexing requirements, data volume, reuse, and SQL Server version.
+SQL Server nested transactions are not independently rollbackable. A plain rollback can abort the caller's transaction, so reusable procedures need an explicit ownership policy.
 
----
+### Catch and preserve errors
 
-## 69. TRANSACTION
-
-Basic transaction:
-
-```sql
-BEGIN TRANSACTION;
-
-...
-
-COMMIT TRANSACTION;
-```
-
-Rollback:
-
-```sql
-ROLLBACK TRANSACTION;
-```
-
-Recommended transaction handling:
-
-```sql
-SET XACT_ABORT ON;
-
-BEGIN TRY
-    BEGIN TRANSACTION;
-
-    ...
-
-    COMMIT TRANSACTION;
-END TRY
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-    BEGIN
-        ROLLBACK TRANSACTION;
-    END;
-
-    THROW;
-END CATCH;
-```
-
----
-
-## 70. TRY...CATCH
-
-Without a transaction:
+Use `THROW` to preserve the original error. Capture diagnostics only when needed.
 
 ```sql
 BEGIN TRY
@@ -1930,8 +1298,6 @@ BEGIN CATCH
     THROW;
 END CATCH;
 ```
-
-Capture diagnostic information only when needed:
 
 ```sql
 BEGIN CATCH
@@ -1947,11 +1313,9 @@ BEGIN CATCH
 END CATCH;
 ```
 
----
+### Custom error
 
-## 71. THROW
-
-Custom error:
+Use an application error number and a specific validation message.
 
 ```sql
 IF @EntityId IS NULL
@@ -1960,21 +1324,9 @@ BEGIN
 END;
 ```
 
-Rethrow the original error:
+### Transaction state
 
-```sql
-BEGIN CATCH
-    THROW;
-END CATCH;
-```
-
-Prefer `THROW` over `RAISERROR` in new code.
-
----
-
-## 72. XACT_STATE
-
-Use:
+`XACT_STATE()` is 1 for committable, -1 for uncommittable and 0 for no active transaction. An owner whose policy aborts on any failure rolls back both active states.
 
 ```sql
 IF XACT_STATE() <> 0
@@ -1983,66 +1335,11 @@ BEGIN
 END;
 ```
 
-Interpretation:
+## Dynamic SQL
 
-```text
-XACT_STATE() =  1
-    An active transaction exists and can be committed.
+### Values
 
-XACT_STATE() = -1
-    An active transaction exists but cannot be committed.
-
-XACT_STATE() =  0
-    No active transaction exists.
-```
-
-When the procedure's error policy is "any failure aborts the unit of work", rolling back for both `1` and `-1` is appropriate.
-
----
-
-## 73. NESTED TRANSACTION CONSIDERATIONS
-
-SQL Server nested transactions are not independent transactions.
-
-A plain:
-
-```sql
-ROLLBACK TRANSACTION;
-```
-
-can roll back the outer transaction as well.
-
-Therefore, distinguish between:
-
-```text
-Procedure owns transaction
-Procedure participates in caller-owned transaction
-```
-
-When reusable procedures may execute inside an existing transaction, design transaction ownership explicitly.
-
-Do not assume each `BEGIN TRANSACTION` creates an independently rollbackable nested transaction.
-
----
-
-## 74. DYNAMIC SQL
-
-Avoid string-concatenating values directly.
-
-Avoid:
-
-```sql
-DECLARE @Sql NVARCHAR(MAX);
-
-SET @Sql =
-    N'SELECT *
-      FROM dbo.Entity
-      WHERE Name = ''' + @Name + N'''';
-
-EXEC (@Sql);
-```
-
-Preferred:
+Pass values to `sys.sp_executesql`; concatenate neither user data nor quoted value strings.
 
 ```sql
 DECLARE @Sql NVARCHAR(MAX);
@@ -2061,23 +1358,12 @@ EXEC sys.sp_executesql
     @Name = @Name;
 ```
 
-Rules:
+### Identifiers
 
-```text
-Values      -> parameters
-Identifiers -> whitelist + QUOTENAME
-```
-
----
-
-## 75. DYNAMIC IDENTIFIERS
-
-Column and table names cannot be parameterized like values.
-
-Use a whitelist:
+Identifiers cannot be parameters. Validate against an allowlist before `QUOTENAME`; quoting alone grants no authorization. Reject missing identifiers as part of input validation.
 
 ```sql
-IF @SortColumn NOT IN
+IF @SortColumn IS NULL OR @SortColumn NOT IN
 (
     N'EntityId',
     N'Name',
@@ -2087,8 +1373,6 @@ BEGIN
     THROW 50001, 'Invalid sort column.', 1;
 END;
 ```
-
-Then:
 
 ```sql
 DECLARE @Sql NVARCHAR(MAX);
@@ -2105,45 +1389,29 @@ SET @Sql = N'
 EXEC sys.sp_executesql @Sql;
 ```
 
-Never treat `QUOTENAME` alone as authorization.
+## Expressions
 
-Whitelist first.
+### Null tests
 
----
-
-## 76. NULL
-
-Incorrect:
-
-```sql
-WHERE e.OptionalValue = NULL
-```
-
-Correct:
+Use `IS NULL` or `IS NOT NULL`, never equality with null.
 
 ```sql
 WHERE e.OptionalValue IS NULL
 ```
 
-or:
-
 ```sql
 WHERE e.OptionalValue IS NOT NULL
 ```
 
----
+### Fallback values
 
-## 77. ISNULL AND COALESCE
-
-SQL Server-specific two-value replacement:
+`ISNULL` and `COALESCE` differ in type and nullability rules; choose deliberately.
 
 ```sql
 SELECT
     ISNULL(e.Name, N'') AS Name
 FROM dbo.Entity AS e;
 ```
-
-Multiple fallback values:
 
 ```sql
 SELECT
@@ -2155,13 +1423,9 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-Be aware that `ISNULL` and `COALESCE` can differ in type resolution and nullability semantics.
+### Zero denominator
 
----
-
-## 78. NULLIF
-
-Useful for avoiding division by zero:
+`NULLIF` can convert a zero denominator to null.
 
 ```sql
 SELECT
@@ -2169,41 +1433,29 @@ SELECT
 FROM dbo.EntityStatistics;
 ```
 
----
+### Conversion
 
-## 79. CAST AND CONVERT
-
-General type conversion:
+Use `CAST` for general conversion; use `CONVERT` when a SQL Server style code is required.
 
 ```sql
 CAST(@Value AS INT)
 ```
 
-SQL Server-specific formatting/style conversion:
-
 ```sql
 CONVERT(VARCHAR(10), @Date, 23)
 ```
 
-Use `CAST` by default when no SQL Server-specific conversion style is required.
+### Tolerant conversion
 
----
-
-## 80. TRY_CAST AND TRY_CONVERT
-
-Useful when processing external or untrusted data:
+`TRY_CAST` returns null for an invalid permitted conversion.
 
 ```sql
 SELECT TRY_CAST(Value AS INT);
 ```
 
-Invalid conversions return `NULL` instead of raising a conversion error.
+### Nullable concatenation
 
----
-
-## 81. STRING CONCATENATION
-
-Preferred for nullable values:
+`CONCAT` handles null values without propagating them through `+`.
 
 ```sql
 SELECT
@@ -2215,19 +1467,11 @@ SELECT
 FROM dbo.Entity AS e;
 ```
 
-This is often safer than:
+## Permissions and object lifecycle
 
-```sql
-e.Prefix + N' ' + e.Name
-```
+### Grant
 
-when nullable values are involved.
-
----
-
-## 82. PERMISSIONS
-
-Grant procedure execution:
+Give application accounts only the object or schema permissions they require.
 
 ```sql
 GRANT EXECUTE
@@ -2235,15 +1479,11 @@ ON OBJECT::dbo.CreateEntity
 TO ApplicationUser;
 ```
 
-Grant table read:
-
 ```sql
 GRANT SELECT
 ON OBJECT::dbo.Entity
 TO ApplicationUser;
 ```
-
-Grant schema execution:
 
 ```sql
 GRANT EXECUTE
@@ -2251,15 +1491,9 @@ ON SCHEMA::dbo
 TO ApplicationUser;
 ```
 
-Prefer least privilege.
+### Revoke and deny
 
-Application accounts should receive only the permissions required for their runtime responsibilities.
-
----
-
-## 83. REVOKE AND DENY
-
-Revoke:
+`REVOKE` removes a grant; `DENY` explicitly blocks permission through many resolution paths.
 
 ```sql
 REVOKE SELECT
@@ -2267,23 +1501,15 @@ ON OBJECT::dbo.Entity
 FROM ApplicationUser;
 ```
 
-Explicitly deny:
-
 ```sql
 DENY DELETE
 ON OBJECT::dbo.Entity
 TO ApplicationUser;
 ```
 
-Use `DENY` intentionally because it overrides granted permissions in many permission-resolution paths.
+### Trigger
 
----
-
-## 84. TRIGGER
-
-Use set-based logic.
-
-Do not assume `inserted` or `deleted` contains only one row.
+Handle multirow `inserted` and `deleted` sets. Prefer explicit application logic when a trigger would obscure behaviour.
 
 ```sql
 CREATE OR ALTER TRIGGER dbo.TR_Entity_Update
@@ -2313,15 +1539,9 @@ END;
 GO
 ```
 
-Prefer explicit application logic over triggers when triggers would make behavior difficult to discover or debug.
+### Existence checks
 
----
-
-## 85. OBJECT EXISTENCE CHECKS
-
-Legacy or migration scenarios may still require explicit checks.
-
-Table:
+Use object checks for legacy or migration cases; prefer `CREATE OR ALTER` for supported programmable objects.
 
 ```sql
 IF OBJECT_ID(N'dbo.Entity', N'U') IS NOT NULL
@@ -2330,8 +1550,6 @@ BEGIN
 END;
 ```
 
-Procedure:
-
 ```sql
 IF OBJECT_ID(N'dbo.GetEntity', N'P') IS NOT NULL
 BEGIN
@@ -2339,11 +1557,9 @@ BEGIN
 END;
 ```
 
-For programmable objects, prefer `CREATE OR ALTER` where supported.
+### Drop objects
 
----
-
-## 86. DROP OBJECTS
+Review dependencies and data loss before executing these operations.
 
 ```sql
 DROP PROCEDURE IF EXISTS dbo.GetEntity;
@@ -2353,30 +1569,9 @@ DROP TABLE IF EXISTS dbo.Entity;
 DROP SEQUENCE IF EXISTS dbo.EntitySequence;
 ```
 
----
+### Client batches
 
-## 87. CREATE OR ALTER CONVENTION
-
-Prefer:
-
-```sql
-CREATE OR ALTER PROCEDURE
-CREATE OR ALTER FUNCTION
-CREATE OR ALTER VIEW
-CREATE OR ALTER TRIGGER
-```
-
-This avoids separate create-vs-alter branching in deployment scripts.
-
----
-
-## 88. GO
-
-`GO` is a client-side batch separator, not a T-SQL statement.
-
-Use it between object definitions when the deployment tool supports it.
-
-Example:
+`GO` separates batches in supporting clients such as sqlcmd and SSMS. Application APIs such as SqlCommand must split batches themselves.
 
 ```sql
 CREATE OR ALTER VIEW dbo.v_Entity
@@ -2398,771 +1593,4 @@ BEGIN
     FROM dbo.v_Entity AS e;
 END;
 GO
-```
-
-Do not send `GO` through APIs such as `SqlCommand` as if it were a SQL Server statement.
-
----
-
-## 89. NOCOUNT
-
-Stored procedures:
-
-```sql
-SET NOCOUNT ON;
-```
-
-Triggers:
-
-```sql
-SET NOCOUNT ON;
-```
-
-This suppresses row-count informational messages such as:
-
-```text
-(1 row affected)
-```
-
-Use it by default for programmable database code unless row-count messages themselves are intentionally consumed.
-
----
-
-## 90. XACT_ABORT
-
-For procedures that own a transaction:
-
-```sql
-SET XACT_ABORT ON;
-```
-
-Recommended combination:
-
-```sql
-SET NOCOUNT ON;
-SET XACT_ABORT ON;
-```
-
-Do not add `SET XACT_ABORT OFF` at the end of a stored procedure solely to "restore" the caller's setting.
-
----
-
-## 91. OUTPUT IN DML
-
-Use `OUTPUT` when generated, changed, or deleted values are needed.
-
-Insert:
-
-```sql
-INSERT INTO dbo.Entity
-(
-    Code,
-    Name
-)
-OUTPUT
-    inserted.EntityId
-VALUES
-(
-    @Code,
-    @Name
-);
-```
-
-Update:
-
-```sql
-UPDATE e
-SET
-    e.Name = @Name
-OUTPUT
-    deleted.Name,
-    inserted.Name
-FROM dbo.Entity AS e
-WHERE e.EntityId = @EntityId;
-```
-
-Delete:
-
-```sql
-DELETE e
-OUTPUT
-    deleted.EntityId
-FROM dbo.Entity AS e
-WHERE e.EntityId = @EntityId;
-```
-
----
-
-## 92. APPLICATION-FACING QUERY RULES
-
-Application SQL should normally follow these rules:
-
-```text
-- Explicit schema.
-- Explicit columns.
-- Explicit aliases.
-- Parameterized values.
-- Deterministic ORDER BY when ordering matters.
-- No SELECT *.
-- No concatenated user input.
-- No implicit date conversion assumptions.
-- No reliance on physical row order.
-- No legacy comma joins.
-```
-
----
-
-## 93. DATETIME STORAGE CONVENTION
-
-For system-generated persisted timestamps, prefer UTC.
-
-Example:
-
-```sql
-CreatedAt DATETIME2(3) NOT NULL
-    CONSTRAINT DF_Entity_CreatedAt
-    DEFAULT (SYSUTCDATETIME())
-```
-
-Convert to the user's local timezone at the application or reporting boundary unless the data model specifically requires local civil time.
-
----
-
-## 94. TEMPORAL RANGE CONVENTION
-
-Prefer:
-
-```text
-Start inclusive
-End exclusive
-```
-
-Example:
-
-```sql
-WHERE e.CreatedAt >= @StartAt
-    AND e.CreatedAt < @EndAt
-```
-
-This avoids precision-specific end-time calculations and composes cleanly across adjacent time ranges.
-
----
-
-## 95. SET-BASED OVER ITERATIVE LOGIC
-
-Prefer:
-
-```sql
-UPDATE e
-SET
-    e.Status = 0
-FROM dbo.Entity AS e
-WHERE e.ExpiredAt < SYSUTCDATETIME();
-```
-
-over row-by-row processing.
-
-Use cursors or loops only when the operation fundamentally requires sequential stateful processing.
-
----
-
-## 96. SELECT STAR CONVENTION
-
-Avoid:
-
-```sql
-SELECT *
-FROM dbo.Entity;
-```
-
-Prefer:
-
-```sql
-SELECT
-    e.EntityId,
-    e.Code,
-    e.Name,
-    e.Status
-FROM dbo.Entity AS e;
-```
-
-Benefits include:
-
-```text
-- Stable application contracts
-- Clear dependencies
-- Reduced unnecessary I/O
-- Safer schema evolution
-- Easier code review
-```
-
----
-
-## 97. DISTINCT CONVENTION
-
-Do not use `DISTINCT` as a default fix for duplicate rows caused by incorrect joins.
-
-Incorrect reasoning:
-
-```sql
-SELECT DISTINCT ...
-```
-
-because a join unexpectedly duplicated rows.
-
-Instead, verify:
-
-```text
-- Join cardinality
-- Missing join predicates
-- One-to-many relationships
-- Duplicate source data
-```
-
-Use `DISTINCT` only when duplicate elimination is part of the query's intended semantics.
-
----
-
-## 98. TRANSACTION SCOPE
-
-Keep transactions as short as practical.
-
-Avoid doing unrelated work inside a transaction:
-
-```text
-- Network calls
-- User interaction
-- Long-running reports
-- Unnecessary read operations
-- External API work
-```
-
-Transaction scope should cover only the database unit of work that requires atomicity.
-
----
-
-## 99. ERROR PROPAGATION
-
-Prefer preserving the original SQL Server error:
-
-```sql
-BEGIN CATCH
-    IF XACT_STATE() <> 0
-    BEGIN
-        ROLLBACK TRANSACTION;
-    END;
-
-    THROW;
-END CATCH;
-```
-
-Avoid reconstructing the error through:
-
-```sql
-RAISERROR(ERROR_MESSAGE(), ...)
-```
-
-unless there is a specific legacy compatibility requirement.
-
----
-
-## 100. CORE PROJECT TEMPLATE
-
-A typical write procedure:
-
-```sql
-CREATE OR ALTER PROCEDURE dbo.UpdateEntity
-    @EntityId BIGINT,
-    @Name NVARCHAR(100)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        UPDATE e
-        SET
-            e.Name = @Name,
-            e.UpdatedAt = SYSUTCDATETIME()
-        FROM dbo.Entity AS e
-        WHERE e.EntityId = @EntityId;
-
-        IF @@ROWCOUNT = 0
-        BEGIN
-            THROW 50001, 'Entity was not found.', 1;
-        END;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-
-        THROW;
-    END CATCH;
-END;
-GO
-```
-
----
-
-## 101. CORE READ QUERY TEMPLATE
-
-```sql
-SELECT
-    e.EntityId,
-    e.Code,
-    e.Name,
-    e.Status,
-    e.CreatedAt
-FROM dbo.Entity AS e
-WHERE e.Status = @Status
-    AND e.CreatedAt >= @StartAt
-    AND e.CreatedAt < @EndAt
-ORDER BY
-    e.CreatedAt DESC,
-    e.EntityId DESC;
-```
-
----
-
-## 102. CORE PAGED QUERY TEMPLATE
-
-```sql
-SELECT
-    e.EntityId,
-    e.Code,
-    e.Name,
-    e.CreatedAt
-FROM dbo.Entity AS e
-WHERE e.Status = @Status
-ORDER BY
-    e.EntityId
-OFFSET (@Page - 1) * @PageSize ROWS
-FETCH NEXT @PageSize ROWS ONLY;
-```
-
----
-
-## 103. CORE LATEST-ROW-PER-GROUP TEMPLATE
-
-```sql
-;WITH RankedEntity AS
-(
-    SELECT
-        r.RelatedEntityId,
-        r.EntityId,
-        r.CreatedAt,
-        ROW_NUMBER() OVER
-        (
-            PARTITION BY r.EntityId
-            ORDER BY
-                r.CreatedAt DESC,
-                r.RelatedEntityId DESC
-        ) AS RowNo
-    FROM dbo.RelatedEntity AS r
-)
-SELECT
-    r.RelatedEntityId,
-    r.EntityId,
-    r.CreatedAt
-FROM RankedEntity AS r
-WHERE r.RowNo = 1;
-```
-
-When ordering may contain ties, add a deterministic tie-breaker.
-
----
-
-## 104. CORE DYNAMIC SQL TEMPLATE
-
-```sql
-DECLARE @Sql NVARCHAR(MAX);
-
-SET @Sql = N'
-    SELECT
-        e.EntityId,
-        e.Name
-    FROM dbo.Entity AS e
-    WHERE e.Status = @Status
-        AND e.Name LIKE @NamePattern;
-';
-
-EXEC sys.sp_executesql
-    @Sql,
-    N'
-        @Status TINYINT,
-        @NamePattern NVARCHAR(200)
-    ',
-    @Status = @Status,
-    @NamePattern = @NamePattern;
-```
-
----
-
-## 105. CORE TABLE TEMPLATE
-
-```sql
-CREATE TABLE dbo.Entity
-(
-    EntityId BIGINT IDENTITY(1, 1) NOT NULL,
-
-    Code NVARCHAR(50) NOT NULL,
-    Name NVARCHAR(100) NOT NULL,
-
-    Status TINYINT NOT NULL
-        CONSTRAINT DF_Entity_Status
-        DEFAULT (1),
-
-    CreatedAt DATETIME2(3) NOT NULL
-        CONSTRAINT DF_Entity_CreatedAt
-        DEFAULT (SYSUTCDATETIME()),
-
-    UpdatedAt DATETIME2(3) NULL,
-
-    CONSTRAINT PK_Entity
-        PRIMARY KEY CLUSTERED (EntityId),
-
-    CONSTRAINT UQ_Entity_Code
-        UNIQUE (Code)
-);
-```
-
----
-
-## 106. CORE READ PROCEDURE TEMPLATE
-
-```sql
-CREATE OR ALTER PROCEDURE dbo.GetEntity
-    @EntityId BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        e.EntityId,
-        e.Code,
-        e.Name,
-        e.Status,
-        e.CreatedAt,
-        e.UpdatedAt
-    FROM dbo.Entity AS e
-    WHERE e.EntityId = @EntityId;
-END;
-GO
-```
-
----
-
-## 107. CORE TRANSACTION PROCEDURE TEMPLATE
-
-```sql
-CREATE OR ALTER PROCEDURE dbo.ProcessEntity
-    @EntityId BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SET XACT_ABORT ON;
-
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        -- Database unit of work.
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-
-        THROW;
-    END CATCH;
-END;
-GO
-```
-
----
-
-## 108. CORE INLINE TVF TEMPLATE
-
-```sql
-CREATE OR ALTER FUNCTION dbo.GetEntitiesByStatus
-(
-    @Status TINYINT
-)
-RETURNS TABLE
-AS
-RETURN
-(
-    SELECT
-        e.EntityId,
-        e.Code,
-        e.Name,
-        e.CreatedAt
-    FROM dbo.Entity AS e
-    WHERE e.Status = @Status
-);
-GO
-```
-
----
-
-## 109. CORE VIEW TEMPLATE
-
-```sql
-CREATE OR ALTER VIEW dbo.v_Entity
-AS
-    SELECT
-        e.EntityId,
-        e.Code,
-        e.Name,
-        e.Status,
-        e.CreatedAt
-    FROM dbo.Entity AS e;
-GO
-```
-
----
-
-## 110. ANTI-PATTERNS
-
-Avoid these unless there is a specific justified reason.
-
-## Legacy comma joins
-
-```sql
-FROM dbo.Entity AS e,
-     dbo.RelatedEntity AS r
-WHERE r.EntityId = e.EntityId
-```
-
-Use ANSI joins instead.
-
----
-
-## SELECT *
-
-```sql
-SELECT *
-FROM dbo.Entity;
-```
-
-Use explicit columns.
-
----
-
-## Dynamic SQL with concatenated values
-
-```sql
-SET @Sql = N'
-    SELECT *
-    FROM dbo.Entity
-    WHERE Name = ''' + @Name + N'''
-';
-```
-
-Use `sp_executesql` parameters.
-
----
-
-## Comparing NULL with equality
-
-```sql
-WHERE Value = NULL
-```
-
-Use:
-
-```sql
-WHERE Value IS NULL
-```
-
----
-
-## Using DISTINCT to hide join errors
-
-```sql
-SELECT DISTINCT ...
-```
-
-Fix the join or source data unless distinctness is intentional.
-
----
-
-## Assuming TOP is deterministic without ORDER BY
-
-```sql
-SELECT TOP (10)
-    ...
-FROM dbo.Entity;
-```
-
-Use an explicit `ORDER BY`.
-
----
-
-## Assuming physical row order
-
-Never rely on the apparent current row order of a table.
-
----
-
-## Blind cascade deletes
-
-Do not apply `ON DELETE CASCADE` everywhere.
-
----
-
-## Long transactions
-
-Do not hold transactions open while performing unrelated work.
-
----
-
-## Rebuilding caught errors with RAISERROR
-
-Prefer:
-
-```sql
-THROW;
-```
-
-for modern error propagation.
-
----
-
-## Assuming nested transactions are independent
-
-They are not independently rollbackable in the way many application developers initially expect.
-
----
-
-## 111. PROJECT-WIDE DEFAULTS
-
-A concise project-wide standard:
-
-```text
-Object naming
-    Explicit schema.
-    Consistent singular or plural table naming.
-    Explicit constraint names.
-    Explicit index names.
-
-Queries
-    Explicit columns.
-    ANSI JOIN.
-    Stable aliases.
-    Parameterized predicates.
-    Explicit ORDER BY.
-    Half-open date ranges.
-
-Stored procedures
-    CREATE OR ALTER.
-    BEGIN...END body.
-    SET NOCOUNT ON.
-    SET XACT_ABORT ON when owning a transaction.
-    TRY...CATCH.
-    XACT_STATE() rollback check.
-    THROW.
-
-Functions
-    Prefer inline TVFs when table-valued abstraction is needed.
-    Avoid unnecessary scalar UDFs.
-
-Data modification
-    Explicit target columns.
-    OUTPUT when generated values are needed.
-    Short transactions.
-    Set-based operations.
-
-Dynamic SQL
-    sys.sp_executesql.
-    Parameterized values.
-    Whitelisted identifiers.
-    QUOTENAME for identifiers.
-
-Schema design
-    Named PK/FK/UQ/CK/DF constraints.
-    DATETIME2 for new timestamp columns.
-    UTC for system timestamps where appropriate.
-    DECIMAL with explicit precision and scale.
-    NVARCHAR for Unicode application data.
-
-Performance
-    Index for actual query patterns.
-    Avoid SELECT *.
-    Avoid unnecessary DISTINCT.
-    Review execution plans for non-trivial queries.
-    Do not assume temp tables and table variables are interchangeable.
-```
-
----
-
-## 112. RECOMMENDED FILE ORGANIZATION
-
-A SQL project can keep reusable templates under a structure such as:
-
-```text
-database/
-├── tables/
-├── views/
-├── functions/
-├── procedures/
-├── triggers/
-├── indexes/
-├── migrations/
-├── security/
-└── templates/
-```
-
-Suggested template files:
-
-```text
-templates/
-├── create-table.sql
-├── create-view.sql
-├── create-function.sql
-├── create-procedure-read.sql
-├── create-procedure-write.sql
-├── create-trigger.sql
-├── transaction.sql
-├── pagination.sql
-├── latest-row-per-group.sql
-├── dynamic-sql.sql
-└── temp-table.sql
-```
-
----
-
-## 113. FINAL BASELINE
-
-If only a small number of rules are enforced, prioritize these:
-
-```text
-1. Explicit schema.
-2. Explicit columns.
-3. ANSI JOIN only.
-4. Semicolon-terminated statements.
-5. SET NOCOUNT ON in procedures and triggers.
-6. SET XACT_ABORT ON for procedure-owned transactions.
-7. TRY...CATCH + XACT_STATE() + THROW.
-8. CREATE OR ALTER for programmable objects.
-9. Parameterized dynamic SQL with sp_executesql.
-10. Whitelist dynamic identifiers.
-11. DATETIME2 + UTC for system timestamps.
-12. Half-open date ranges.
-13. Named constraints and indexes.
-14. Set-based operations over loops.
-15. Never rely on implicit row order.
-16. Avoid SELECT *.
-17. Avoid DISTINCT as a join repair mechanism.
-18. Keep transactions short.
-19. Treat nested transactions explicitly.
-20. Design indexes from real access patterns.
 ```
