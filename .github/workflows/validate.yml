@@ -2,6 +2,7 @@ name: Validate
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -47,7 +48,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y luarocks unzip
           sudo luarocks install luacheck
-          python3 -m pip install --user sqlfluff==4.2.2
+          pipx install sqlfluff==4.2.2
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install Tree-sitter CLI
@@ -70,17 +71,27 @@ jobs:
           mkdir -p "$HOME/.config"
           ln -s "$GITHUB_WORKSPACE" "$HOME/.config/nvim"
 
+      - name: Cache plugins and parsers
+        id: nvim-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/nvim/lazy
+            ~/.local/share/nvim/site
+          key: nvim-linux-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/install_parsers.lua') }}
+
+      # restore checks out the lockfile commits; sync would update past them.
       - name: Install plugins from the lockfile
+        if: steps.nvim-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p "$HOME/.local/share/nvim/lazy"
-          git clone --filter=blob:none --branch=stable \
-            https://github.com/folke/lazy.nvim.git \
-            "$HOME/.local/share/nvim/lazy/lazy.nvim"
+          lazy_dir="$HOME/.local/share/nvim/lazy/lazy.nvim"
+          git clone --filter=blob:none https://github.com/folke/lazy.nvim.git "$lazy_dir"
+          git -C "$lazy_dir" checkout --detach "$(jq -r '."lazy.nvim".commit' lazy-lock.json)"
           nvim --headless -u NONE \
             --cmd "set rtp^=$GITHUB_WORKSPACE" \
-            --cmd "set rtp^=$HOME/.local/share/nvim/lazy/lazy.nvim" \
+            --cmd "set rtp^=$lazy_dir" \
             -c "lua require('lazy').setup({ { import = 'plugins' } }, require('config.lazy'))" \
-            -c "Lazy! sync" \
+            -c "Lazy! restore" \
             -c "qall"
 
       - name: Install integration parsers
@@ -115,7 +126,15 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v3
 
+      - name: Cache core-test dependencies
+        id: nvim-cache
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\nvim-data\lazy
+          key: nvim-windows-core-${{ hashFiles('lazy-lock.json') }}
+
       - name: Install locked core-test dependencies
+        if: steps.nvim-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $pluginRoot = Join-Path $env:LOCALAPPDATA 'nvim-data/lazy'
