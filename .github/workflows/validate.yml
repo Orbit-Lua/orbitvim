@@ -1,4 +1,4 @@
-name: Neovim validation
+name: check
 
 on:
   push:

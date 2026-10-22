@@ -2,7 +2,7 @@
 
 Lua configuration for Neovim with language tooling for C#, Python, JavaScript, TypeScript, Go, SQL and Markdown.
 
-[![Neovim validation](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
+[![check](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
 [![Neovim](https://img.shields.io/badge/Neovim-0.12%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 
 ## Install
