@@ -3,7 +3,8 @@
 stds = { "luajit" }
 cache = true
 codes = true
-read_globals = { "vim" }
+-- Configuration code assigns fields such as vim.g and vim.opt.
+globals = { "vim" }
 files["tests/**"] = {
   read_globals = { "assert", "describe", "it", "before_each", "after_each" },
 }

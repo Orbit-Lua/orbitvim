@@ -9,8 +9,6 @@ return {
     "nvim-treesitter/nvim-treesitter",
     lazy = false,
     branch = "main",
-    event = { "BufReadPost", "BufNewFile" },
-    cmd = { "TSInstall", "TSBufEnable", "TSBufDisable", "TSModuleInfo" },
     build = { ":TSUpdate" },
     init = function()
       theme.load_cache("syntax")
@@ -39,18 +37,13 @@ return {
   -- https://github.com/andymass/vim-matchup?tab=readme-ov-file#installation
   {
     "andymass/vim-matchup",
-    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    -- Upstream reads these globals while loading and advises against lazy loading.
+    lazy = false,
     init = function()
       vim.g.matchup_treesitter_stopline = 500
       vim.g.matchup_matchparen_offscreen =
         { method = "popup", fullwidth = 1, border = 0 }
-      require("match-up").setup({ ---@diagnostic disable-next-line
-        treesitter = { stopline = 500 },
-      })
     end,
-    ---@type matchup.Config
-    ---@diagnostic disable-next-line
-    opts = { treesitter = { stopline = 500 } },
   },
 
   -- https://github.com/windwp/nvim-ts-autotag

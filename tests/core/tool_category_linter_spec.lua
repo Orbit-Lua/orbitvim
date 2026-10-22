@@ -71,6 +71,20 @@ describe("tool.category.linter", function()
     assert.equals("DiagnosticError", hl)
   end)
 
+  it("reports a missing executable from a factory linter", function()
+    package.loaded.lint.linters.luacheck = function()
+      return { cmd = "__orbitvim_missing_linter_bin__" }
+    end
+
+    local status = linter.entry_status({
+      name = "luacheck",
+      meta = tools.linter.luacheck,
+      installed = true,
+    })
+
+    assert.equals("no binary", status)
+  end)
+
   it("reports linters missing from runtime filetype config", function()
     local status, hl = linter.entry_status({
       name = "eslint_d",

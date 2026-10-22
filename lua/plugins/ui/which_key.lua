@@ -2,17 +2,8 @@
 return {
   {
     "folke/which-key.nvim",
-    lazy = false,
+    event = "VeryLazy",
     keys = {
-      "<leader>",
-      "<c-r>",
-      "<c-w>",
-      '"',
-      "'",
-      "`",
-      "c",
-      "v",
-      "g",
       { "<leader>wK", "<cmd>WhichKey <CR>", desc = "show all keymaps" },
       {
         "<leader>wk",

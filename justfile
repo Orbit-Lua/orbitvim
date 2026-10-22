@@ -16,13 +16,17 @@ fmt-check:
 
 # Run Luacheck
 lint:
-    luacheck {{ lua_paths }} --globals vim
+    luacheck {{ lua_paths }}
 
 validate-test-suites:
     nvim --headless --clean -l scripts/tests/validate.lua tests/core tests/integration
 
 # Alias of test-core
 test: test-core
+
+# Run one core or integration spec
+test-spec spec:
+    nvim --headless --noplugin -u {{ minimal_init }} -c "lua require('plenary.busted').run([[{{ spec }}]])" -c "qall"
 
 # Run hermetic core specs
 test-core: validate-test-suites
@@ -34,6 +38,15 @@ test-integration: validate-test-suites
 
 # Run both suites
 test-all: test-core test-integration
+
+# Install the locked plugin revisions and fail if the lockfile changes
+deps:
+    nvim --headless -u NORC -l scripts/tests/restore_plugins.lua
+    git diff --exit-code -- lazy-lock.json
+
+# Install the parsers that integration specs execute
+parsers:
+    nvim --headless -u init.lua -l scripts/tests/install_parsers.lua
 
 # Build and execute the locked native plugin dependencies
 test-build:

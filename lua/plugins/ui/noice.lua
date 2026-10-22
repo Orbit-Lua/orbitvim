@@ -7,9 +7,7 @@ return {
     opts = function()
       return require("config.ui.noice")
     end,
-    dependencies = {
-      "MunifTanjim/nui.nvim",
-      "rcarriga/nvim-notify",
-    },
+    -- Notifications render through snacks.notifier.
+    dependencies = { "MunifTanjim/nui.nvim" },
   },
 }

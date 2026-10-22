@@ -59,7 +59,11 @@ M.linter = {
   },
   hadolint = { mason = "hadolint", ft = { "dockerfile" } },
   ["markdownlint-cli2"] = { mason = "markdownlint-cli2", ft = { "markdown" } },
-  luacheck = { mason = "luacheck", ft = { "lua" } },
+  luacheck = {
+    mason = nil,
+    ft = { "lua" },
+    note = "uses Luacheck 1.2+ from LuaRocks or the standalone executable",
+  },
   sqlfluff = { mason = "sqlfluff", ft = { "sql", "mysql", "plsql" } },
 }
 
@@ -157,12 +161,11 @@ M.package = {
   },
 }
 
--- Canonical default formatter order per ft — mirrors config/formatter/init.lua
--- Only needed for fts with multiple formatters; single-formatter fts are always sorted correctly
+-- Default formatter order per ft where more than one formatter applies.
 M.formatter_defaults = {
   python = { "ruff_fix", "ruff_organize_imports", "ruff_format" },
-  markdown = { "deno_fmt", "markdownlint-cli2", "markdown-toc" },
-  ["markdown.mdx"] = { "deno_fmt", "markdownlint-cli2", "markdown-toc" },
+  markdown = { "markdownlint-cli2", "markdown-toc" },
+  ["markdown.mdx"] = { "markdownlint-cli2", "markdown-toc" },
 }
 
 -- Canonical default linter order per ft

@@ -29,8 +29,6 @@ return {
     end,
   },
 
-  { "microsoft/python-type-stubs" },
-
   -- https://github.com/seblyng/roslyn.nvim?tab=readme-ov-file#%EF%B8%8F-configuration
   {
     "seblyng/roslyn.nvim",
@@ -43,7 +41,8 @@ return {
       return require("config.lsp.roslyn")
     end,
     cond = function()
-      local server = vim.fn.has("win32") == 1 and "roslyn-language-server.cmd"
+      local server = require("utils.os").is_win()
+          and "roslyn-language-server.cmd"
         or "roslyn-language-server"
       return vim.fn.executable("dotnet") == 1 and vim.fn.executable(server) == 1
     end,

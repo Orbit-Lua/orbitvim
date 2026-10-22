@@ -117,7 +117,6 @@ function M.setup_ui(opts)
   local dapui = require("dapui")
 
   dapui.setup(opts)
-  dap.set_log_level("TRACE")
 
   dap.listeners.before.terminate["dapui_config"] = function()
     dapui.close()

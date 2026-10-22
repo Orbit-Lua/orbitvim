@@ -1,44 +1,15 @@
--- LSP client lifecycle
---
--- 1. Start
--- 2. Initialize Handshake
---  - nvim send initialize request
---  - server response capabilities
--- 3. Attach
---  - attach client to current buffer
--- 4. Handlers
---  - ex. textDocument/hover
+-- Attachment and capability events. Neovim announces only LspAttach; this
+-- module also reports dynamic registrations and, once per client and buffer,
+-- each tracked method the client supports, so features can enable themselves.
 
 local M = {}
-
----@alias LspClientFilterFun fun(client: lsp.Client.filter):boolean
----@alias lsp.Client.filter {id?: number, bufnr?: number, name?: string, method?: string, filter?:LspClientFilterFun}
-
----@param opts? lsp.Client.filter
-function M.get_clients(opts)
-  local clients ---@type vim.lsp.Client[]
-  if vim.lsp.get_clients then
-    clients = vim.lsp.get_clients(opts)
-  else
-    ---@diagnostic disable-next-line: deprecated
-    clients = vim.lsp.get_active_clients(opts)
-    if opts and opts.method then
-      ---@param client vim.lsp.Client
-      clients = vim.tbl_filter(function(client)
-        return client:supports_method(opts.method, opts.bufnr)
-      end, clients)
-    end
-  end
-  return opts and opts.filter and vim.tbl_filter(opts.filter, clients)
-    or clients
-end
 
 ---@param on_attach fun(client:vim.lsp.Client, buffer)
 ---@param name? string
 function M.on_attach(on_attach, name)
   return vim.api.nvim_create_autocmd("LspAttach", {
     group = vim.api.nvim_create_augroup(
-      "UserLspAttach_" .. (name or "all"),
+      "OrbitVimLspAttach_" .. (name or "all"),
       { clear = false }
     ),
     callback = function(args)
@@ -67,41 +38,13 @@ M.action = setmetatable({}, {
   end,
 })
 
----@class LspCommand: lsp.ExecuteCommandParams
----@field open? boolean
----@field handler? lsp.Handler
-
----@param opts LspCommand
-function M.execute(opts)
-  local params = {
-    command = opts.command,
-    arguments = opts.arguments,
-  }
-  if opts.open then
-    local ok, trouble = pcall(require, "trouble")
-    if ok then
-      trouble.open({
-        mode = "lsp_command",
-        params = params,
-      })
-    end
-  else
-    local clients =
-      vim.lsp.get_clients({ bufnr = 0, method = "workspace/executeCommand" })
-    local client = clients[1]
-    if client then
-      return client:request("workspace/executeCommand", params, opts.handler, 0)
-    end
-  end
-end
-
 ---@param fn fun(client:vim.lsp.Client, buffer):boolean?
 ---@param opts? {group?: integer}
 function M.on_dynamic_capability(fn, opts)
   return vim.api.nvim_create_autocmd("User", {
     pattern = "LspDynamicCapability",
     group = opts and opts.group or vim.api.nvim_create_augroup(
-      "UserLspDynamicCapability",
+      "OrbitVimLspDynamicCapability",
       { clear = false }
     ),
     callback = function(args)
@@ -168,7 +111,7 @@ function M.setup()
   M.on_dynamic_capability(check_methods)
   vim.api.nvim_create_autocmd({ "LspDetach", "BufWipeout" }, {
     group = vim.api.nvim_create_augroup(
-      "UserLspMethodLifecycle",
+      "OrbitVimLspMethodLifecycle",
       { clear = true }
     ),
     callback = function(event)
@@ -205,9 +148,7 @@ check_methods = function(client, buffer, opts)
     if not (opts and opts.refresh) or refresh_methods[method] then
       clients[client] = clients[client] or {}
       if (opts and opts.force) or not clients[client][buffer] then
-        if
-          client.supports_method and client:supports_method(method, buffer)
-        then
+        if client:supports_method(method, buffer) then
           clients[client][buffer] = true
           emit_supported_method(client, buffer, method, {
             refresh = opts and opts.refresh or nil,

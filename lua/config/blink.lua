@@ -183,7 +183,6 @@ function M.build()
     },
 
     sources = {
-      compat = {},
       default = { "lazydev", "lsp", "path", "snippets", "buffer" },
       per_filetype = {
         lua = { inherit_defaults = true, "lazydev" },

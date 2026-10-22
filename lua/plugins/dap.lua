@@ -54,11 +54,6 @@ return {
         "<cmd>DapStepOut<CR>",
         desc = "dap step out",
       },
-      {
-        "<leader>dw",
-        "<cmd>DapViewWatch<CR>",
-        desc = "dap open watch window",
-      },
     },
   },
 
@@ -79,6 +74,13 @@ return {
           require("dap").restart()
         end,
         desc = "dap restart",
+      },
+      {
+        "<leader>dw",
+        function()
+          require("dapui").float_element("watches", { enter = true })
+        end,
+        desc = "dap open watch window",
       },
     },
     dependencies = { "Orbit-Lua/nvim-dap", "nvim-neotest/nvim-nio" },

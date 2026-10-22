@@ -32,13 +32,6 @@ return {
       },
 
       {
-        "saghen/blink.compat",
-        optional = true,
-        opts = {},
-        version = "1.*",
-      },
-
-      {
         "folke/lazydev.nvim",
         ft = "lua",
 
@@ -59,10 +52,5 @@ return {
     end,
 
     main = "runtime.completion.blink",
-    opts_extend = {
-      "sources.completion.enabled_providers",
-      "sources.compat",
-      "sources.default",
-    },
   },
 }

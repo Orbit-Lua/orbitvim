@@ -2,7 +2,7 @@
 
 # T-SQL snippets
 
-OrbitVim provides 104 project-local LuaSnip templates for Microsoft SQL Server.
+OrbitVim provides project-local LuaSnip templates for Microsoft SQL Server.
 They follow the practices in the
 [T-SQL conventions](tsql-conventions.md) and replace the generic SQL collection
 from `friendly-snippets`.
@@ -25,7 +25,7 @@ changing an object name such as `Entity` also updates its related constraint
 names. The final cursor position is represented by `$0` in the source.
 
 SQL buffers keep Neovim's `sql` filetype. LuaSnip internally extends it with
-the `tsql` collection, so Treesitter and SQLFluff continue to use the normal
+the `tsql` collection, so Tree-sitter and SQLFluff continue to use the normal
 SQL toolchain.
 
 ## Choosing a trigger

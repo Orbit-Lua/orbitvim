@@ -1,30 +1,18 @@
 local python = require("runtime.python")
-local os_utils = require("utils.os")
-
-local is_debugpy_installed = function()
-  local venv_path = python.get_venv_path()
-
-  if os_utils.is_win() then
-    venv_path = venv_path .. "/Scripts/debugpy.exe"
-  else
-    venv_path = venv_path .. "/bin/debugpy"
-  end
-
-  return vim.fn.filereadable(venv_path) == 1
-end
 
 ---@type Dap.Module
 return {
   adapters = {
     python = function(callback, config)
       if config.request == "launch" then
-        if python.check_venv() ~= 0 then
+        local debugpy = python.venv_executable("debugpy")
+        if not debugpy then
+          vim.notify("Activate a virtual environment", vim.log.levels.WARN)
           return
         end
-
-        if not is_debugpy_installed() then
+        if vim.fn.filereadable(debugpy) ~= 1 then
           vim.notify(
-            "debugpy not found in venv, please install debugpy in venv",
+            "Install debugpy in the virtual environment",
             vim.log.levels.WARN
           )
           return
@@ -32,7 +20,7 @@ return {
 
         callback({
           type = "executable",
-          command = python.get_virtual_python_path(),
+          command = python.venv_python(),
           args = { "-m", "debugpy.adapter" },
           options = {
             source_filetype = "python",

@@ -1,7 +1,6 @@
 local M = {}
 
 local fs = require("utils.fs")
-local highlights = require("utils.hl")
 local icons = require("utils.icons")
 
 local harpoon_ns = vim.api.nvim_create_namespace("harpoon")
@@ -48,9 +47,8 @@ M.highlight_current_file = function()
             2,
             {
               end_col = #line,
-              hl_group = highlights.util.get_hl_name_without_syntax(
-                highlights.hl_groups.active_context
-              ),
+              -- Defined in chadrc's hl_add.
+              hl_group = "active_context",
             }
           )
           vim.api.nvim_win_set_cursor(cx.win_id, { line_number, 0 })

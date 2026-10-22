@@ -42,17 +42,6 @@ end
 
 local M = {}
 
-M.util = {
-  ---@param hl string
-  get_hl_name_without_syntax = function(hl)
-    return hl:gsub("%%#", ""):gsub("#", "")
-  end,
-}
-
-M.hl_groups = {
-  active_context = "%#active_context#",
-}
-
 ---Applies diagnostic highlight overrides using the current theme palette.
 M.setup_diagnostic = function()
   ---@type Base30Table

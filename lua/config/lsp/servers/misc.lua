@@ -18,7 +18,7 @@ return {
 
     powershell_es = {
       bundle_path = fs.mason_pkg_path .. "/powershell-editor-services",
-      shell = "pwsh",
+      shell = vim.fn.executable("pwsh") == 1 and "pwsh" or "powershell",
     },
   },
 }

@@ -42,8 +42,8 @@ return {
       require_cwd = true,
     },
     ["deno_fmt"] = {
-      args = function()
-        local file_extension = vim.fn.expand("%:e")
+      args = function(_, ctx)
+        local file_extension = vim.fn.fnamemodify(ctx.filename, ":e")
 
         if file_extension ~= "" then
           return { "fmt", "-", "--ext=" .. file_extension }
@@ -53,8 +53,8 @@ return {
       end,
     },
     ["prisma_fmt"] = {
-      command = function()
-        local root = fs.get_root()
+      command = function(_, ctx)
+        local root = fs.get_root(ctx.filename)
         if os_utils.is_win() then
           return root .. "/node_modules/.bin/prisma.CMD"
         end
@@ -97,6 +97,10 @@ return {
     ["markdown.mdx"] = { "markdownlint-cli2", "markdown-toc" },
 
     yaml = { "yamlfmt" },
+
+    sql = { "sqlfluff" },
+    mysql = { "sqlfluff" },
+    plsql = { "sqlfluff" },
   },
 
   format_on_save = false,

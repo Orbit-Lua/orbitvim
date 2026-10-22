@@ -99,9 +99,10 @@ M.base46 = {
     -- SnacksPickerListBorder = { fg = "blue" },
   },
 
-  -- integrations = {
-  --   "todo",
-  -- },
+  -- Extra base46 caches beyond the defaults; todo-comments loads "todo".
+  integrations = {
+    "todo",
+  },
 
   excluded = {},
 

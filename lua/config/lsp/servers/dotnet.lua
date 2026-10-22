@@ -23,10 +23,9 @@ return {
       --   "--stdio",
       -- },
 
+      -- roslyn.nvim owns on_init, so semantic tokens are dropped on attach.
       on_attach = function(client, _)
-        if client:supports_method("textDocument/semanticTokens") then
-          client.server_capabilities.semanticTokensProvider = nil
-        end
+        client.server_capabilities.semanticTokensProvider = nil
       end,
 
       -- luacheck: ignore

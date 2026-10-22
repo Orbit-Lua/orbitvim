@@ -4,6 +4,7 @@ local M = {}
 ---@field module string
 ---@field field string
 ---@field category "formatter"|"linter"
+---@field activation string config module whose `field` lists initial runtime names by filetype
 
 ---@param spec Tool.ListAdapterSpec
 ---@return Tool.CategoryHandler
@@ -27,11 +28,17 @@ function M.new(spec)
       return false, err
     end
 
+    -- Enabling restores a tool only where the configuration activates it;
+    -- other supported filetypes stay unwired, matching the next startup.
+    local activation = require(spec.activation)[spec.field]
+    local runtime_name = opts.meta.runtime_name or opts.name
     for _, ft in ipairs(opts.meta.ft or {}) do
       local list = module[spec.field][ft] or {}
-      local runtime_name = opts.meta.runtime_name or opts.name
       if opts.is_enabled then
-        if not vim.tbl_contains(list, runtime_name) then
+        if
+          vim.tbl_contains(activation[ft] or {}, runtime_name)
+          and not vim.tbl_contains(list, runtime_name)
+        then
           table.insert(list, runtime_name)
         end
       else
@@ -41,9 +48,11 @@ function M.new(spec)
           end
         end
       end
-      local names = order.from_runtime(spec.category, list)
-      local ordered = order.enabled_names_for_ft(spec.category, ft, names)
-      module[spec.field][ft] = order.to_runtime(spec.category, ordered)
+      if module[spec.field][ft] or #list > 0 then
+        local names = order.from_runtime(spec.category, list)
+        local ordered = order.enabled_names_for_ft(spec.category, ft, names)
+        module[spec.field][ft] = order.to_runtime(spec.category, ordered)
+      end
     end
   end
 
@@ -78,20 +87,20 @@ function M.new(spec)
 
     local filetypes = opts.filetype and { opts.filetype }
       or (opts.meta.ft or {})
-    local total = #filetypes
-    if total == 0 then
+    if #filetypes == 0 then
       return "no ft", "DiagnosticWarn"
     end
 
-    local configured = 0
+    -- Measure against the configured activation, the set enabling restores.
+    local runtime_name = opts.meta.runtime_name or opts.name
+    local activation = require(spec.activation)[spec.field]
+    local total, configured = 0, 0
     for _, ft in ipairs(filetypes) do
-      if
-        vim.tbl_contains(
-          module[spec.field][ft] or {},
-          opts.meta.runtime_name or opts.name
-        )
-      then
-        configured = configured + 1
+      if vim.tbl_contains(activation[ft] or {}, runtime_name) then
+        total = total + 1
+        if vim.tbl_contains(module[spec.field][ft] or {}, runtime_name) then
+          configured = configured + 1
+        end
       end
     end
 

@@ -1,7 +1,6 @@
 return {
   treesitter = {
     install_dir = vim.fn.stdpath("data") .. "/site",
-    ensure_installed = require("config.packages").treesitter_ensure_installed,
   },
 
   context = {

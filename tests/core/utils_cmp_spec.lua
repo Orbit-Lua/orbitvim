@@ -56,4 +56,18 @@ describe("utils.cmp", function()
       end
     )
   end)
+
+  it("stops snippets on Escape without loading LuaSnip", function()
+    local loaded, preload = package.loaded.luasnip, package.preload.luasnip
+    local required = false
+    package.loaded.luasnip = nil
+    package.preload.luasnip = function()
+      required = true
+      return { session = { current_nodes = {} } }
+    end
+    local ok, err = pcall(cmp_utils.actions.snippet_stop)
+    package.loaded.luasnip, package.preload.luasnip = loaded, preload
+    assert(ok, err)
+    assert.is_false(required)
+  end)
 end)

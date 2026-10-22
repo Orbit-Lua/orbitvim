@@ -3,7 +3,7 @@ return {
   workspaces = {
     {
       name = "knowledge base",
-      path = vim.fn.expand("~") .. "/OneDrive/Knowledge_Base",
+      path = vim.fn.expand(require("config.settings").get().notes.vault),
     },
   },
 

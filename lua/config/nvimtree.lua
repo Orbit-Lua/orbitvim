@@ -1,5 +1,5 @@
 local icons = require("config.icons")
-local is_windows = vim.fn.has("win32") == 1
+local is_windows = require("utils.os").is_win()
 
 ---@type nvim_tree.config
 return {

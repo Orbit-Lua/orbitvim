@@ -4,246 +4,211 @@ local borders = require("config.borders")
 
 local M = {}
 
----@type LazyKeysLspSpec[]|nil
-M._keys = nil
+---@class Lsp.Keymap
+---@field [1] string lhs
+---@field [2] string|function|false rhs; false removes an inherited mapping
+---@field desc? string
+---@field mode? string|string[]
+---@field has? string|string[] method names; "definition" means "textDocument/definition"
+---@field cond? fun(): boolean
+---@field nowait? boolean
+---@field expr? boolean
 
----@alias LazyKeysOpts LazyKeysBase|{has?:string|string[], silent?:boolean, buffer:unknown, cond?:fun():boolean}
----@alias LazyKeysLspSpec LazyKeysSpec|{has?:string|string[], cond?:fun():boolean}
----@alias LazyKeysLsp LazyKeys|{has?:string|string[], cond?:fun():boolean}
-
----@return LazyKeysLspSpec[]
-function M.get()
-  if M._keys then
-    return M._keys
-  end
-  M._keys = {
-    {
-      "<leader>cl",
-      function()
-        require("snacks").picker.lsp_config()
-      end,
-      desc = "lsp info",
-    },
-    {
-      "gd",
-      vim.lsp.buf.definition,
-      desc = "goto definition",
-      has = "definition",
-    },
-    { "gR", vim.lsp.buf.references, desc = "references", nowait = true },
-    { "gI", vim.lsp.buf.implementation, desc = "goto implementation" },
-    { "gy", vim.lsp.buf.type_definition, desc = "goto type definition" },
-    { "gD", vim.lsp.buf.declaration, desc = "goto declaration" },
-    {
-      "K",
-      function()
-        return vim.lsp.buf.hover({
-          focus = true,
-          silent = true,
-          border = borders.lsp.hover,
-          max_width = select(1, window.get_doc_size()),
-          max_height = select(2, window.get_doc_size()),
-        })
-      end,
-      desc = "hover",
-      has = "hover",
-    },
-    {
-      "gK",
-      function()
-        return vim.lsp.buf.signature_help({
-          focus = false,
-          silent = true,
-          max_width = select(1, window.get_doc_size()),
-          max_height = select(2, window.get_doc_size()),
-          border = borders.lsp.signature_help,
-        })
-      end,
-      desc = "signature help",
-      has = "signatureHelp",
-    },
-    {
-      "<m-k>",
-      function()
-        return vim.lsp.buf.signature_help({
-          focus = false,
-          silent = true,
-          max_width = select(1, window.get_doc_size()),
-          max_height = select(2, window.get_doc_size()),
-          border = borders.lsp.signature_help,
-        })
-      end,
-      mode = "i",
-      desc = "signature help",
-      has = "signatureHelp",
-    },
-    {
-      "<leader>ca",
-      function()
-        vim.lsp.buf.code_action({
-          -- refer to: https://github.com/pmizio/typescript-tools.nvim/issues/238#issuecomment-3114629296
-          filter = function(action)
-            local exclude_actions =
-              { ["Move to a new file"] = true, ["Move to file"] = true }
-            return not exclude_actions[action.title]
-          end,
-        })
-      end,
-      desc = "code action",
-      mode = { "n", "v" },
-      has = "codeAction",
-    },
-    {
-      "<leader>cC",
-      vim.lsp.codelens.run,
-      desc = "run code lens",
-      mode = { "n", "v" },
-      has = "codeLens",
-    },
-    {
-      "<leader>cc",
-      function()
-        vim.lsp.codelens.enable(not vim.lsp.codelens.is_enabled())
-      end,
-      desc = "toggle code lens",
-      mode = { "n" },
-      has = "codeLens",
-    },
-    {
-      "<leader>ci",
-      lsp_client.toggle_inlay_hints,
-      desc = "toggle inlay hints",
-      mode = { "n" },
-      has = "inlayHint",
-    },
-    {
-      "<leader>cR",
-      function()
-        require("snacks").rename.rename_file()
-      end,
-      desc = "rename file",
-      mode = { "n" },
-      has = { "workspace/didRenameFiles", "workspace/willRenameFiles" },
-    },
-    { "<leader>cr", vim.lsp.buf.rename, desc = "rename", has = "rename" },
-    {
-      "<leader>cA",
-      lsp_client.action.source,
-      desc = "code source action",
-      has = "codeAction",
-    },
-    {
-      "]]",
-      function()
-        require("snacks").words.jump(vim.v.count1)
-      end,
-      has = "documentHighlight",
-      desc = "next reference",
-      cond = function()
-        return require("snacks").words.is_enabled()
-      end,
-    },
-    {
-      "[[",
-      function()
-        require("snacks").words.jump(-vim.v.count1)
-      end,
-      has = "documentHighlight",
-      desc = "prev reference",
-      cond = function()
-        return require("snacks").words.is_enabled()
-      end,
-    },
-    {
-      "<a-n>",
-      function()
-        require("snacks").words.jump(vim.v.count1, true)
-      end,
-      has = "documentHighlight",
-      desc = "next reference",
-      cond = function()
-        return require("snacks").words.is_enabled()
-      end,
-    },
-    {
-      "<a-p>",
-      function()
-        require("snacks").words.jump(-vim.v.count1, true)
-      end,
-      has = "documentHighlight",
-      desc = "prev reference",
-      cond = function()
-        return require("snacks").words.is_enabled()
-      end,
-    },
+local function float_opts(border, focus)
+  local width, height = window.get_doc_size()
+  return {
+    focus = focus,
+    silent = true,
+    border = border,
+    max_width = width,
+    max_height = height,
   }
-
-  return M._keys
 end
 
+local function signature_help()
+  vim.lsp.buf.signature_help(float_opts(borders.lsp.signature_help, false))
+end
+
+local function snacks_words_enabled()
+  return require("snacks").words.is_enabled()
+end
+
+local function jump_reference(count, cycle)
+  return function()
+    require("snacks").words.jump(count * vim.v.count1, cycle)
+  end
+end
+
+---@type Lsp.Keymap[]
+local defaults = {
+  {
+    "<leader>cl",
+    function()
+      require("snacks").picker.lsp_config()
+    end,
+    desc = "lsp info",
+  },
+  {
+    "gd",
+    vim.lsp.buf.definition,
+    desc = "goto definition",
+    has = "definition",
+  },
+  { "gR", vim.lsp.buf.references, desc = "references", nowait = true },
+  { "gI", vim.lsp.buf.implementation, desc = "goto implementation" },
+  { "gy", vim.lsp.buf.type_definition, desc = "goto type definition" },
+  { "gD", vim.lsp.buf.declaration, desc = "goto declaration" },
+  {
+    "K",
+    function()
+      vim.lsp.buf.hover(float_opts(borders.lsp.hover, true))
+    end,
+    desc = "hover",
+    has = "hover",
+  },
+  { "gK", signature_help, desc = "signature help", has = "signatureHelp" },
+  {
+    "<m-k>",
+    signature_help,
+    mode = "i",
+    desc = "signature help",
+    has = "signatureHelp",
+  },
+  {
+    "<leader>ca",
+    function()
+      vim.lsp.buf.code_action({
+        -- refer to: https://github.com/pmizio/typescript-tools.nvim/issues/238#issuecomment-3114629296
+        filter = function(action)
+          return action.title ~= "Move to a new file"
+            and action.title ~= "Move to file"
+        end,
+      })
+    end,
+    desc = "code action",
+    mode = { "n", "v" },
+    has = "codeAction",
+  },
+  {
+    "<leader>cC",
+    vim.lsp.codelens.run,
+    desc = "run code lens",
+    mode = { "n", "v" },
+    has = "codeLens",
+  },
+  {
+    "<leader>cc",
+    function()
+      -- Lenses are enabled per buffer on attach.
+      local buffer = { bufnr = vim.api.nvim_get_current_buf() }
+      vim.lsp.codelens.enable(not vim.lsp.codelens.is_enabled(buffer), buffer)
+    end,
+    desc = "toggle code lens",
+    has = "codeLens",
+  },
+  {
+    "<leader>ci",
+    lsp_client.toggle_inlay_hints,
+    desc = "toggle inlay hints",
+    has = "inlayHint",
+  },
+  {
+    "<leader>cR",
+    function()
+      require("snacks").rename.rename_file()
+    end,
+    desc = "rename file",
+    has = { "workspace/didRenameFiles", "workspace/willRenameFiles" },
+  },
+  { "<leader>cr", vim.lsp.buf.rename, desc = "rename", has = "rename" },
+  {
+    "<leader>cA",
+    lsp_client.action.source,
+    desc = "code source action",
+    has = "codeAction",
+  },
+  {
+    "]]",
+    jump_reference(1),
+    desc = "next reference",
+    has = "documentHighlight",
+    cond = snacks_words_enabled,
+  },
+  {
+    "[[",
+    jump_reference(-1),
+    desc = "prev reference",
+    has = "documentHighlight",
+    cond = snacks_words_enabled,
+  },
+  {
+    "<a-n>",
+    jump_reference(1, true),
+    desc = "next reference",
+    has = "documentHighlight",
+    cond = snacks_words_enabled,
+  },
+  {
+    "<a-p>",
+    jump_reference(-1, true),
+    desc = "prev reference",
+    has = "documentHighlight",
+    cond = snacks_words_enabled,
+  },
+}
+
+---@param buffer integer
 ---@param method string|string[]
+---@return boolean
 function M.has(buffer, method)
   if type(method) == "table" then
-    for _, m in ipairs(method) do
-      if M.has(buffer, m) then
-        return true
-      end
-    end
-    return false
+    return vim.iter(method):any(function(name)
+      return M.has(buffer, name)
+    end)
   end
   method = method:find("/") and method or "textDocument/" .. method
-  local clients = lsp_client.get_clients({ bufnr = buffer })
-  for _, client in ipairs(clients) do
-    if client:supports_method(method, buffer) then
-      return true
+  return vim.iter(vim.lsp.get_clients({ bufnr = buffer })):any(function(client)
+    return client:supports_method(method, buffer)
+  end)
+end
+
+---Default mappings followed by those of each attached server; for the same
+---mode and lhs, the later definition wins.
+---@param buffer integer
+---@return table<string, Lsp.Keymap & {mode: string}>
+local function resolve(buffer)
+  local servers = require("config.lsp").servers
+  local specs = vim.list_extend({}, defaults)
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = buffer })) do
+    vim.list_extend(specs, (servers[client.name] or {}).keys or {})
+  end
+
+  local resolved = {}
+  for _, spec in ipairs(specs) do
+    local modes = spec.mode or "n"
+    for _, mode in ipairs(type(modes) == "table" and modes or { modes }) do
+      resolved[mode .. "\0" .. spec[1]] = vim.tbl_extend("force", spec, {
+        mode = mode,
+      })
     end
   end
-  return false
+  return resolved
 end
 
----@return LazyKeysLsp[]
-function M.resolve(buffer)
-  local Keys = require("lazy.core.handler.keys")
-  if not Keys.resolve then
-    return {}
-  end
-  local spec = vim.tbl_extend("force", {}, M.get())
-  local opts = require("config.lsp")
-  local clients = lsp_client.get_clients({ bufnr = buffer })
-  for _, client in ipairs(clients) do
-    local maps = opts.servers[client.name] and opts.servers[client.name].keys
-      or {}
-    vim.list_extend(spec, maps)
-  end
-  return Keys.resolve(spec)
-end
-
+---@param buffer integer
 function M.on_attach(_, buffer)
-  local Keys = require("lazy.core.handler.keys")
-  local keymaps = M.resolve(buffer)
-
-  for _, keys in pairs(keymaps) do
-    local has_capability = not keys.has or M.has(buffer, keys.has)
-    local is_condition_met = not (
-      keys.cond == false
-      or ((type(keys.cond) == "function") and not keys.cond())
-    )
-
-    if has_capability and is_condition_met then
-      ---@type LazyKeysOpts
-      local opts = Keys.opts(keys)
-      opts.cond = nil
-      opts.has = nil
-      opts.silent = opts.silent ~= false
-      opts.buffer = buffer
-      vim.keymap.set(keys.mode or "n", keys.lhs, keys.rhs, {
-        desc = opts.desc,
-        noremap = opts.noremap,
-        remap = opts.remap,
-        expr = opts.expr,
-        nowait = opts.nowait,
-        buffer = opts.buffer,
-        silent = opts.silent,
+  for _, spec in pairs(resolve(buffer)) do
+    if
+      spec[2]
+      and (not spec.has or M.has(buffer, spec.has))
+      and (not spec.cond or spec.cond())
+    then
+      vim.keymap.set(spec.mode, spec[1], spec[2], {
+        buffer = buffer,
+        desc = spec.desc,
+        expr = spec.expr,
+        nowait = spec.nowait,
+        silent = true,
       })
     end
   end

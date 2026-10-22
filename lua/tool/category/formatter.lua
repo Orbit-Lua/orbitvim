@@ -2,6 +2,7 @@ local M = require("tool.category.list").new({
   module = "conform",
   field = "formatters_by_ft",
   category = "formatter",
+  activation = "config.formatter",
 })
 
 local function command_not_found(message)

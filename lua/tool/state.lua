@@ -95,6 +95,43 @@ function M.get()
   return _state
 end
 
+-- A writer holds the lock for milliseconds; an older lock was left by a
+-- process that exited mid-write.
+local stale_lock_seconds = 10
+
+local function is_stale(stat)
+  return stat ~= nil and os.time() - stat.mtime.sec > stale_lock_seconds
+end
+
+local function open_lock(lock_path)
+  local lock, lock_error = vim.uv.fs_open(lock_path, "wx", 384)
+  if lock or not is_stale(vim.uv.fs_stat(lock_path)) then
+    return lock, lock_error
+  end
+  -- Claim the stale lock by renaming it: when two instances find it, only one
+  -- rename succeeds, and a fresh lock claimed after a replacement goes back.
+  local claimed = string.format(
+    "%s.%d-%d.stale",
+    lock_path,
+    vim.uv.os_getpid(),
+    vim.uv.hrtime()
+  )
+  if not vim.uv.fs_rename(lock_path, claimed) then
+    return nil, lock_error
+  end
+  if is_stale(vim.uv.fs_stat(claimed)) then
+    vim.uv.fs_unlink(claimed)
+    return vim.uv.fs_open(lock_path, "wx", 384)
+  end
+  -- Another instance replaced the stale lock first; return its fresh lock.
+  -- If a third writer already holds the path, keep the claimed file instead
+  -- of deleting a live lock.
+  if vim.uv.fs_link(claimed, lock_path) then
+    vim.uv.fs_unlink(claimed)
+  end
+  return nil, lock_error
+end
+
 local function update(category, key, value)
   local path = state_path()
   local parent = vim.fn.fnamemodify(path, ":h")
@@ -103,7 +140,7 @@ local function update(category, key, value)
     return false, tostring(mkdir_error)
   end
   local lock_path = path .. ".lock"
-  local lock, lock_error = vim.uv.fs_open(lock_path, "wx", 384)
+  local lock, lock_error = open_lock(lock_path)
   if not lock then
     return false,
       "could not lock tool state (another writer or stale lock): " .. tostring(

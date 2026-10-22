@@ -3,7 +3,7 @@ local augroup = vim.api.nvim_create_augroup
 
 -- Lazy load trigger for FilePost
 autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
-  group = augroup("NvFilePost", { clear = true }),
+  group = augroup("OrbitVimFilePost", { clear = true }),
   callback = function(args)
     local file = vim.api.nvim_buf_get_name(args.buf)
     local buftype = vim.api.nvim_get_option_value("buftype", { buf = args.buf })
@@ -17,7 +17,7 @@ autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
         "User",
         { pattern = "FilePost", modeline = false }
       )
-      vim.api.nvim_del_augroup_by_name("NvFilePost")
+      vim.api.nvim_del_augroup_by_name("OrbitVimFilePost")
 
       vim.schedule(function()
         vim.api.nvim_exec_autocmds("FileType", {})
@@ -32,7 +32,7 @@ autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
 
 -- Start treesitter on filetype detection
 autocmd("FileType", {
-  pattern = "*",
+  group = augroup("OrbitVimTreesitter", { clear = true }),
   callback = function(args)
     require("runtime.treesitter").start(args.buf)
   end,
@@ -40,7 +40,7 @@ autocmd("FileType", {
 
 -- idle buffer open triggers statusline redraw
 autocmd("DiagnosticChanged", {
-  group = augroup("UserDiagnosticChanged", { clear = true }),
+  group = augroup("OrbitVimDiagnosticRedraw", { clear = true }),
   callback = function()
     vim.cmd("redrawstatus")
   end,
@@ -63,7 +63,7 @@ local function has_listed_unnamed_buffer()
 end
 
 autocmd("VimEnter", {
-  group = augroup("StartupNoNameBuffer", { clear = true }),
+  group = augroup("OrbitVimStartupBuffer", { clear = true }),
   callback = function(data)
     if vim.fn.argc() > 0 or data.file ~= "" then
       return
@@ -81,7 +81,7 @@ autocmd("VimEnter", {
 })
 
 autocmd("VimEnter", {
-  group = augroup("AutoSetDir", { clear = true }),
+  group = augroup("OrbitVimDirectoryArgument", { clear = true }),
   callback = function(data)
     if vim.fn.isdirectory(data.file) ~= 1 then
       return
@@ -99,7 +99,7 @@ autocmd("VimEnter", {
 })
 
 autocmd("BufWritePost", {
-  group = augroup("ReloadNvUiConfig", { clear = true }),
+  group = augroup("OrbitVimReloadNvUi", { clear = true }),
   pattern = vim.fs.normalize(vim.fn.stdpath("config") .. "/lua/chadrc.lua"),
   callback = function()
     package.loaded.chadrc = nil

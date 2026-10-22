@@ -13,31 +13,65 @@ local function merge_linters(lint, linters)
       lint.linters[linter_name] =
         ---@diagnostic disable-next-line
         vim.tbl_deep_extend("force", lint.linters[linter_name], linter)
-      if type(linter.prepend_args) == "table" then
-        lint.linters[linter_name].args = lint.linters[linter_name].args or {}
-        vim.list_extend(lint.linters[linter_name].args, linter.prepend_args)
-      end
     else
       lint.linters[linter_name] = linter
     end
   end
 end
 
+local wrapped = setmetatable({}, { __mode = "k" })
+
+local function strip_carriage_returns(linter)
+  if
+    type(linter) == "table"
+    and type(linter.parser) == "function"
+    and not wrapped[linter.parser]
+  then
+    local parse = linter.parser
+    linter.parser = function(output, bufnr, linter_cwd)
+      return parse((output:gsub("\r\n", "\n")), bufnr, linter_cwd)
+    end
+    wrapped[linter.parser] = true
+  end
+  return linter
+end
+
+-- Windows linters emit CRLF; strip \r before parsing so diagnostics show no ^M.
+-- Setup may run again, so parsers and factories are wrapped only once.
 local function normalize_windows_output(lint)
   if not require("utils.os").is_win() then
     return
   end
 
-  -- On Windows, linters emit CRLF. Strip \r before parsers run to prevent ^M
-  -- appearing in diagnostic messages.
-  for _, linter in pairs(lint.linters) do
-    if type(linter) == "table" and type(linter.parser) == "function" then
-      local orig = linter.parser
-      linter.parser = function(output, bufnr, linter_cwd)
-        return orig(output:gsub("\r\n", "\n"), bufnr, linter_cwd)
+  for name, linter in pairs(lint.linters) do
+    if type(linter) == "function" and not wrapped[linter] then
+      lint.linters[name] = function()
+        return strip_carriage_returns(linter())
+      end
+      wrapped[lint.linters[name]] = true
+    else
+      strip_carriage_returns(linter)
+    end
+  end
+end
+
+---Resolve linters like nvim-lint: an exact filetype wins, otherwise each
+---dot-separated part contributes its linters once, in order.
+local function resolve_linters(lint, filetype)
+  local exact = lint.linters_by_ft[filetype]
+  if exact then
+    return vim.list_extend({}, exact)
+  end
+  local names, seen = {}, {}
+  for _, part in ipairs(vim.split(filetype, ".", { plain = true })) do
+    for _, name in ipairs(lint.linters_by_ft[part] or {}) do
+      if not seen[name] then
+        seen[name] = true
+        table.insert(names, name)
       end
     end
   end
+  return names
 end
 
 local function apply_tool_order(linters_by_ft)
@@ -54,10 +88,11 @@ local function apply_tool_order(linters_by_ft)
   end
 end
 
-local function build_runner(lint)
+local function build_runner(lint, skip_while_editing)
   local logger = require("utils.logger")
 
-  return function(bufnr)
+  ---@param editing boolean only TextChanged fired since the last run
+  return function(bufnr, editing)
     if
       not vim.api.nvim_buf_is_valid(bufnr)
       or not vim.api.nvim_buf_is_loaded(bufnr)
@@ -70,14 +105,12 @@ local function build_runner(lint)
         return
       end
 
-      -- Use nvim-lint's logic first:
-      -- * checks if linters exist for the full filetype first
-      -- * otherwise will split filetype by "." and add all those linters
-      -- * this differs from conform.nvim which only uses the first filetype that has a formatter
-      local linter_names = lint._resolve_linter_by_ft(vim.bo.filetype)
-
-      -- Create a copy of the names table to avoid modifying the original.
-      linter_names = vim.list_extend({}, linter_names)
+      local linter_names = resolve_linters(lint, vim.bo.filetype)
+      if editing then
+        linter_names = vim.tbl_filter(function(name)
+          return not vim.tbl_contains(skip_while_editing, name)
+        end, linter_names)
+      end
 
       -- Add fallback linters.
       if #linter_names == 0 then
@@ -99,7 +132,6 @@ local function build_runner(lint)
         ---@type Linter
         local linter = lint.linters[linter_name]
         if not linter then
-          vim.notify("Linter not found: " .. linter_name, vim.log.levels.WARN)
           logger.write(
             "linter",
             "ERROR",
@@ -159,13 +191,15 @@ function M.setup(opts)
 
   lint.linters_by_ft = opts.linters_by_ft
 
-  local group = vim.api.nvim_create_augroup("nvim-lint", { clear = true })
-  local run = build_runner(lint)
+  local group = vim.api.nvim_create_augroup("OrbitVimLint", { clear = true })
+  local run = build_runner(lint, opts.skip_while_editing or {})
   local buffer_tokens = {}
+  local editing = {}
   vim.api.nvim_create_autocmd(opts.events, {
     group = group,
     callback = function(args)
       local bufnr = args.buf
+      editing[bufnr] = editing[bufnr] ~= false and args.event == "TextChanged"
       buffer_tokens[bufnr] = (buffer_tokens[bufnr] or 0) + 1
       local token = buffer_tokens[bufnr]
       if generation ~= setup_generation then
@@ -190,7 +224,9 @@ function M.setup(opts)
               active_timers[bufnr] = nil
               timer:close()
             end
-            run(bufnr)
+            local only_edits = editing[bufnr] == true
+            editing[bufnr] = nil
+            run(bufnr, only_edits)
           end)
         end)
       end
@@ -206,6 +242,7 @@ function M.setup(opts)
         active_timers[args.buf] = nil
       end
       buffer_tokens[args.buf] = nil
+      editing[args.buf] = nil
     end,
   })
 end

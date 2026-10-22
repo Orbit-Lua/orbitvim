@@ -14,7 +14,7 @@
 ---@field setup {[string]: fun()}
 ---@field diagnostics vim.diagnostic.Opts
 ---@field inlay_hints {enabled: boolean, exclude: table}
----@field codelens {enabled: boolean, autocmd: boolean}
+---@field codelens {enabled: boolean}
 
 ---@class Lsp.Server.Module
 ---@field servers? Lsp.Config.Servers
@@ -56,13 +56,13 @@ return {
   inlay_hints = require("config.settings").get().lsp.inlay_hints,
   codelens = require("config.settings").get().lsp.codelens,
 
+  -- Tree-sitter owns highlighting.
   on_init = function(client, _)
-    if client:supports_method("textDocument/semanticTokens") then
-      client.server_capabilities.semanticTokensProvider = nil
-    end
+    client.server_capabilities.semanticTokensProvider = nil
   end,
 
-  capabilities = require("config.lsp.capabilities").get_lsp_capabilities({
+  -- Overrides applied on top of the completion engine's client capabilities.
+  capabilities = {
     textDocument = {
       diagnostic = {
         dynamicRegistration = true,
@@ -71,7 +71,7 @@ return {
     window = {
       workDoneProgress = true,
     },
-  }, true),
+  },
 
   disable_default_settings = {
     roslyn = { "on_init" },

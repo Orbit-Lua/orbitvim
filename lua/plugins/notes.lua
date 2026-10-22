@@ -3,9 +3,10 @@ return {
   {
     "obsidian-nvim/obsidian.nvim",
     version = "*",
-    cond = vim.fn.isdirectory(vim.fn.expand("~") .. "/OneDrive/Knowledge_Base")
-      == 1,
-    lazy = true,
+    cond = function()
+      local vault = require("config.settings").get().notes.vault
+      return vault ~= "" and vim.fn.isdirectory(vim.fn.expand(vault)) == 1
+    end,
     ft = "markdown",
     ---@module 'obsidian'
     ---@type obsidian.config

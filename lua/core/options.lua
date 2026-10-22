@@ -2,13 +2,12 @@ local opt = vim.opt
 local o = vim.o
 local g = vim.g
 
--- Prepend Mason bin directory to PATH
-local is_windows = vim.fn.has("win32") ~= 0
-local sep = is_windows and "\\" or "/"
-local delim = is_windows and ";" or ":"
-vim.env.PATH = table.concat({ vim.fn.stdpath("data"), "mason", "bin" }, sep)
-  .. delim
-  .. vim.env.PATH
+-- Mason loads lazily, so its bin directory joins PATH before any tool runs.
+local os_utils = require("utils.os")
+vim.env.PATH = table.concat(
+  { vim.fn.stdpath("data"), "mason", "bin" },
+  os_utils.is_win() and "\\" or "/"
+) .. os_utils.path_delimiter() .. vim.env.PATH
 
 -- General editor options
 o.laststatus = 3
@@ -27,7 +26,6 @@ o.numberwidth = 2
 o.ruler = false
 
 opt.shortmess:append("sI")
-o.shm = vim.o.shm .. "I"
 
 o.signcolumn = "yes"
 o.undofile = true

@@ -167,23 +167,27 @@ describe("tool.data", function()
   )
 
   it("reports runtime wiring for the requested scope", function()
+    local activation = package.loaded["config.formatter"]
+    package.loaded["config.formatter"] = {
+      formatters_by_ft = { lua = { "stylua" }, python = { "stylua" } },
+    }
     package.loaded.conform = { formatters_by_ft = { lua = { "stylua" } } }
     mason.package_status = function()
       return true
     end
-    local meta = { mason = "stylua", ft = { "lua", "python" } }
-    assert.equals(
+    local meta = { mason = "stylua", ft = { "lua", "python", "go" } }
+    local labels = {}
+    for _, filetype in ipairs({ "lua", "python", "go", false }) do
+      labels[#labels + 1] =
+        data.health_status("formatter", "stylua", meta, filetype or nil).label
+    end
+    package.loaded["config.formatter"] = activation
+    assert.same({
       "Configured",
-      data.health_status("formatter", "stylua", meta, "lua").label
-    )
-    assert.equals(
       "Not configured",
-      data.health_status("formatter", "stylua", meta, "python").label
-    )
-    assert.equals(
+      "Not configured",
       "Partly configured 1/2",
-      data.health_status("formatter", "stylua", meta).label
-    )
+    }, labels)
   end)
   it("keeps source diagnostics distinct from a failed linter", function()
     package.loaded.lint = {

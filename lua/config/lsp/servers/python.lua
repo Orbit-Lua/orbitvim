@@ -33,33 +33,8 @@ return {
             diagnosticMode = "workspace",
             useLibraryCodeForTypes = true,
             typeCheckingMode = "standard",
-
-            -- include = { "src" },
-
-            -- fix completion delay: https://github.com/microsoft/pyright/issues/4878
-            -- extraPaths = { "typings" },
-            -- useLibraryCodeForTypes = false,
-            -- stubPath = data_path .. "/lazy/python-type-stubs/stubs",
           },
         },
-      },
-    },
-
-    -- config: https://github.com/python-lsp/python-lsp-server/blob/develop/CONFIGURATION.md
-    pylsp = {
-      settings = {
-        plugins = {
-          jedi_completion = { fuzzy = true },
-          pycodestyle = { maxLineLength = 80 },
-          signature = { formatter = "ruff", line_length = 100 },
-        },
-      },
-    },
-
-    -- config: https://github.com/pappasam/jedi-language-server?tab=readme-ov-file#configuration
-    jedi_language_server = {
-      init_options = {
-        hover = { enable = true },
       },
     },
   },

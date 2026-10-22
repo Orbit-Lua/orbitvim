@@ -46,10 +46,7 @@ describe("settings schema language server", function()
         cmd = { executable, "--stdio" },
         root_dir = root,
         settings = (require("config.lsp").servers.jsonls or {}).settings,
-        capabilities = require("config.lsp.capabilities").get_lsp_capabilities(
-          {},
-          true
-        ),
+        capabilities = require("runtime.lsp").client_capabilities(),
         init_options = {
           provideFormatter = false,
           handledSchemaProtocols = { "file" },

@@ -56,29 +56,6 @@ describe("LSP client lifecycle", function()
     return buf
   end
 
-  it("filters the clients returned by Neovim", function()
-    local received
-    vim.lsp.get_clients = function(opts)
-      received = opts
-      return { { id = 1 }, { id = 2 } }
-    end
-
-    local clients = lsp.get_clients({
-      bufnr = 7,
-      filter = function(client)
-        return client.id == 2
-      end,
-    })
-
-    assert.equals(7, received.bufnr)
-    assert.same(
-      { 2 },
-      vim.tbl_map(function(client)
-        return client.id
-      end, clients)
-    )
-  end)
-
   it("turns an action name into an applying code-action request", function()
     local received
     vim.lsp.buf.code_action = function(opts)

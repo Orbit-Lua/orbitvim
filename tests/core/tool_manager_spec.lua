@@ -373,7 +373,7 @@ describe("tool.manager", function()
         package.loaded.conform.formatters_by_ft.markdown
       )
       assert.same(
-        { "deno_fmt", "markdown-toc", "markdownlint-cli2" },
+        { "markdown-toc", "markdownlint-cli2", "deno_fmt" },
         state.get_order("formatter", "markdown")
       )
     end

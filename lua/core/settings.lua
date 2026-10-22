@@ -218,7 +218,7 @@ function M.setup()
     callback = function(event)
       local path = vim.fs.normalize(vim.fn.fnamemodify(event.file, ":p"))
       local expected = settings.path()
-      if package.config:sub(1, 1) == "\\" then
+      if require("utils.os").is_win() then
         path, expected = path:lower(), expected:lower()
       end
       if path == expected then

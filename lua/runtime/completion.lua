@@ -2,7 +2,7 @@ local M = {}
 
 function M.build_luasnip(plugin)
   local command = { "make", "install_jsregexp" }
-  if vim.fn.has("win32") == 1 then
+  if require("utils.os").is_win() then
     local executable = vim.uv.fs_realpath(vim.v.progpath) or vim.v.progpath
     table.insert(
       command,

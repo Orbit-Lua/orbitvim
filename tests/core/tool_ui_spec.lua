@@ -366,7 +366,7 @@ describe("Tool Manager Nui sessions", function()
       vim.wait(20)
       assert.equals(count + 1, #snapshots)
       for _, autocmd in ipairs(vim.api.nvim_get_autocmds({})) do
-        assert.is_nil((autocmd.group_name or ""):match("^ToolManagerSession"))
+        assert.is_nil((autocmd.group_name or ""):match("^OrbitVimToolManager"))
       end
     end
   )

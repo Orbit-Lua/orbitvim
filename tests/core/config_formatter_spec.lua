@@ -21,8 +21,9 @@ describe("config.formatter", function()
     sqlfluff.cwd = originals.cwd
   end)
 
-  it("uses the project-local Prisma formatter on Unix", function()
-    fs.get_root = function()
+  it("uses the formatted file's project Prisma formatter on Unix", function()
+    fs.get_root = function(path)
+      assert.equals("/tmp/project/schema.prisma", path)
       return "/tmp/project"
     end
     os_utils.is_win = function()
@@ -31,7 +32,10 @@ describe("config.formatter", function()
 
     assert.equals(
       "/tmp/project/node_modules/.bin/prisma",
-      formatter.formatters.prisma_fmt.command()
+      formatter.formatters.prisma_fmt.command(
+        nil,
+        { filename = "/tmp/project/schema.prisma" }
+      )
     )
   end)
 
@@ -45,7 +49,10 @@ describe("config.formatter", function()
 
     assert.equals(
       "C:/project/node_modules/.bin/prisma.CMD",
-      formatter.formatters.prisma_fmt.command()
+      formatter.formatters.prisma_fmt.command(
+        nil,
+        { filename = "C:/project/schema.prisma" }
+      )
     )
   end)
 

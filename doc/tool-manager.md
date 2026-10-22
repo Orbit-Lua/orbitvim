@@ -37,7 +37,7 @@ An installation continues if you close Tool Manager. Successful enablement still
 | `Diagnostics: …` | Source-code findings, not a failed tool process |
 | `Failed` | A tool operation reported an execution failure |
 
-Installed packages do not guarantee active runtime wiring. The canonical registry describes supported tools and filetypes; initial activation remains in the owning runtime/configuration. For example, SQLFluff's linter adapter can support SQL without being included in the initial linter list. The list uses icons and English status labels; Enabled is On/Off, or N/A for installation-only categories. External management is a source, not a runtime status. Details separate installation, source, runtime status, and enablement; they include filetypes, notes, and linter errors/diagnostics where available.
+Installed packages do not guarantee active runtime wiring. The canonical registry describes supported tools and filetypes; initial activation lives in `config.formatter` and `config.linter`. Enabling a tool wires it only where that configuration activates it: Deno supports Markdown but formats only the web filetypes it is configured for. The list uses icons and English status labels; Enabled is On/Off, or N/A for installation-only categories. External management is a source, not a runtime status. Details separate installation, source, runtime status, and enablement; they include filetypes, notes, and linter errors/diagnostics where available.
 
 ## Priority and storage
 
@@ -47,10 +47,10 @@ Select a formatter or linter in buffer scope, or inside an all-state filetype gr
 
 State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists. State writes lock, reread the latest disk values, merge the selected change and replace the file atomically. Separate instances therefore retain each other's unrelated changes. A refused replacement preserves the previous persisted state and does not apply the unsaved change to the runtime.
 
-A busy `tools.json.lock` reports an error instead of overwriting another writer. Retry after the other operation completes. If a process crashed and left a stale lock, close all Neovim instances before removing that exact lock file. Other instances' writes do not automatically refresh an already open manager or its runtime.
+A busy `tools.json.lock` reports an error instead of overwriting another writer; retry after the other operation completes. A lock that outlives any write was left by a process that exited mid-write and is replaced. Other instances' writes do not automatically refresh an already open manager or its runtime.
 
 ## View lifecycle
 
 Nui owns mounting, layout updates, and popup buffers/windows. Each OrbitVim view session owns its event subscriptions, debounce timer, selection, and details. Normal close, external window closure, and buffer deletion dispose the session. Resize fits the layout to the available editor area; lists and details remain scrollable.
 
-The architecture and developer checks are described in [architecture](architecture.md) and [AGENTS](../AGENTS.md).
+[Architecture](architecture.md) describes the module boundaries.

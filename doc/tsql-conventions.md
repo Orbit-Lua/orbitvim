@@ -2,9 +2,7 @@
 
 # T-SQL Conventions and Templates
 
-A practical set of conventions and reusable templates for Microsoft SQL Server / T-SQL projects.
-
-The goal is to keep database objects, queries, migrations, stored procedures, and application-facing SQL consistent, readable, and predictable.
+Conventions and templates for Microsoft SQL Server objects, queries, migrations and stored procedures. The [snippets](tsql-snippets.md) follow them, and every `sql` fence here is part of the highlighting test corpus.
 
 ---
 

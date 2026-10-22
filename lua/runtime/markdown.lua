@@ -4,9 +4,10 @@ function M.build_preview(plugin)
   local info = vim.json.decode(
     table.concat(vim.fn.readfile(plugin.dir .. "/package.json"), "\n")
   )
-  local windows = vim.fn.has("win32") == 1
+  local os_utils = require("utils.os")
+  local windows = os_utils.is_win()
   local platform = windows and "win" or "linux"
-  if vim.fn.has("mac") == 1 then
+  if os_utils.is_mac() then
     platform = vim.uv.os_uname().machine == "arm64" and "macos-arm64" or "macos"
   end
   local executable = plugin.dir

@@ -5,6 +5,14 @@ local M = {}
 ---@return string? cmd, string? err
 function M.resolve_cmd(tool, command_field)
   command_field = command_field or "cmd"
+  -- nvim-lint accepts factories that build the linter for the current buffer.
+  if type(tool) == "function" then
+    local ok, built = pcall(tool)
+    if not ok then
+      return nil, "definition failed: " .. tostring(built)
+    end
+    tool = built
+  end
   if type(tool) ~= "table" or not tool[command_field] then
     return nil, nil
   end

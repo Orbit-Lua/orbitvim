@@ -143,6 +143,17 @@ describe("tool.state", function()
     end
   )
 
+  it("replaces a lock left by a writer that exited mid-write", function()
+    local lock_path = state_path .. ".lock"
+    test.write_file(lock_path, "")
+    local abandoned = os.time() - 60
+    assert(vim.uv.fs_utime(lock_path, abandoned, abandoned))
+
+    assert.is_true(state.set_enabled("lsp", "lua_ls", false))
+    assert.is_false(state.load().lsp.lua_ls)
+    assert.is_nil(vim.uv.fs_stat(lock_path))
+  end)
+
   it(
     "persists enablement and ordering changes through the public interface",
     function()

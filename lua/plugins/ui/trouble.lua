@@ -3,7 +3,6 @@ return {
   {
     -- ref: https://github.com/folke/trouble.nvim/blob/main/docs/examples.md
     "folke/trouble.nvim",
-    lazy = false,
 
     opts = function()
       return require("config.ui.trouble").trouble
@@ -48,7 +47,7 @@ return {
 
   {
     "folke/todo-comments.nvim",
-    lazy = false,
+    event = "User FilePost",
     dependencies = { "nvim-lua/plenary.nvim" },
     keys = {
       {
@@ -78,7 +77,7 @@ return {
     end,
 
     config = function(_, opts)
-      require("core.theme").load_cache("lsp")
+      require("core.theme").load_cache("todo")
       require("todo-comments").setup(opts)
     end,
   },

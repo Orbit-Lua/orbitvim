@@ -6,16 +6,7 @@ local icons = require("config.icons")
 ---@return table
 function M.options()
   local opts = vim.deepcopy(require("config.formatter"))
-  local state_mod = require("tool.state")
   local order = require("tool.order")
-  local ft = require("utils.ft")
-
-  if state_mod.is_enabled("formatter", "sqlfluff") then
-    for _, filetype in ipairs(ft.sql_ft) do
-      opts.formatters_by_ft[filetype] = opts.formatters_by_ft[filetype] or {}
-      table.insert(opts.formatters_by_ft[filetype], "sqlfluff")
-    end
-  end
 
   for filetype, formatters in pairs(opts.formatters_by_ft) do
     local registry_names = order.from_runtime("formatter", formatters)

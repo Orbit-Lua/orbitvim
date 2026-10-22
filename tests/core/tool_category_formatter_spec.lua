@@ -54,7 +54,23 @@ describe("tool.category.formatter", function()
     assert.same({ "ruff_fix", "ruff_format" }, conform.formatters_by_ft.python)
   end)
 
-  it("reports partial runtime wiring across declared filetypes", function()
+  it("re-enables a formatter only where configuration activates it", function()
+    conform.formatters_by_ft.markdown = { "markdownlint-cli2" }
+    conform.formatters_by_ft.html = { "deno_fmt" }
+    for _, enabled in ipairs({ false, true }) do
+      formatter.apply_runtime({
+        name = "deno_fmt",
+        meta = tools.formatter.deno_fmt,
+        is_enabled = enabled,
+      })
+    end
+
+    assert.same({ "markdownlint-cli2" }, conform.formatters_by_ft.markdown)
+    assert.same({ "deno_fmt" }, conform.formatters_by_ft.html)
+    assert.is_nil(conform.formatters_by_ft["markdown.mdx"])
+  end)
+
+  it("reports partial runtime wiring across configured filetypes", function()
     local status, hl = formatter.entry_status({
       name = "deno_fmt",
       meta = tools.formatter.deno_fmt,
@@ -72,7 +88,7 @@ describe("tool.category.formatter", function()
       installed = true,
     })
 
-    assert.equals("partly configured 1/11", status)
+    assert.equals("partly configured 1/9", status)
     assert.equals("DiagnosticWarn", hl)
   end)
 

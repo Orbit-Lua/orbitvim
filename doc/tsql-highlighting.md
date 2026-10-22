@@ -13,8 +13,8 @@ Both layers also apply to fenced `sql` blocks in Markdown. Tree-sitter injects
 the SQL parser into each fence, while Neovim's Markdown syntax includes the
 `tsql` fallback only inside the same fenced regions.
 
-This keeps Tree-sitter responsible for normal SQL structure and avoids the
-maintenance cost of a separate T-SQL grammar.
+Tree-sitter stays responsible for SQL structure, so no separate T-SQL grammar
+is maintained.
 
 ## Runtime behavior
 
@@ -151,11 +151,3 @@ included automatically; do not pin the test to a fixed fence count.
 The corpus deliberately does not require error-free parse trees. The generic
 SQL grammar may recover T-SQL constructs through `ERROR` nodes; the relevant
 contract is complete visual highlighting through the two layers.
-
-Before committing a change, run the full suite and startup smoke test:
-
-```bash
-just all
-just test-integration
-nvim --headless "+qall"
-```

@@ -68,6 +68,22 @@ function M.apply_inlay_hints(hints)
   end
 end
 
+---Blink's completion capabilities with the configured overrides; Neovim's
+---defaults when Blink is unavailable.
+---@param overrides? lsp.ClientCapabilities
+---@return lsp.ClientCapabilities
+function M.client_capabilities(overrides)
+  local ok, blink = pcall(require, "blink.cmp")
+  if ok then
+    return blink.get_lsp_capabilities(overrides, true)
+  end
+  return vim.tbl_deep_extend(
+    "force",
+    vim.lsp.protocol.make_client_capabilities(),
+    overrides or {}
+  )
+end
+
 ---Registers all configured LSP servers with vim.lsp.
 ---@param opts Lsp.Config.Spec
 M.register_servers = function(opts)
@@ -77,7 +93,7 @@ M.register_servers = function(opts)
   local state_mod = require("tool.state")
   local default_lsp_config = {
     on_init = opts.on_init,
-    capabilities = opts.capabilities,
+    capabilities = M.client_capabilities(opts.capabilities),
   }
 
   for _, server in ipairs(packages.lsp_servers) do
@@ -204,26 +220,17 @@ M.activate_features = function(opts)
     )
   end
 
-  if opts.codelens.enabled and vim.lsp.codelens then
-    lsp_client.on_supports_method("textDocument/codeLens", function(_, bufnr)
-      vim.lsp.codelens.enable(true)
-      vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-        group = vim.api.nvim_create_augroup(
-          "UserCodeLens_" .. bufnr,
-          { clear = true }
-        ),
-        buffer = bufnr,
-        callback = function()
-          vim.lsp.codelens.enable(true, { bufnr = bufnr })
-        end,
-      })
+  -- Enabled lenses refresh themselves as the buffer changes.
+  if opts.codelens.enabled then
+    lsp_client.on_supports_method("textDocument/codeLens", function(_, buffer)
+      vim.lsp.codelens.enable(true, { bufnr = buffer })
     end)
   end
 
   local pending_refresh = {}
   vim.api.nvim_create_autocmd("LspProgress", {
     group = vim.api.nvim_create_augroup(
-      "UserLspSupportsMethodRefresh",
+      "OrbitVimLspMethodRefresh",
       { clear = true }
     ),
     pattern = "end",
@@ -254,11 +261,10 @@ end
 
 function M.setup(opts)
   local lsp_client = require("runtime.lsp.client")
+  local keymaps = require("runtime.lsp.keymaps")
   lsp_client.setup()
-  lsp_client.on_attach(function(client, buffer)
-    require("runtime.lsp.keymaps").on_attach(client, buffer)
-  end)
-  lsp_client.on_dynamic_capability(require("runtime.lsp.keymaps").on_attach)
+  lsp_client.on_attach(keymaps.on_attach)
+  lsp_client.on_dynamic_capability(keymaps.on_attach)
 
   M.configure_diagnostics(opts)
   M.install_diagnostic_filter()

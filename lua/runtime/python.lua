@@ -93,30 +93,28 @@ function M.recreate_stub(root, name, on_done)
   return true
 end
 
-function M.get_venv_path()
-  local venv_path = os.getenv("VIRTUAL_ENV")
-  if not venv_path or venv_path == "" then
-    return ""
+---Path of an executable inside the active virtual environment, or nil when
+---no environment is active.
+---@param name string executable name without extension
+---@return string?
+function M.venv_executable(name)
+  local venv = os.getenv("VIRTUAL_ENV")
+  if not venv or venv == "" then
+    return nil
   end
-  return vim.fs.normalize(venv_path)
+  local windows = os_utils.is_win()
+  return vim.fs.joinpath(
+    vim.fs.normalize(venv),
+    windows and "Scripts" or "bin",
+    name .. (windows and ".exe" or "")
+  )
 end
 
-function M.get_virtual_python_path()
-  local venv_path = M.get_venv_path()
-  if venv_path == "" then
-    return ""
-  end
-  local executable = os_utils.is_win() and "/Scripts/pythonw.exe"
-    or "/bin/python"
-  return venv_path .. executable
-end
-
-function M.check_venv()
-  if M.get_virtual_python_path() == "" then
-    vim.notify("venv has not been activated", vim.log.levels.WARN)
-    return 1
-  end
-  return 0
+---Interpreter for the debug adapter; pythonw avoids a console window on
+---Windows.
+---@return string?
+function M.venv_python()
+  return M.venv_executable(os_utils.is_win() and "pythonw" or "python")
 end
 
 return M

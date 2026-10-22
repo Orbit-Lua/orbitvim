@@ -37,8 +37,9 @@ M.actions = {
     end
   end,
   snippet_stop = function()
-    local luasnip_ok, luasnip = pcall(require, "luasnip")
-    if luasnip_ok then
+    -- Escape runs this on every press; a session exists only if LuaSnip loaded.
+    local luasnip = package.loaded.luasnip
+    if luasnip then
       local current_nodes = luasnip.session.current_nodes
       if current_nodes[vim.api.nvim_get_current_buf()] then
         luasnip.unlink_current()

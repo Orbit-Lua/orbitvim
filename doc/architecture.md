@@ -1,12 +1,14 @@
 # Architecture
 
-OrbitVim separates declarative configuration from runtime activation. `init.lua` runs editor setup before Lazy, imports plugin specifications, then registers commands and finishes theme, shell, highlight, and general-key setup. A fresh Lazy clone checks out its bundled lockfile revision before being loaded.
+OrbitVim separates declarative configuration from runtime activation. `init.lua` applies editor options and settings before Lazy, imports the plugin specs, then registers commands and finishes theme, shell, highlight and general-key setup. A fresh Lazy clone checks out the revision in `lazy-lock.json` before it loads.
 
-User settings are resolved from the bundled JSON schema before plugin setup. `config.settings` owns data, validation and defaults; `core.settings` applies live changes transactionally and observes the exact saved path. Restart-only changes remain pending. Commands live in `commands.settings`. The [settings guide](settings.md) defines scope, precedence and recovery.
+Plugin specs declare identity, dependencies, loading triggers, keys and lifecycle callbacks. Editable options live in `lua/config/`; activation lives in `lua/runtime/` or the feature's owner, which the lifecycle callbacks call.
 
-Plugin specifications declare identity, dependencies, loading triggers, keys, and lifecycle callbacks. Editable options live in `lua/config/`; activation lives in `lua/runtime/` or the feature's owner. Importing a specification does not itself register commands/events/mappings or load highlight caches.
+## Settings
 
-## Tool Manager boundaries
+`config.settings` resolves `settings.json` against the bundled schema before plugin setup and validates tool and server IDs against the registry. `core.settings` applies live changes transactionally and observes saves to the exact settings path; restart-only changes stay pending. `commands.settings` registers `:OrbitSettings`. The [settings guide](settings.md) defines scope, precedence and recovery.
+
+## Tool Manager
 
 ```mermaid
 flowchart TD
@@ -23,30 +25,26 @@ flowchart TD
     Runtime --> State
 ```
 
-`lua/config/tools.lua` is the single registry for logical tool identities, supported filetypes, backend aliases, installers, and ordered defaults. `config.packages` derives sorted, unique package/server/parser lists. Supported filetypes do not imply initial runtime activation; explicit configured lists and conditions retain that responsibility.
+`config.tools` is the single registry of logical tool IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique package, server and parser lists from it.
 
-`tool.manager` accepts selections by category, logical name, and optional filetype. It validates capabilities before changing state or invoking installers. Snapshots contain tool status, structured health, filetype groups, and summary data. They contain no Nui nodes, cursor positions, or highlight offsets.
+`tool.manager` takes selections by category, logical name and optional filetype, and checks capabilities before changing state or calling installers. Its snapshots carry tool status, structured health, filetype groups and summaries, never Nui nodes, cursor positions or highlight offsets.
 
-`tool.state` reads compatible current/legacy JSON and persists logical identities. Each write takes an exclusive lock and rereads disk state before merging its selected field. `tool.order` reconciles saved/default order with current candidates. Formatter/linter adapters translate backend identifiers at their runtime boundary and preserve unrelated runtime entries; priority changes retain the configured activation set. Health checks use the captured source buffer. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
+`tool.state` reads current and legacy JSON and persists logical IDs. Each write takes an exclusive lock and rereads disk state before merging its field. `tool.order` reconciles saved and default order with the current candidates. Category adapters translate backend identifiers at the runtime boundary and preserve unrelated runtime entries. Formatter and linter adapters re-enable a tool only on filetypes that `config.formatter` / `config.linter` activate initially, matching startup. Health checks use the captured source buffer. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
 
-`tool.ui.view` owns one session: Nui Layout/Popup components, view mode, source context, stable selection, mappings, event subscriptions, timers, and the selection-following details preview. `tool.ui.render` builds Nui Tree/Line content; `tool.ui.details` renders wrapped health and selected-tool information. Shared glyphs come from `config.icons`; mappings and help descriptions come from `config.tool_manager`.
+`tool.ui.view` owns one session: Nui layout and popups, view mode, source context, selection, mappings, subscriptions, timers and the details preview. `tool.ui.render` builds Nui tree content; `tool.ui.details` renders health and selected-tool information. Glyphs come from `config.icons`; mappings and help text come from `config.tool_manager`.
 
-Tool operations can outlive the view. Completion changes legitimate state/runtime behavior but only refreshes the session that initiated the operation if it is still active. Every subscription/timer is disposed when that session closes; a later view cannot inherit an earlier callback.
+An operation can outlive its view. Its completion updates state and runtime but refreshes only the session that started it, and only while that session is open.
 
-## Shared helpers and tests
+## Runtime owners
 
-Shared helpers expose concrete local behavior. Callers import the owning module directly; OrbitVim does not proxy arbitrary Lazy utilities. Tree-sitter predicates and SQL syntax activation belong to `runtime.treesitter`, not a generic utility facade.
+- `runtime.lsp` registers servers, diagnostics and optional features, and merges client capabilities from Blink; `runtime.lsp.client` owns client lifecycle and capability events, with private method-tracking state and idempotent setup.
+- `runtime.completion.blink` owns Blink setup and resize subscriptions; `utils.cmp` holds completion and snippet actions and their dispatch order.
+- `runtime.treesitter` owns parser start, SQL predicates and SQL syntax fallback.
+- `runtime.harpoon` owns list items, selection highlighting and setup; `runtime.ui` coordinates Snacks and Trouble setup.
+- `runtime.completion` builds LuaSnip, linking the running Neovim's directory on Windows; `runtime.markdown` waits for the preview installer and checks its executable version. Both run argument lists directly, independent of the interactive shell.
+- `runtime.notes` installs one Markdown highlight override from `lua/config/notes/markdown.scm` that keeps code fences visible at `conceallevel=2`. Upstream query changes need review against it.
+- `core.shell` chooses Windows shell and compiler defaults while keeping explicit choices.
 
-LSP and DAP option assembly live at `config.lsp` and `config.dap`. Blink setup and resize subscriptions live in `runtime.completion.blink`; `utils.cmp` contains completion/snippet actions and their ordered dispatch. Logical/runtime list conversion is shared through `tool.order`. Selected-tool logs and diagnostics are queried through `tool.manager.details`; glyph selection belongs to the Nui renderer.
+UI options live in `lua/config/ui/`; navigation, completion, Git and notes options have their own `lua/config/` modules.
 
-LSP client lifecycle and capability events live in `runtime.lsp.client`. Its method-tracking state is private, and setup is idempotent. Callers import that owner directly.
-
-UI options live in `config.ui`; navigation, completion, Git and notes options have their own config modules. `runtime.harpoon` owns list items, selection highlighting and setup; `runtime.ui` owns coordinated UI setup. `core.shell` chooses available Windows defaults while preserving explicit shell/compiler choices.
-
-`runtime.completion` builds LuaSnip with the running Neovim's DLL directory on Windows. `runtime.markdown` waits for the preview installer and checks its executable version. Both build callbacks execute argument lists directly, independently of the interactive shell.
-
-`runtime.notes` installs one Markdown highlight override from `lua/config/notes/markdown.scm`. The override retains visible code fences at `conceallevel=2`; extending the upstream query would retain its conceal metadata. Parser integration protects this behavior, and upstream query changes still require review.
-
-`tests/core/` verifies persistence, ordering, state transitions, safety, runtime seams, and public Nui interactions without network/installations. `tests/integration/` exercises actual parsers, snippets, SQLFluff, JSON language-server behavior, native build adapters, a local Git bootstrap and validation failure propagation. Fixtures stay under the bootstrap's isolated test root. One Linux/Windows CI matrix runs the same recipes: formatting, lint, both complete suites, native dependency execution and startup. It restores and verifies plugin revisions against the lockfile on both platforms. Windows uses [MSYS2](https://github.com/msys2/setup-msys2) for native build tools while retaining native Git. The test admission rules and exact validation commands are in [AGENTS](../AGENTS.md).
-
-The design borrows the separation of state, actions, and rendering seen in [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) supplies UI components; no second local windowing framework is maintained.
+The separation of state, actions and rendering follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) supplies the UI components.

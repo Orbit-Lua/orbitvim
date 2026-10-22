@@ -27,7 +27,9 @@ return {
       require("core.theme").load_cache("nvimtree")
     end,
     ---@type nvim_tree.config
-    opts = require("config.nvimtree"),
+    opts = function()
+      return require("config.nvimtree")
+    end,
     keys = {
       { "<C-n>", "<cmd>NvimTreeToggle<CR>", desc = "nvimtree toggle window" },
       {

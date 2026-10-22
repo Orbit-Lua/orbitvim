@@ -243,6 +243,19 @@
       },
       "x-reload": "restart",
       "description": "Initial tool priorities. Requires a restart; does not change saved enablement or ordering."
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vault": {
+          "type": "string",
+          "default": "",
+          "description": "Obsidian vault directory; ~ expands to the home directory. obsidian.nvim loads for Markdown only when this directory exists."
+        }
+      },
+      "x-reload": "restart",
+      "description": "Obsidian notes. Requires a restart."
     }
   }
 }

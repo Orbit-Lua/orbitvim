@@ -27,14 +27,4 @@ return {
       _G.MiniIcons.mock_nvim_web_devicons()
     end,
   },
-
-  {
-    "nvim-tree/nvim-web-devicons",
-    lazy = false,
-    cond = false,
-    opts = function()
-      require("core.theme").load_cache("devicons")
-      return { override = require("nvchad.icons.devicons") }
-    end,
-  },
 }

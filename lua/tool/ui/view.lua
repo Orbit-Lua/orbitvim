@@ -283,7 +283,7 @@ function View.new(source, state, on_close)
   vim.wo[self.body.winid].cursorline = true
   vim.api.nvim_set_current_win(self.body.winid)
   self.group = vim.api.nvim_create_augroup(
-    "ToolManagerSession" .. self.body.bufnr,
+    "OrbitVimToolManager" .. self.body.bufnr,
     { clear = true }
   )
   self.unsubscribe = require("tool.mason").observe(function()

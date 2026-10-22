@@ -27,7 +27,7 @@ local function terminal_cmd(opts)
   end
 
   if
-    vim.fn.has("win32") == 1
+    require("utils.os").is_win()
     and vim.tbl_contains({ "powershell", "pwsh" }, shell_name())
   then
     return { vim.o.shell, "-NoLogo" }

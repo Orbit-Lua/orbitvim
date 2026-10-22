@@ -145,20 +145,16 @@ jobs:
           path: |
             ${{ env.NVIM_DATA_PATH }}/lazy
             ${{ env.NVIM_DATA_PATH }}/site
-          key: nvim-${{ runner.os }}-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/restore_plugins.lua', 'scripts/tests/install_parsers.lua', '.github/workflows/validate.yml') }}
+          key: nvim-${{ runner.os }}-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/restore_plugins.lua', 'scripts/tests/install_parsers.lua', 'justfile', '.github/workflows/validate.yml') }}
 
       - name: Restore and verify locked plugins
-        run: |
-          nvim --headless -u NORC -l scripts/tests/restore_plugins.lua
-          if ($LASTEXITCODE -ne 0) { throw 'Locked plugin installation failed' }
-          git diff --exit-code -- lazy-lock.json
-          if ($LASTEXITCODE -ne 0) { throw 'Plugin installation changed the lockfile' }
+        run: just deps
 
       - name: Build and execute native dependencies
         run: just test-build
 
       - name: Install integration parsers
-        run: nvim --headless -u init.lua -l scripts/tests/install_parsers.lua
+        run: just parsers
 
       - name: Run core validation
         run: just all
