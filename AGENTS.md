@@ -61,17 +61,17 @@ Core specs must be deterministic and hermetic: no network, Mason installation, p
 
 ## Validation
 
-From the repository root, prepare Neovim 0.12+, StyLua, Luacheck, Tree-sitter CLI 0.26.1+ and `make`. Open Neovim once to bootstrap plugins: core specs require Plenary and Nui in Lazy's data directory. Install configured parsers with `:TSInstallAll` before parser integration checks. Integration tests also require LuaSnip and SQLFluff.
+From the repository root, prepare Neovim 0.12+, StyLua, Luacheck, Tree-sitter CLI 0.26.1+ and `just`. Open Neovim once to bootstrap plugins: core specs require Plenary and Nui in Lazy's data directory. Install configured parsers with `:TSInstallAll` before parser integration checks. Integration tests also require LuaSnip and SQLFluff.
 
 | Command | Effect |
 | --- | --- |
-| `make fmt` | Rewrite Lua formatting, including tests and `init.lua` |
-| `make fmt-check` | Check formatting without rewriting |
-| `make lint` | Run Luacheck |
-| `make test` / `make test-core` | Run hermetic core specs |
-| `make test-integration` | Run parser, snippet and executable integration specs |
-| `make test-all` | Run both suites |
-| `make all` | Format check, lint and core specs |
+| `just fmt` | Rewrite Lua formatting, including tests and `init.lua` |
+| `just fmt-check` | Check formatting without rewriting |
+| `just lint` | Run Luacheck |
+| `just test` / `just test-core` | Run hermetic core specs |
+| `just test-integration` | Run parser, snippet and executable integration specs |
+| `just test-all` | Run both suites |
+| `just all` | Format check, lint and core specs |
 | `nvim --headless "+qall"` | Smoke-test startup with installed plugins/user state |
 
 For one core spec:
@@ -82,7 +82,7 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   -c 'qall'
 ```
 
-Run `make all` before completion. Run `make test-integration` for changes to Tree-sitter queries/parsers/runtime, LuaSnip collections, SQLFluff executable behavior, or their adapters. Run startup smoke checks when startup/plugin loading changes. Report checks actually run and missing dependencies; do not silently skip them.
+Run `just all` before completion. Run `just test-integration` for changes to Tree-sitter queries/parsers/runtime, LuaSnip collections, SQLFluff executable behavior, or their adapters. Run startup smoke checks when startup/plugin loading changes. Report checks actually run and missing dependencies; do not silently skip them.
 
 ## Safety and style
 

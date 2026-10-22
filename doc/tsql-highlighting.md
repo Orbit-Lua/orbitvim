@@ -155,7 +155,7 @@ contract is complete visual highlighting through the two layers.
 Before committing a change, run the full suite and startup smoke test:
 
 ```bash
-make all
-make test-integration
+just all
+just test-integration
 nvim --headless "+qall"
 ```

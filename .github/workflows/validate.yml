@@ -32,6 +32,9 @@ jobs:
           sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
           echo "/opt/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
 
+      - name: Install just
+        uses: extractions/setup-just@v3
+
       - name: Install StyLua
         uses: JohnnyMorganz/stylua-action@v5
         with:
@@ -84,10 +87,10 @@ jobs:
         run: nvim --headless -u init.lua -l scripts/tests/install_parsers.lua
 
       - name: Run core validation
-        run: make all
+        run: just all
 
       - name: Run integration tests
-        run: make test-integration
+        run: just test-integration
 
       - name: Smoke-test startup
         run: nvim --headless "+qall"
@@ -101,15 +104,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install baseline Neovim and make
+      - name: Install baseline Neovim
         shell: pwsh
         run: |
           $archive = Join-Path $env:RUNNER_TEMP 'nvim.zip'
           Invoke-WebRequest "https://github.com/neovim/neovim/releases/download/$env:NEOVIM_VERSION/nvim-win64.zip" -OutFile $archive
           Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
           Join-Path $env:RUNNER_TEMP 'nvim-win64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
-          choco install make --yes --no-progress
-          if ($LASTEXITCODE -ne 0) { throw 'make installation failed' }
+
+      - name: Install just
+        uses: extractions/setup-just@v3
 
       - name: Install locked core-test dependencies
         shell: pwsh
@@ -130,4 +134,4 @@ jobs:
           }
 
       - name: Run Windows core tests
-        run: make test-core
+        run: just test-core

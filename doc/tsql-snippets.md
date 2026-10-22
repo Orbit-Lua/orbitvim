@@ -243,7 +243,7 @@ transaction, identifier-validation, and parameterization behavior in
 or collection-size assertions. Then run:
 
 ```bash
-make all
-make test-integration
+just all
+just test-integration
 nvim --headless "+qall"
 ```

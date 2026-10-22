@@ -106,16 +106,16 @@ system viewer.
 
 ## Development
 
-Install Neovim, `make`, StyLua, and Luacheck. Open Neovim once to bootstrap the locked plugins, including Plenary and Nui. Integration tests additionally require the configured parsers, LuaSnip, and SQLFluff; use `:TSInstallAll` to prepare parsers.
+Install Neovim, `just`, StyLua, and Luacheck. Open Neovim once to bootstrap the locked plugins, including Plenary and Nui. Integration tests additionally require the configured parsers, LuaSnip, and SQLFluff; use `:TSInstallAll` to prepare parsers.
 
 Run commands from the repository root:
 
 | Command | Effect |
 | --- | --- |
-| `make all` | Check formatting, lint, and run hermetic core specs |
-| `make test-integration` | Run parser, snippet, and executable integration specs |
-| `make test-all` | Run both suites |
-| `make fmt` | Rewrite Lua formatting |
+| `just` or `just all` | Check formatting, lint, and run hermetic core specs |
+| `just test-integration` | Run parser, snippet, and executable integration specs |
+| `just test-all` | Run both suites |
+| `just fmt` | Rewrite Lua formatting |
 | `nvim --headless "+qall"` | Smoke-test startup with installed plugins |
 
 For one core spec:
