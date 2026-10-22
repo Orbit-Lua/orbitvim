@@ -112,6 +112,8 @@ Validation passed `just all` (145 core cases), `just test-integration` (50 integ
 
 Windows CI exposed an incomplete runtimepath in the test bootstrap: changing to a fixture directory made uncached application modules unavailable when the repository was outside Neovim's default configuration path. The bootstrap now captures absolute repository and `after` paths. Existing Python regeneration, Harpoon selection and parser cases reproduce the failures with an empty configuration home and pass with the fix; no test expectation changed. Replacing the absolute entry with `.` breaks module loading; omitting `after` loses the production parser queries.
 
+Runtime paths are deduplicated by filesystem identity without changing their order, so configuration symlinks cannot duplicate injection queries. A throwaway Windows junction check exercises the existing injection suite through an alias. Windows builds retain the runner's native Git instead of installing a second Git through MSYS. The bootstrap assertion includes child output when startup fails before executing the fixture.
+
 ## Fresh installation acceptance
 
 Acceptance used separate XDG configuration, data, state and cache directories. It downloaded plugins, compiled the integration parsers, installed JSON LSP through Mason and verified all 43 installed plugin revisions against the bundled lockfile. Both suites also passed against these newly installed dependencies.

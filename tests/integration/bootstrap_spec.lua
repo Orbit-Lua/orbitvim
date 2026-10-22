@@ -74,6 +74,11 @@ describe("first-start Lazy bootstrap", function()
         }, { env = environment, text = true })
         :wait(15000)
       assert.equals(0, result.code, result.stderr)
+      assert.equals(
+        1,
+        vim.fn.filereadable(root .. "/loaded.txt"),
+        result.stdout .. result.stderr
+      )
       assert.same({ "locked" }, vim.fn.readfile(root .. "/loaded.txt"))
     end
   )

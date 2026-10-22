@@ -24,9 +24,21 @@ augroup OrbitVimTestCleanup
   autocmd VimLeavePre * call <SID>cleanup_test_root()
 augroup END
 
-execute 'set rtp^=' . fnameescape(getcwd())
-execute 'set rtp+=' . fnameescape(getcwd() . '/after')
-lua package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
+lua << EOF
+local repository = vim.fn.getcwd()
+vim.opt.runtimepath:prepend(repository)
+vim.opt.runtimepath:append(repository .. "/after")
+local seen = {}
+vim.opt.runtimepath = vim.tbl_filter(function(path)
+  local canonical = vim.uv.fs_realpath(path) or path
+  if seen[canonical] then
+    return false
+  end
+  seen[canonical] = true
+  return true
+end, vim.opt.runtimepath:get())
+package.path = repository .. "/?.lua;" .. package.path
+EOF
 execute 'set rtp+=' . fnameescape(s:plugin_data_path . '/lazy/plenary.nvim')
 runtime! plugin/plenary.vim
 lua require('tests.helpers').setup()

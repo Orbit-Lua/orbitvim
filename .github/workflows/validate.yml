@@ -145,7 +145,7 @@ jobs:
         with:
           msystem: UCRT64
           path-type: inherit
-          install: make git mingw-w64-ucrt-x86_64-gcc
+          install: make mingw-w64-ucrt-x86_64-gcc
 
       - name: Expose native build tools
         shell: pwsh
