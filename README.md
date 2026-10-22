@@ -1,6 +1,6 @@
 # OrbitVim
 
-[![Validate](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml?query=branch%3Amain)
+[![Check](https://img.shields.io/github/actions/workflow/status/Orbit-Lua/orbitvim/validate.yml?branch=main&label=check&logo=githubactions&logoColor=white)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
 [![Neovim 0.12+](https://img.shields.io/badge/Neovim-0.12%2B-57A143?style=flat-square&logo=neovim&logoColor=white)](https://neovim.io/)
 
 A Lua Neovim configuration for C#, Python, JavaScript, TypeScript, Go, SQL and Markdown, with a Tool Manager that installs, enables and orders language tools from one view.
