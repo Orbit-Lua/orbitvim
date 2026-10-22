@@ -42,12 +42,10 @@ function M.apply_adapter(dap, name, enabled, definitions)
   if enabled then
     if name == "coreclr" then
       local ok, dotnet = pcall(require, "dotnet-cli")
-      if ok then
-        local ready, err = dotnet.setup_dap()
-        if not ready then
-          vim.notify(err, vim.log.levels.ERROR)
-        end
+      if not ok then
+        return false, "dotnet-cli is unavailable"
       end
+      return dotnet.setup_dap()
     else
       dap.adapters[name] = definitions.adapters[name]
       add_configurations(dap, name, definitions.configurations)
@@ -98,6 +96,34 @@ function M.setup(dap, definitions, state)
         table.insert(dap.configurations[filetype], vim.deepcopy(configuration))
       end
     end
+  end
+  if state.is_enabled("dap", "coreclr") then
+    local ok, plugin = pcall(require, "dotnet-cli")
+    if ok then
+      local registered, err = plugin.setup_dap()
+      if not registered then
+        vim.notify(err, vim.log.levels.WARN, { title = "Dotnet" })
+      end
+    else
+      vim.notify("dotnet-cli.nvim is unavailable", vim.log.levels.WARN, {
+        title = "Dotnet",
+      })
+    end
+  end
+end
+
+function M.setup_ui(opts)
+  local dap = require("dap")
+  local dapui = require("dapui")
+
+  dapui.setup(opts)
+  dap.set_log_level("TRACE")
+
+  dap.listeners.before.terminate["dapui_config"] = function()
+    dapui.close()
+  end
+  dap.listeners.before.event_exited["dapui_config"] = function()
+    dapui.close()
   end
 end
 

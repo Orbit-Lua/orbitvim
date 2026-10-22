@@ -38,12 +38,4 @@ M.rpad = function(s, w)
   return dw < w and (s .. string.rep(" ", w - dw)) or s
 end
 
----Pad `s` with trailing spaces to fill `inner_w` display columns.
----@param s string
----@param inner_w integer
----@return string
-M.fill_line = function(s, inner_w)
-  return M.rpad(s, inner_w)
-end
-
 return M

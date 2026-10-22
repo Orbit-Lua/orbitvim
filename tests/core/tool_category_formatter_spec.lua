@@ -31,27 +31,17 @@ describe("tool.category.formatter", function()
     state.set_order("formatter", "python", { "ruff_fix", "ruff_format" })
     state.set_enabled("formatter", "ruff_fix", true)
     state.set_enabled("formatter", "ruff_format", true)
+    formatter = require("tool.category.formatter")
+  end)
+
+  after_each(function()
+    package.loaded.conform = original_conform
     vim.g.tool_state_path = original_state_path
     package.loaded["tool.state"] = original_state_module
     package.loaded["tool.order"] = original_order_module
     package.loaded["tool.category.formatter"] = original_formatter_module
     package.loaded["tool.category.list"] = original_handler_module
     test.cleanup_all()
-
-    formatter = require("tool.category.formatter")
-  end)
-
-  after_each(function()
-    package.loaded.conform = original_conform
-    if tools.formatter_defaults.python then
-      state.set_order(
-        "formatter",
-        "python",
-        vim.deepcopy(tools.formatter_defaults.python)
-      )
-    end
-    state.set_enabled("formatter", "ruff_fix", true)
-    state.set_enabled("formatter", "ruff_format", true)
   end)
 
   it("re-enables a formatter at its saved runtime priority", function()

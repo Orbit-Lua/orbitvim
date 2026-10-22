@@ -94,7 +94,9 @@ return {
     "iamcco/markdown-preview.nvim",
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
     ft = { "markdown" },
-    build = ":call mkdp#util#install()",
+    build = function(plugin)
+      require("runtime.markdown").build_preview(plugin)
+    end,
     keys = {
       {
         "<leader>mp",

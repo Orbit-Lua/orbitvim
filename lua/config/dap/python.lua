@@ -1,8 +1,8 @@
-local py_cmd = require("runtime.python")
+local python = require("runtime.python")
 local os_utils = require("utils.os")
 
 local is_debugpy_installed = function()
-  local venv_path = py_cmd.get_venv_path()
+  local venv_path = python.get_venv_path()
 
   if os_utils.is_win() then
     venv_path = venv_path .. "/Scripts/debugpy.exe"
@@ -18,7 +18,7 @@ return {
   adapters = {
     python = function(callback, config)
       if config.request == "launch" then
-        if py_cmd.check_venv() ~= 0 then
+        if python.check_venv() ~= 0 then
           return
         end
 
@@ -32,7 +32,7 @@ return {
 
         callback({
           type = "executable",
-          command = py_cmd.get_virtual_python_path(),
+          command = python.get_virtual_python_path(),
           args = { "-m", "debugpy.adapter" },
           options = {
             source_filetype = "python",

@@ -1,6 +1,8 @@
 # Architecture
 
-OrbitVim separates declarative configuration from runtime activation. `init.lua` runs editor setup before Lazy, imports plugin specifications, then registers commands and finishes theme, shell, highlight, and general-key setup.
+OrbitVim separates declarative configuration from runtime activation. `init.lua` runs editor setup before Lazy, imports plugin specifications, then registers commands and finishes theme, shell, highlight, and general-key setup. A fresh Lazy clone checks out its bundled lockfile revision before being loaded.
+
+User settings are resolved from the bundled JSON schema before plugin setup. `config.settings` owns data, validation and defaults; `core.settings` applies live changes transactionally and observes the exact saved path. Restart-only changes remain pending. Commands live in `commands.settings`. The [settings guide](settings.md) defines scope, precedence and recovery.
 
 Plugin specifications declare identity, dependencies, loading triggers, keys, and lifecycle callbacks. Editable options live in `lua/config/`; activation lives in `lua/runtime/` or the feature's owner. Importing a specification does not itself register commands/events/mappings or load highlight caches.
 
@@ -25,7 +27,7 @@ flowchart TD
 
 `tool.manager` accepts selections by category, logical name, and optional filetype. It validates capabilities before changing state or invoking installers. Snapshots contain tool status, structured health, filetype groups, and summary data. They contain no Nui nodes, cursor positions, or highlight offsets.
 
-`tool.state` reads compatible current/legacy JSON and persists logical identities. `tool.order` reconciles saved/default order with current candidates. Formatter/linter adapters translate backend identifiers at their runtime boundary and preserve unrelated runtime entries. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
+`tool.state` reads compatible current/legacy JSON and persists logical identities. Each write takes an exclusive lock and rereads disk state before merging its selected field. `tool.order` reconciles saved/default order with current candidates. Formatter/linter adapters translate backend identifiers at their runtime boundary and preserve unrelated runtime entries; priority changes retain the configured activation set. Health checks use the captured source buffer. DAP activation is shared with `runtime.dap`; parser installation uses Tree-sitter's async result.
 
 `tool.ui.view` owns one session: Nui Layout/Popup components, view mode, source context, stable selection, mappings, event subscriptions, timers, and the selection-following details preview. `tool.ui.render` builds Nui Tree/Line content; `tool.ui.details` renders wrapped health and selected-tool information. Shared glyphs come from `config.icons`; mappings and help descriptions come from `config.tool_manager`.
 
@@ -35,6 +37,16 @@ Tool operations can outlive the view. Completion changes legitimate state/runtim
 
 Shared helpers expose concrete local behavior. Callers import the owning module directly; OrbitVim does not proxy arbitrary Lazy utilities. Tree-sitter predicates and SQL syntax activation belong to `runtime.treesitter`, not a generic utility facade.
 
-`tests/core/` verifies persistence, ordering, state transitions, safety, runtime seams, and public Nui interactions without network/installations. `tests/integration/` exercises actual parsers, snippets, and the SQLFluff executable. Fixtures stay under the bootstrap's isolated test root. The test admission rules and exact validation commands are in [AGENTS](../AGENTS.md).
+LSP and DAP option assembly live at `config.lsp` and `config.dap`. Blink setup and resize subscriptions live in `runtime.completion.blink`; `utils.cmp` contains completion/snippet actions and their ordered dispatch. Logical/runtime list conversion is shared through `tool.order`. Selected-tool logs and diagnostics are queried through `tool.manager.details`; glyph selection belongs to the Nui renderer.
+
+LSP client lifecycle and capability events live in `runtime.lsp.client`. Its method-tracking state is private, and setup is idempotent. Callers import that owner directly.
+
+UI options live in `config.ui`; navigation, completion, Git and notes options have their own config modules. `runtime.harpoon` owns list items, selection highlighting and setup; `runtime.ui` owns coordinated UI setup. `core.shell` chooses available Windows defaults while preserving explicit shell/compiler choices.
+
+`runtime.completion` builds LuaSnip with the running Neovim's DLL directory on Windows. `runtime.markdown` waits for the preview installer and checks its executable version. Both build callbacks execute argument lists directly, independently of the interactive shell.
+
+`runtime.notes` installs one Markdown highlight override from `lua/config/notes/markdown.scm`. The override retains visible code fences at `conceallevel=2`; extending the upstream query would retain its conceal metadata. Parser integration protects this behavior, and upstream query changes still require review.
+
+`tests/core/` verifies persistence, ordering, state transitions, safety, runtime seams, and public Nui interactions without network/installations. `tests/integration/` exercises actual parsers, snippets, SQLFluff, JSON language-server behavior, native build adapters and a local Git bootstrap. Fixtures stay under the bootstrap's isolated test root. Windows CI also builds the locked LuaSnip dependency with [MSYS2](https://github.com/msys2/setup-msys2), installs Markdown preview and runs schema/build/bootstrap integration. The test admission rules and exact validation commands are in [AGENTS](../AGENTS.md).
 
 The design borrows the separation of state, actions, and rendering seen in [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) supplies UI components; no second local windowing framework is maintained.

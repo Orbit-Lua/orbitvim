@@ -1,5 +1,4 @@
 local ft = require("utils.ft")
-local utils_table = require("utils.table")
 local fs = require("utils.fs")
 
 return {
@@ -11,21 +10,7 @@ return {
   end,
 
   handlers = {
-    -- Drop duplicated diagnostic message
-    -- https://neovim.io/doc/user/lsp.html#lsp-handler
-    ---@type lsp.Handler
-    ["textDocument/publishDiagnostics"] = function(err, res, ctx)
-      local filtered = {}
-      res.diagnostics = utils_table.unique_by_key(res.diagnostics, "message")
-      for _, diagnostic in ipairs(res.diagnostics) do
-        if diagnostic.source == "tsserver" then
-          table.insert(filtered, diagnostic)
-        end
-      end
-
-      res.diagnostics = filtered
-      vim.lsp.diagnostic.on_publish_diagnostics(err, res, ctx)
-    end,
+    ["textDocument/publishDiagnostics"] = require("runtime.lsp").publish_typescript_diagnostics,
   },
 
   settings = {

@@ -5,6 +5,7 @@ vim.g.base46_cache = vim.fn.stdpath("data") .. "/nvchad/base46/"
 vim.g.mapleader = " "
 
 require("core.options")
+require("core.settings").setup()
 require("core.autocmds")
 require("core.filetypes")
 
@@ -29,6 +30,27 @@ if not vim.uv.fs_stat(lazypath) then
         .. vim.trim(output)
     )
   end
+  local lock_path = vim.fn.stdpath("config") .. "/lazy-lock.json"
+  if vim.fn.filereadable(lock_path) == 1 then
+    local lock = vim.json.decode(table.concat(vim.fn.readfile(lock_path), "\n"))
+    local revision = lock["lazy.nvim"] and lock["lazy.nvim"].commit
+    if revision then
+      local checkout = vim.fn.system({
+        "git",
+        "-C",
+        lazypath,
+        "checkout",
+        "--detach",
+        revision,
+      })
+      if vim.v.shell_error ~= 0 then
+        error(
+          "Failed to check out locked lazy.nvim revision: "
+            .. vim.trim(checkout)
+        )
+      end
+    end
+  end
 end
 vim.opt.rtp:prepend(lazypath)
 
@@ -45,7 +67,7 @@ local theme = require("core.theme")
 theme.load_cache("defaults")
 theme.load_cache("statusline")
 
-require("utils.shell").setup()
+require("core.shell").setup()
 require("utils.hl").setup()
 
 require("core.keymaps")

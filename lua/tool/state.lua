@@ -28,6 +28,12 @@ local function build_defaults()
   for ft, order in pairs(tools.linter_defaults or {}) do
     defaults.linter_order[ft] = vim.deepcopy(order)
   end
+  local settings = require("config.settings").get().tools
+  for _, category in ipairs({ "formatter", "linter" }) do
+    for ft, order in pairs(settings[category .. "_defaults"]) do
+      defaults[category .. "_order"][ft] = vim.deepcopy(order)
+    end
+  end
   return defaults
 end
 
@@ -89,13 +95,40 @@ function M.get()
   return _state
 end
 
-function M.save()
+local function update(category, key, value)
   local path = state_path()
-  local ok, encoded = pcall(vim.json.encode, M.get())
-  if not ok then
-    return false, encoded
+  local parent = vim.fn.fnamemodify(path, ":h")
+  local made, mkdir_error = pcall(vim.fn.mkdir, parent, "p")
+  if not made then
+    return false, tostring(mkdir_error)
   end
-  return require("utils.fs").atomic_write(path, encoded)
+  local lock_path = path .. ".lock"
+  local lock, lock_error = vim.uv.fs_open(lock_path, "wx", 384)
+  if not lock then
+    return false,
+      "could not lock tool state (another writer or stale lock): " .. tostring(
+        lock_error
+      )
+  end
+  local ok, saved, save_error = pcall(function()
+    local latest = M.load()
+    latest[category][key] = vim.deepcopy(value)
+    local written, err =
+      require("utils.fs").atomic_write(path, vim.json.encode(latest))
+    if written then
+      _state = latest
+    end
+    return written, err
+  end)
+  vim.uv.fs_close(lock)
+  local unlocked, unlock_error = vim.uv.fs_unlink(lock_path)
+  if not ok then
+    return false, tostring(saved)
+  end
+  if not unlocked then
+    return false, "could not remove state lock: " .. tostring(unlock_error)
+  end
+  return saved, save_error
 end
 
 function M.is_enabled(cat, name)
@@ -108,17 +141,10 @@ function M.is_enabled(cat, name)
 end
 
 function M.set_enabled(cat, name, enabled)
-  local state = M.get()
-  if state[cat] then
-    local previous = state[cat][name]
-    state[cat][name] = enabled
-    local ok, err = M.save()
-    if not ok then
-      state[cat][name] = previous
-      return false, err
-    end
+  if not M.get()[cat] then
+    return true
   end
-  return true
+  return update(cat, name, enabled)
 end
 
 ---@param kind "formatter"|"linter"
@@ -128,15 +154,8 @@ end
 
 ---@param kind "formatter"|"linter"
 function M.set_order(kind, ft, order)
-  local orders = M.get()[kind .. "_order"]
-  local previous = orders[ft]
-  orders[ft] = order
-  local ok, err = M.save()
-  if not ok then
-    orders[ft] = previous
-    return false, err
-  end
-  return true
+  M.get()
+  return update(kind .. "_order", ft, order)
 end
 
 return M

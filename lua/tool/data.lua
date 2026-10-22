@@ -32,25 +32,6 @@ function M.tool_entries(category, ft)
   return flat
 end
 
----@param category ToolCategory
----@return { total: integer, enabled: integer, disabled: integer }
-function M.state_summary(category)
-  local handler = category_handlers[category]
-  if handler and handler.summary then
-    return handler.summary(tools[category] or {})
-  end
-
-  local total = 0
-  local enabled = 0
-  for name in pairs(tools[category] or {}) do
-    total = total + 1
-    if state_mod.is_enabled(category, name) then
-      enabled = enabled + 1
-    end
-  end
-  return { total = total, enabled = enabled, disabled = total - enabled }
-end
-
 local runtime_labels = {
   ["no binary"] = "Missing executable",
   ["missing definition"] = "Missing definition",
@@ -73,7 +54,7 @@ end
 ---@param meta Tool.Definition
 ---@param filetype? string
 ---@return table
-function M.health_status(category, name, meta, filetype)
+function M.health_status(category, name, meta, filetype, bufnr)
   local handler = category_handlers[category]
   local toggleable = handler.capabilities.toggle
   local enabled
@@ -114,12 +95,11 @@ function M.health_status(category, name, meta, filetype)
       name = name,
       meta = meta,
       filetype = filetype,
+      bufnr = bufnr,
     })
   end
   local runtime_text = toggleable and runtime_label(runtime) or "Not applicable"
   local label, severity = runtime_text, runtime_highlight or "DiagnosticWarn"
-  local glyphs = require("config.icons").tool_manager
-  local icon = glyphs.enabled
   if facts and facts.diagnostics then
     local diagnostics = facts.diagnostics
     label = string.format(
@@ -129,33 +109,27 @@ function M.health_status(category, name, meta, filetype)
     )
     runtime_text = label
     severity = "DiagnosticInfo"
-    icon = glyphs.info
   elseif runtime == "no binary" then
     severity = "DiagnosticWarn"
   end
   if installing then
-    label, severity, icon = "Installing…", "DiagnosticInfo", glyphs.installing
+    label, severity = "Installing…", "DiagnosticInfo"
   elseif enabled == false then
-    label, severity, icon = "Disabled", "Comment", glyphs.disabled
+    label, severity = "Disabled", "Comment"
   elseif installation == "missing" then
-    label, severity, icon = "Not installed", "DiagnosticWarn", glyphs.warning
+    label, severity = "Not installed", "DiagnosticWarn"
   elseif installation == "unavailable" or installation == "unknown" then
-    label, severity, icon = "Unknown", "DiagnosticWarn", glyphs.unknown
+    label, severity = "Unknown", "DiagnosticWarn"
   elseif not toggleable then
     label, severity = "Installed", "Comment"
   elseif runtime == "disabled" then
-    label, severity, icon = "Not active", "DiagnosticWarn", glyphs.warning
+    label, severity = "Not active", "DiagnosticWarn"
   elseif runtime == "idle" then
-    icon, severity = glyphs.idle, "Comment"
-  elseif severity == "DiagnosticError" then
-    icon = glyphs.error
-  elseif severity == "DiagnosticWarn" then
-    icon = glyphs.warning
+    severity = "Comment"
   end
   return {
     label = label,
     severity = severity,
-    icon = icon,
     enabled = enabled,
     installation = installation,
     source = source,

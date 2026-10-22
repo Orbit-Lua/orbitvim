@@ -1,75 +1,77 @@
-local test = require("tests.helpers")
-local luasnip_path = test.plugin_path("LuaSnip")
-local original_runtimepath = vim.opt.runtimepath:get()
-vim.opt.runtimepath:append(luasnip_path)
+describe("T-SQL snippet expansions", function()
+  local test = require("tests.helpers")
+  local original_runtimepath, original_buffer, buffer, ls, snippets
 
-local snippets = dofile(vim.fn.getcwd() .. "/luasnippets/tsql.lua")
-
-local function index_by_trigger()
-  local indexed = {}
-
-  for _, snippet in ipairs(snippets) do
-    assert.is_nil(
-      indexed[snippet.trigger],
-      "duplicate trigger: " .. snippet.trigger
-    )
-    indexed[snippet.trigger] = snippet
-  end
-
-  return indexed
-end
-
-local function body(snippet)
-  return table.concat(snippet:get_docstring(), "\n")
-end
-
-describe("T-SQL snippets", function()
-  local indexed = index_by_trigger()
+  before_each(function()
+    original_runtimepath = vim.o.runtimepath
+    vim.opt.runtimepath:append(test.plugin_path("LuaSnip"))
+    ls = require("luasnip")
+    snippets = {}
+    for _, snippet in ipairs(dofile("luasnippets/tsql.lua")) do
+      assert.is_nil(snippets[snippet.trigger], "duplicate snippet trigger")
+      snippets[snippet.trigger] = snippet
+    end
+    original_buffer = vim.api.nvim_get_current_buf()
+    buffer = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(buffer)
+  end)
 
   after_each(function()
-    vim.opt.runtimepath = original_runtimepath
-  end)
-
-  it("uses unique non-empty triggers and names", function()
-    for _, snippet in ipairs(snippets) do
-      assert.is_true(
-        type(snippet.trigger) == "string" and snippet.trigger ~= ""
-      )
-      assert.is_true(type(snippet.name) == "string" and snippet.name ~= "")
+    if buffer and vim.api.nvim_buf_is_valid(buffer) then
+      ls.unlink_current()
+      vim.api.nvim_set_current_buf(original_buffer)
+      vim.api.nvim_buf_delete(buffer, { force = true })
     end
+    vim.o.runtimepath = original_runtimepath
   end)
 
-  it("follows programmable-object and transaction conventions", function()
-    local read_procedure = body(indexed.cprocr)
-    assert.is_truthy(read_procedure:find("CREATE OR ALTER PROCEDURE", 1, true))
-    assert.is_truthy(read_procedure:find("SET NOCOUNT ON;", 1, true))
-
-    local write_procedure = body(indexed.cprocw)
-    assert.is_truthy(write_procedure:find("SET XACT_ABORT ON;", 1, true))
-    assert.is_truthy(write_procedure:find("IF XACT_STATE() <> 0", 1, true))
-    assert.is_truthy(write_procedure:find("ROLLBACK TRANSACTION;", 1, true))
-    assert.is_truthy(write_procedure:find("THROW;", 1, true))
-  end)
+  local function expand(trigger)
+    ls.unlink_current()
+    vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "" })
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    ls.snip_expand(assert(snippets[trigger]):copy())
+    return table.concat(vim.api.nvim_buf_get_lines(buffer, 0, -1, false), "\n")
+  end
 
   it(
-    "parameterizes dynamic values and validates dynamic identifiers",
+    "expands procedures with explicit queries and safe transactions",
     function()
-      local dynamic_sql = body(indexed.dynsql)
-      assert.is_truthy(dynamic_sql:find("EXEC sys.sp_executesql", 1, true))
-      assert.is_truthy(dynamic_sql:find("@Status = @Status", 1, true))
-
-      local dynamic_identifier = body(indexed.dynident)
-      assert.is_truthy(dynamic_identifier:find("NOT IN", 1, true))
-      assert.is_truthy(dynamic_identifier:find("QUOTENAME", 1, true))
+      local read = expand("cprocr")
+      assert.is_truthy(
+        read:find("CREATE OR ALTER PROCEDURE dbo.GetEntity", 1, true)
+      )
+      assert.is_truthy(read:find("WHERE e.EntityId = @EntityId;", 1, true))
+      local write = expand("cprocw")
+      assert.is_truthy(write:find("SET XACT_ABORT ON;", 1, true))
+      assert.is_truthy(write:find("IF XACT_STATE() <> 0", 1, true))
+      assert.is_truthy(write:find("ROLLBACK TRANSACTION;", 1, true))
+      assert.is_truthy(write:find("THROW;", 1, true))
+      assert.is_true(ls.jumpable(1))
     end
   )
 
-  it("does not encode prohibited query and error anti-patterns", function()
-    for _, snippet in ipairs(snippets) do
-      local snippet_body = body(snippet)
-      assert.is_nil(snippet_body:match("SELECT%s+%*"), snippet.trigger)
-      assert.is_nil(snippet_body:find("RAISERROR", 1, true), snippet.trigger)
-      assert.is_nil(snippet_body:find("EXEC (@Sql)", 1, true), snippet.trigger)
+  it(
+    "expands dynamic values as parameters and reuses whitelisted identifiers",
+    function()
+      local values = expand("dynsql")
+      assert.is_truthy(values:find("EXEC sys.sp_executesql", 1, true))
+      assert.is_truthy(values:find("@Status = @Status", 1, true))
+      local identifier = expand("dynident")
+      assert.is_truthy(identifier:find("IF @SortColumn NOT IN", 1, true))
+      assert.is_truthy(identifier:find("QUOTENAME(@SortColumn)", 1, true))
     end
-  end)
+  )
+
+  it(
+    "expands every template without unsafe SQL or unresolved placeholders",
+    function()
+      for trigger in pairs(snippets) do
+        local output = expand(trigger)
+        assert.is_nil(output:match("SELECT%s+%*"), trigger)
+        assert.is_nil(output:find("RAISERROR", 1, true), trigger)
+        assert.is_nil(output:find("EXEC (@Sql)", 1, true), trigger)
+        assert.is_nil(output:match("%${%d"), trigger)
+      end
+    end
+  )
 end)

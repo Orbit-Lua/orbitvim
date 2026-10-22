@@ -43,18 +43,4 @@ describe("utils.window", function()
     assert.is_true(window.is_floating(floating))
     assert.is_false(window.is_floating(vim.api.nvim_get_current_win()))
   end)
-
-  it(
-    "bounds completion and documentation sizes to the current editor",
-    function()
-      vim.o.columns = 100
-      vim.o.lines = 50
-
-      local completion_w, completion_h = window.get_completion_size()
-      local doc_w, doc_h = window.get_doc_size()
-
-      assert.same({ 40, 15 }, { completion_w, completion_h })
-      assert.same({ 50, 20 }, { doc_w, doc_h })
-    end
-  )
 end)

@@ -1,7 +1,7 @@
 describe("core.keymaps", function()
   local test = require("tests.helpers")
   local fs = require("utils.fs")
-  local utils_lsp = require("utils.lsp")
+  local lsp_client = require("runtime.lsp.client")
   local original_mapleader
   local original_cwd
   local original_fs_root
@@ -13,7 +13,7 @@ describe("core.keymaps", function()
     original_mapleader = vim.g.mapleader
     original_cwd = vim.fn.getcwd()
     original_fs_root = fs.get_root
-    original_get_clients = utils_lsp.get_clients
+    original_get_clients = lsp_client.get_clients
     original_core_keymaps = package.loaded["core.keymaps"]
     original_runtime_keymaps = package.loaded["runtime.lsp.keymaps"]
   end)
@@ -22,7 +22,7 @@ describe("core.keymaps", function()
     vim.g.mapleader = original_mapleader
     vim.api.nvim_set_current_dir(original_cwd)
     fs.get_root = original_fs_root
-    utils_lsp.get_clients = original_get_clients
+    lsp_client.get_clients = original_get_clients
     package.loaded["core.keymaps"] = original_core_keymaps
     package.loaded["runtime.lsp.keymaps"] = original_runtime_keymaps
     test.cleanup_all()
@@ -86,26 +86,41 @@ describe("core.keymaps", function()
   end)
 
   it(
-    "resolves hover only for clients that support the actual LSP method",
+    "resolves dynamic hover against the requested buffer rather than the current one",
     function()
-      local supports_hover = true
-      utils_lsp.get_clients = function(opts)
-        assert.is_table(opts)
-        return {
-          {
-            supports_method = function(_, method)
-              assert.equals("textDocument/hover", method)
-              return supports_hover
-            end,
+      local source, current =
+        vim.api.nvim_create_buf(true, false),
+        vim.api.nvim_create_buf(true, false)
+      vim.bo[source].filetype, vim.bo[current].filetype = "python", "lua"
+      vim.api.nvim_set_current_buf(current)
+      local client = setmetatable({
+        server_capabilities = {},
+        capabilities = {
+          textDocument = { hover = { dynamicRegistration = true } },
+        },
+        registrations = {
+          hoverProvider = {
+            {
+              method = "textDocument/hover",
+              registerOptions = {
+                documentSelector = { { language = "python" } },
+              },
+            },
           },
-        }
+        },
+        get_language_id = function(_, filetype)
+          return filetype
+        end,
+      }, { __index = require("vim.lsp.client") })
+      lsp_client.get_clients = function(opts)
+        assert.is_table(opts)
+        return { client }
       end
       package.loaded["runtime.lsp.keymaps"] = nil
       local keymaps = require("runtime.lsp.keymaps")
 
-      assert.is_true(keymaps.has(vim.api.nvim_get_current_buf(), "hover"))
-      supports_hover = false
-      assert.is_false(keymaps.has(vim.api.nvim_get_current_buf(), "hover"))
+      assert.is_true(keymaps.has(source, "hover"))
+      assert.is_false(keymaps.has(current, "hover"))
     end
   )
 end)

@@ -17,14 +17,21 @@
 ---@field meta Tool.Definition
 ---@field installed boolean?
 ---@field filetype string?
+---@field bufnr integer?
 ---@class Tool.ApplyOrderOpts
 ---@field ft string
 ---@field enabled_names string[]
 
-return {
-  width = 120,
-  height = 40,
-  missing_package_policy = "auto",
+---@class Tool.CategoryHandler
+---@field capabilities {toggle: boolean, install: boolean, reorder: boolean}
+---@field apply_runtime? fun(opts: Tool.ApplyRuntimeOpts): boolean?, string?
+---@field apply_order? fun(opts: Tool.ApplyOrderOpts): boolean?, string?
+---@field entry_status? fun(opts: Tool.StatusOpts): string?, string?, table?
+---@field install? fun(name: string, on_complete?: fun(success: boolean, err?: string)): boolean
+---@field installation_status? fun(name: string): boolean?, string?
+---@field wiring_status? fun(opts: Tool.StatusOpts): string?, string?
+
+return vim.tbl_extend("force", {
   categories = { "lsp", "dap", "linter", "formatter", "parser", "package" },
   labels = {
     lsp = "LSP",
@@ -34,8 +41,6 @@ return {
     parser = "Parser",
     package = "Package",
   },
-  details = { width = 54, max_messages = 8 },
-  refresh = { debounce_ms = 500 },
   -- The view installs these mappings and renders the same descriptions in help.
   mappings = {
     {
@@ -82,4 +87,4 @@ return {
     },
     { keys = { "K" }, action = "details", description = "Show tool details" },
   },
-}
+}, require("config.settings").get().tool_manager)

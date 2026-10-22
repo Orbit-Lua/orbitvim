@@ -16,24 +16,15 @@ function M.new(spec)
   local function backend()
     local ok, module = pcall(require, spec.module)
     if not ok then
-      return nil
+      return nil, tostring(module)
     end
     return module
   end
 
-  local function registry_name(runtime_name)
-    for name, meta in pairs(require("config.tools")[spec.category] or {}) do
-      if (meta.runtime_name or name) == runtime_name then
-        return name
-      end
-    end
-    return runtime_name
-  end
-
   function adapter.apply_runtime(opts)
-    local module = backend()
+    local module, err = backend()
     if not module then
-      return
+      return false, err
     end
 
     for _, ft in ipairs(opts.meta.ft or {}) do
@@ -50,37 +41,33 @@ function M.new(spec)
           end
         end
       end
-      local names = vim.tbl_map(registry_name, list)
+      local names = order.from_runtime(spec.category, list)
       local ordered = order.enabled_names_for_ft(spec.category, ft, names)
-      module[spec.field][ft] = vim.tbl_map(function(name)
-        local meta = require("config.tools")[spec.category][name]
-        return meta and (meta.runtime_name or name) or name
-      end, ordered)
+      module[spec.field][ft] = order.to_runtime(spec.category, ordered)
     end
   end
 
   function adapter.apply_order(opts)
-    local module = backend()
-    if module then
-      local old = module[spec.field][opts.ft] or {}
-      local known = {}
-      for name, meta in pairs(require("config.tools")[spec.category] or {}) do
-        if vim.tbl_contains(meta.ft or {}, opts.ft) then
-          known[meta.runtime_name or name] = true
-        end
-      end
-      local result = vim.deepcopy(opts.enabled_names)
-      result = vim.tbl_map(function(name)
-        local meta = require("config.tools")[spec.category][name]
-        return meta and (meta.runtime_name or name) or name
-      end, result)
-      for _, name in ipairs(old) do
-        if not known[name] and not vim.tbl_contains(result, name) then
-          table.insert(result, name)
-        end
-      end
-      module[spec.field][opts.ft] = result
+    local module, err = backend()
+    if not module then
+      return false, err
     end
+    local old = module[spec.field][opts.ft] or {}
+    local known = {}
+    for name, meta in pairs(require("config.tools")[spec.category] or {}) do
+      if vim.tbl_contains(meta.ft or {}, opts.ft) then
+        known[meta.runtime_name or name] = true
+      end
+    end
+    local result = vim.tbl_filter(function(name)
+      return vim.tbl_contains(old, name)
+    end, order.to_runtime(spec.category, opts.enabled_names))
+    for _, name in ipairs(old) do
+      if not known[name] and not vim.tbl_contains(result, name) then
+        table.insert(result, name)
+      end
+    end
+    module[spec.field][opts.ft] = result
   end
 
   function adapter.wiring_status(opts)

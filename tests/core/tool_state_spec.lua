@@ -114,6 +114,36 @@ describe("tool.state", function()
   end)
 
   it(
+    "merges independent cached writers without losing another instance's choice",
+    function()
+      local first = state
+      first.get()
+      reload()
+      state.get()
+      assert.is_true(first.set_enabled("formatter", "yaml", false))
+      assert.is_true(state.set_enabled("formatter", "prisma_fmt", false))
+      local persisted = state.load()
+      assert.is_false(persisted.formatter.yaml)
+      assert.is_false(persisted.formatter.prisma_fmt)
+      assert.is_false(state.is_enabled("formatter", "yaml"))
+    end
+  )
+
+  it(
+    "refuses a concurrent writer without changing cached or persisted choices",
+    function()
+      assert.is_true(state.set_enabled("lsp", "lua_ls", false))
+      local before = table.concat(vim.fn.readfile(state_path), "\n")
+      test.write_file(state_path .. ".lock", "another writer")
+      local ok, err = state.set_enabled("lsp", "lua_ls", true)
+      assert.is_false(ok)
+      assert.is_truthy(err)
+      assert.is_false(state.is_enabled("lsp", "lua_ls"))
+      assert.equals(before, table.concat(vim.fn.readfile(state_path), "\n"))
+    end
+  )
+
+  it(
     "persists enablement and ordering changes through the public interface",
     function()
       state.set_enabled("lsp", "lua_ls", false)

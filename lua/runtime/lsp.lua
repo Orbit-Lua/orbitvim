@@ -1,4 +1,72 @@
 local M = {}
+local feature_options
+
+---Retain distinct findings even when their diagnostic messages match.
+function M.publish_typescript_diagnostics(err, result, context, config)
+  if result and result.diagnostics then
+    local filtered = {}
+    for _, diagnostic in ipairs(result.diagnostics) do
+      if
+        diagnostic.source == "tsserver"
+        and not vim.iter(filtered):any(function(previous)
+          return vim.deep_equal(previous, diagnostic)
+        end)
+      then
+        table.insert(filtered, diagnostic)
+      end
+    end
+    result = vim.tbl_extend("force", result, { diagnostics = filtered })
+  end
+  vim.lsp.diagnostic.on_publish_diagnostics(err, result, context, config)
+end
+
+function M.apply_inlay_hints(hints)
+  local changed, seen = {}, {}
+  local ok, err = pcall(function()
+    for _, client in ipairs(vim.lsp.get_clients()) do
+      local buffers = vim.tbl_keys(client.attached_buffers)
+      table.sort(buffers)
+      for _, buffer in ipairs(buffers) do
+        if
+          not seen[buffer]
+          and vim.api.nvim_buf_is_valid(buffer)
+          and vim.bo[buffer].buftype == ""
+          and client:supports_method("textDocument/inlayHint", buffer)
+        then
+          seen[buffer] = true
+          local previous = vim.lsp.inlay_hint.is_enabled({ bufnr = buffer })
+          local enabled = hints.enabled
+            and not vim.tbl_contains(hints.exclude, vim.bo[buffer].filetype)
+          if enabled ~= previous then
+            table.insert(changed, { buffer = buffer, enabled = previous })
+            vim.lsp.inlay_hint.enable(enabled, { bufnr = buffer })
+          end
+        end
+      end
+    end
+  end)
+  if not ok then
+    local failures = {}
+    for index = #changed, 1, -1 do
+      local old = changed[index]
+      local restored, restore_error =
+        pcall(vim.lsp.inlay_hint.enable, old.enabled, { bufnr = old.buffer })
+      if not restored then
+        table.insert(failures, tostring(restore_error))
+      end
+    end
+    if #failures > 0 then
+      err = tostring(err)
+        .. "; inlay hint rollback failed: "
+        .. table.concat(failures, "; ")
+        .. "; restart required"
+    end
+    error(err, 0)
+  end
+  if feature_options then
+    feature_options.inlay_hints = vim.deepcopy(hints)
+  end
+end
 
 ---Registers all configured LSP servers with vim.lsp.
 ---@param opts Lsp.Config.Spec
@@ -108,14 +176,16 @@ end
 ---Activates optional LSP features (inlay hints, code lens).
 ---@param opts Lsp.Config.Spec
 M.activate_features = function(opts)
-  local utils_lsp = require("utils.lsp")
+  feature_options = opts
+  local lsp_client = require("runtime.lsp.client")
 
-  if opts.inlay_hints.enabled then
-    utils_lsp.on_supports_method(
+  do
+    lsp_client.on_supports_method(
       "textDocument/inlayHint",
       function(_, buffer, event)
         if
           vim.api.nvim_buf_is_valid(buffer)
+          and opts.inlay_hints.enabled
           and vim.bo[buffer].buftype == ""
           and not vim.tbl_contains(
             opts.inlay_hints.exclude,
@@ -135,7 +205,7 @@ M.activate_features = function(opts)
   end
 
   if opts.codelens.enabled and vim.lsp.codelens then
-    utils_lsp.on_supports_method("textDocument/codeLens", function(_, bufnr)
+    lsp_client.on_supports_method("textDocument/codeLens", function(_, bufnr)
       vim.lsp.codelens.enable(true)
       vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
         group = vim.api.nvim_create_augroup(
@@ -172,7 +242,7 @@ M.activate_features = function(opts)
               pending_refresh[key] = nil
               local refreshed_client = vim.lsp.get_client_by_id(client.id)
               if refreshed_client then
-                utils_lsp.refresh_supported_methods(refreshed_client, buffer)
+                lsp_client.refresh_supported_methods(refreshed_client, buffer)
               end
             end, 100)
           end
@@ -180,6 +250,20 @@ M.activate_features = function(opts)
       end
     end,
   })
+end
+
+function M.setup(opts)
+  local lsp_client = require("runtime.lsp.client")
+  lsp_client.setup()
+  lsp_client.on_attach(function(client, buffer)
+    require("runtime.lsp.keymaps").on_attach(client, buffer)
+  end)
+  lsp_client.on_dynamic_capability(require("runtime.lsp.keymaps").on_attach)
+
+  M.configure_diagnostics(opts)
+  M.install_diagnostic_filter()
+  M.activate_features(opts)
+  M.register_servers(opts)
 end
 
 return M

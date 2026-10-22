@@ -1,4 +1,4 @@
--- LSP Lifecycle
+-- LSP client lifecycle
 --
 -- 1. Start
 -- 2. Initialize Handshake
@@ -115,10 +115,12 @@ function M.on_dynamic_capability(fn, opts)
 end
 
 ---@type table<string, table<vim.lsp.Client, table<number, boolean>>>
-M._supports_method = {}
+local supported_methods = {}
 
 ---@type table<string, boolean>
-M._refresh_methods = {}
+local refresh_methods = {}
+local check_methods
+local initialized = false
 
 ---@class Lsp.SupportsMethod.Event
 ---@field client_id integer
@@ -130,7 +132,7 @@ M._refresh_methods = {}
 ---@param buffer number
 ---@param method string
 ---@param opts? {refresh?: boolean}
-function M._emit_supports_method(client, buffer, method, opts)
+local function emit_supported_method(client, buffer, method, opts)
   vim.api.nvim_exec_autocmds("User", {
     pattern = "LspSupportsMethod",
     data = {
@@ -143,6 +145,10 @@ function M._emit_supports_method(client, buffer, method, opts)
 end
 
 function M.setup()
+  if initialized then
+    return
+  end
+  initialized = true
   local register_capability = vim.lsp.handlers["client/registerCapability"]
   vim.lsp.handlers["client/registerCapability"] = function(err, res, ctx)
     ---@diagnostic disable-next-line: no-unknown
@@ -158,14 +164,31 @@ function M.setup()
     end
     return result
   end
-  M.on_attach(M._check_methods)
-  M.on_dynamic_capability(M._check_methods)
+  M.on_attach(check_methods)
+  M.on_dynamic_capability(check_methods)
+  vim.api.nvim_create_autocmd({ "LspDetach", "BufWipeout" }, {
+    group = vim.api.nvim_create_augroup(
+      "UserLspMethodLifecycle",
+      { clear = true }
+    ),
+    callback = function(event)
+      for _, clients in pairs(supported_methods) do
+        for client, buffers in pairs(clients) do
+          if
+            event.event == "BufWipeout" or client.id == event.data.client_id
+          then
+            buffers[event.buf] = nil
+          end
+        end
+      end
+    end,
+  })
 end
 
 ---@param client vim.lsp.Client
 ---@param buffer number
 ---@param opts? {force?: boolean, refresh?: boolean}
-function M._check_methods(client, buffer, opts)
+check_methods = function(client, buffer, opts)
   -- don't trigger on invalid buffers
   if not vim.api.nvim_buf_is_valid(buffer) then
     return
@@ -178,15 +201,15 @@ function M._check_methods(client, buffer, opts)
   if vim.bo[buffer].buftype == "nofile" then
     return
   end
-  for method, clients in pairs(M._supports_method) do
-    if not (opts and opts.refresh) or M._refresh_methods[method] then
+  for method, clients in pairs(supported_methods) do
+    if not (opts and opts.refresh) or refresh_methods[method] then
       clients[client] = clients[client] or {}
       if (opts and opts.force) or not clients[client][buffer] then
         if
           client.supports_method and client:supports_method(method, buffer)
         then
           clients[client][buffer] = true
-          M._emit_supports_method(client, buffer, method, {
+          emit_supported_method(client, buffer, method, {
             refresh = opts and opts.refresh or nil,
           })
         end
@@ -203,18 +226,18 @@ end
 ---@param client vim.lsp.Client
 ---@param buffer number
 function M.refresh_supported_methods(client, buffer)
-  M._check_methods(client, buffer, { force = true, refresh = true })
+  check_methods(client, buffer, { force = true, refresh = true })
 end
 
 ---@param method string
 ---@param fn fun(client:vim.lsp.Client, buffer, event?: Lsp.SupportsMethod.Event)
 ---@param opts? {refresh?: boolean}
 function M.on_supports_method(method, fn, opts)
-  M._supports_method[method] = M._supports_method[method]
+  supported_methods[method] = supported_methods[method]
     or setmetatable({}, { __mode = "k" })
   local refreshable = opts and opts.refresh
   if opts and opts.refresh then
-    M._refresh_methods[method] = true
+    refresh_methods[method] = true
   end
 
   return vim.api.nvim_create_autocmd("User", {
@@ -234,7 +257,8 @@ end
 
 ---Toggles LSP inlay hints for the current buffer.
 function M.toggle_inlay_hints()
-  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+  local scope = { bufnr = vim.api.nvim_get_current_buf() }
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(scope), scope)
 end
 
 return M

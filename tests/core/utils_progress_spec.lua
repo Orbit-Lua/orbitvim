@@ -2,8 +2,12 @@ describe("utils.progress", function()
   local original_manager
   local original_notify
   local notifications
+  local original_progress
+  local progress
 
   before_each(function()
+    original_progress = package.loaded["utils.progress"]
+    progress = nil
     original_manager = package.loaded["noice.message.manager"]
     original_notify = vim.notify
     notifications = {}
@@ -11,9 +15,12 @@ describe("utils.progress", function()
   end)
 
   after_each(function()
+    if progress then
+      progress:finish({ message = "Test cleanup" })
+    end
     package.loaded["noice.message.manager"] = original_manager
     vim.notify = original_notify
-    package.loaded["utils.progress"] = nil
+    package.loaded["utils.progress"] = original_progress
   end)
 
   it("updates one Noice message through its full lifecycle", function()
@@ -40,7 +47,7 @@ describe("utils.progress", function()
       return { id = 7 }
     end
 
-    local progress = require("utils.progress").start({
+    progress = require("utils.progress").start({
       message = "Working…",
       notify_opts = { state = "progress", icon = "." },
       interval = 10,
@@ -78,7 +85,7 @@ describe("utils.progress", function()
       return 1
     end
 
-    local progress = require("utils.progress").start({ message = "Working…" })
+    progress = require("utils.progress").start({ message = "Working…" })
     progress:finish({ message = "Finished" })
 
     assert.same(2, #notifications)

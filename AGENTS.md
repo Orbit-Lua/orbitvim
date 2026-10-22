@@ -16,6 +16,8 @@ OrbitVim is a Lua Neovim configuration. `init.lua` runs three phases in order: e
 
 Tool Manager's UI interface is `require("tool").open()` / `.close()`; its operation interface is `tool.manager`, which takes logical selections, never cursor positions, Nui objects or render callbacks. Read [architecture](doc/architecture.md) before changing these boundaries and the [Tool Manager guide](doc/tool-manager.md) before changing its workflows.
 
+Read the [settings guide](doc/settings.md) before changing schema defaults, merge rules, reload scope or settings/state precedence. `settings.schema.json` owns public defaults; `settings.json` is personal and ignored by Git. Tool enablement and saved order remain in the data directory's `tools.json`.
+
 ## Ownership
 
 | Change | Owner |
@@ -24,6 +26,8 @@ Tool Manager's UI interface is `require("tool").open()` / `.close()`; its operat
 | Editor options, PATH, autocmds, filetypes, general keys, theme activation | `lua/core/` |
 | Lazy plugin identity, dependencies, triggers, plugin keys, lifecycle callbacks | `lua/plugins/` |
 | Editable plugin and language options | `lua/config/` |
+| Public settings schema, decoding, validation and accepted data | `settings.schema.json`, `lua/config/settings.lua` |
+| Settings application, rollback and save observation | `lua/core/settings.lua` |
 | Canonical tool IDs, runtime aliases, filetypes, Mason packages, default priority | `lua/config/tools.lua` |
 | Derived sorted package, LSP server and parser lists | `lua/config/packages.lua` |
 | Tool Manager options, mapping/help descriptions, install policy | `lua/config/tool_manager.lua` |
@@ -63,7 +67,7 @@ Tool Manager's UI interface is `require("tool").open()` / `.close()`; its operat
 
 ## Validation
 
-Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open Neovim once so Lazy installs Plenary and Nui, which core specs load from Lazy's data directory. Integration specs also need `:TSInstallAll`, LuaSnip and SQLFluff.
+Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open Neovim once so Lazy installs Plenary and Nui, which core specs load from Lazy's data directory. Integration specs also need `:TSInstallAll`, LuaSnip, Markdown preview, SQLFluff and `json-lsp` (Mason) or `vscode-json-language-server` on PATH. Build integration requires Git, GNU Make, a C compiler (GCC or Clang), and Bash; Windows also needs Windows PowerShell.
 
 | Command | Effect |
 | --- | --- |
@@ -82,7 +86,7 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   -c 'qall'
 ```
 
-- Run `just all` before finishing. Add `just test-integration` for Tree-sitter queries, parsers or runtime, LuaSnip collections, SQLFluff behaviour, or their adapters, and the smoke test for startup or plugin-loading changes. Report the checks run and any missing dependency.
+- Run `just all` before finishing. Add `just test-integration` for Tree-sitter queries, parsers or runtime, LuaSnip collections, SQLFluff behaviour, JSON schema language-server behaviour, or their adapters, and the smoke test for startup or plugin-loading changes. Report the checks run and any missing dependency.
 - On Windows the `justfile` runs recipes through PowerShell. MSYS `make` dropped `LOCALAPPDATA`, so Plenary was not found and the headless runner hung on E492; a headless suite that never exits means that kind of startup error.
 
 ## Docs

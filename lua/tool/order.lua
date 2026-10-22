@@ -3,6 +3,23 @@ local M = {}
 local tools = require("config.tools")
 local state_mod = require("tool.state")
 
+function M.from_runtime(category, names)
+  local aliases = {}
+  for name, meta in pairs(tools[category] or {}) do
+    aliases[meta.runtime_name or name] = name
+  end
+  return vim.tbl_map(function(name)
+    return aliases[name] or name
+  end, names)
+end
+
+function M.to_runtime(category, names)
+  return vim.tbl_map(function(name)
+    local meta = tools[category][name]
+    return meta and (meta.runtime_name or name) or name
+  end, names)
+end
+
 ---@param names string[]
 ---@return table<string, boolean>
 local function to_set(names)

@@ -53,14 +53,8 @@ return {
     },
   },
 
-  inlay_hints = {
-    enabled = true,
-    exclude = {},
-  },
-
-  codelens = {
-    enabled = false,
-  },
+  inlay_hints = require("config.settings").get().lsp.inlay_hints,
+  codelens = require("config.settings").get().lsp.codelens,
 
   on_init = function(client, _)
     if client:supports_method("textDocument/semanticTokens") then

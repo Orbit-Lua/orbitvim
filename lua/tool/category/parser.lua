@@ -37,20 +37,8 @@ function M.installation_status(name)
   return installed[name] == true
 end
 
----@param opts Tool.StatusOpts
----@return string, string
-function M.entry_status(opts)
-  local installed = M.installation_status(opts.name)
-  if installed == nil then
-    return "treesitter unavailable", "DiagnosticWarn"
-  elseif installed then
-    return "installed", "DiagnosticOk"
-  end
-  return "not installed", "DiagnosticError"
-end
-
 ---@param name string
----@param on_done fun()?
+---@param on_done fun(success: boolean, err?: string)?
 ---@return boolean
 function M.install(name, on_done)
   local module = treesitter()
@@ -98,20 +86,6 @@ function M.install(name, on_done)
     end
   end))
   return true
-end
-
----@param definitions table<string, Tool.Definition>
----@return { total: integer, installed: integer, missing: integer }
-function M.summary(definitions)
-  local installed = installed_set() or {}
-  local total = vim.tbl_count(definitions)
-  local count = 0
-  for name in pairs(definitions) do
-    if installed[name] then
-      count = count + 1
-    end
-  end
-  return { total = total, installed = count, missing = total - count }
 end
 
 return M

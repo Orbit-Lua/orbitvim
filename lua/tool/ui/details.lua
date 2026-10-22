@@ -84,16 +84,15 @@ local function content(view, tool)
     table.insert(lines, { tool.meta.note, "Comment" })
   end
   if view:category() == "linter" and tool.enabled then
-    for _, entry in
-      ipairs(require("utils.logger").get_entries("linter", tool.name))
-    do
+    local facts =
+      require("tool.manager").details({ category = "linter", name = tool.name })
+    for _, entry in ipairs(facts.logs) do
       table.insert(lines, {
         entry.level .. " " .. entry.message,
         entry.level == "ERROR" and "DiagnosticError" or "DiagnosticWarn",
       })
     end
-    local diagnostics =
-      require("tool.category").linter.get_linter_diagnostics(tool.name)
+    local diagnostics = facts.diagnostics
     for index, diagnostic in ipairs(diagnostics.messages) do
       if index > config.details.max_messages then
         table.insert(lines, {
@@ -164,13 +163,10 @@ local function redraw(view)
   local width, height, placement = geometry(view)
   local row, col
   if placement == "right" then
-    width = math.min(
-      width,
-      vim.o.columns - vim.api.nvim_win_get_width(view.frame.winid) - 5
-    )
     row = math.max(1, math.floor((vim.o.lines - height) / 2) - 1)
     local frame_position = vim.api.nvim_win_get_position(view.frame.winid)
     col = frame_position[2] + vim.api.nvim_win_get_width(view.frame.winid) + 2
+    width = math.min(width, vim.o.columns - col - 2)
   elseif placement == "bottom" then
     width = math.min(width, vim.o.columns - 4)
     local frame_position = vim.api.nvim_win_get_position(view.frame.winid)

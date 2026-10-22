@@ -14,7 +14,7 @@ function M.atomic_write(path, contents)
       return false, tostring(created)
     end
     if created == 0 and vim.fn.isdirectory(parent) == 0 then
-      return false, "failed to create state directory: " .. parent
+      return false, "failed to create parent directory: " .. parent
     end
   end
 
@@ -122,13 +122,13 @@ M.root_pattern = {
 ---@param markers string[]
 ---@return string?
 local function find_root_marker(startpath, markers)
-  local Path = vim.fn.expand(startpath)
+  local search_path = vim.fn.expand(startpath)
   for _, marker in ipairs(markers) do
-    local found = vim.fn.finddir(marker, Path .. ";")
+    local found = vim.fn.finddir(marker, search_path .. ";")
     if type(found) == "string" and found ~= "" then
       return vim.fn.fnamemodify(found, ":p:h:h")
     end
-    local found_file = vim.fn.findfile(marker, Path .. ";")
+    local found_file = vim.fn.findfile(marker, search_path .. ";")
     if type(found_file) == "string" and found_file ~= "" then
       return vim.fn.fnamemodify(found_file, ":p:h")
     end

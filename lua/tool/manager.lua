@@ -6,11 +6,30 @@ local order = require("tool.order")
 local state = require("tool.state")
 local categories = require("tool.category")
 local mason = require("tool.mason")
+local failures = {}
 
 local function done(callback, success, err)
   if callback then
     callback(success, err)
   end
+end
+
+local function apply(category, name, operation, opts, callback)
+  local ok, result, err = true, true, nil
+  if operation then
+    ok, result, err = pcall(operation, opts)
+  end
+  local key = category .. ":" .. name
+  if not ok or result == false then
+    local message = "setting saved; runtime apply failed: "
+      .. tostring(ok and err or result)
+    failures[key] = message
+    done(callback, false, message)
+    return false
+  end
+  failures[key] = nil
+  done(callback, true)
+  return true
 end
 
 local function valid_category(category)
@@ -74,8 +93,16 @@ function M.snapshot(opts)
       category,
       entry.name,
       entry.meta,
-      scope == "buffer" and ft or nil
+      scope == "buffer" and ft or nil,
+      bufnr
     )
+    local failure = failures[category .. ":" .. entry.name]
+    if failure then
+      health_status.reason = failure
+      health_status.label = "Apply failed"
+      health_status.severity = "DiagnosticError"
+      health_status.attention = true
+    end
     table.insert(snapshot.tools, {
       name = entry.name,
       meta = vim.deepcopy(entry.meta),
@@ -101,6 +128,22 @@ function M.snapshot(opts)
   return snapshot
 end
 
+---Selected-tool facts are queried through the same interface as list snapshots.
+function M.details(selection)
+  selection = selection or {}
+  local category, name = selection.category, selection.name
+  if not definition(category, name) then
+    return nil
+  end
+  if category == "linter" then
+    return {
+      logs = require("utils.logger").get_entries("linter", name),
+      diagnostics = categories.linter.get_linter_diagnostics(name),
+    }
+  end
+  return { logs = {}, diagnostics = { messages = {} } }
+end
+
 ---@param selection { category: ToolCategory, name: string }
 ---@param on_complete fun(success: boolean, err?: string)?
 ---@return boolean
@@ -115,7 +158,7 @@ function M.toggle(selection, on_complete)
   end
 
   local enabled = not state.is_enabled(category, name)
-  local function apply()
+  local function apply_toggle()
     local saved, save_error = state.set_enabled(category, name, enabled)
     if not saved then
       done(
@@ -125,11 +168,13 @@ function M.toggle(selection, on_complete)
       )
       return false
     end
-    if handler.apply_runtime then
-      handler.apply_runtime({ name = name, meta = meta, is_enabled = enabled })
-    end
-    done(on_complete, true)
-    return true
+    return apply(
+      category,
+      name,
+      handler.apply_runtime,
+      { name = name, meta = meta, is_enabled = enabled },
+      on_complete
+    )
   end
 
   if enabled and meta.mason then
@@ -142,7 +187,7 @@ function M.toggle(selection, on_complete)
       end
       return mason.install(meta.mason, function(success, install_err)
         if success then
-          apply()
+          apply_toggle()
         else
           done(on_complete, false, install_err or "package installation failed")
         end
@@ -153,7 +198,7 @@ function M.toggle(selection, on_complete)
     end
   end
 
-  return apply()
+  return apply_toggle()
 end
 
 ---@param selection { category: ToolCategory, name: string }
@@ -225,14 +270,10 @@ function M.reorder(selection, on_complete)
     )
     return false
   end
-  if handler.apply_order then
-    handler.apply_order({
-      ft = ft,
-      enabled_names = order.enabled_names_for_ft(category, ft, names),
-    })
-  end
-  done(on_complete, true)
-  return true
+  return apply(category, name, handler.apply_order, {
+    ft = ft,
+    enabled_names = order.enabled_names_for_ft(category, ft, names),
+  }, on_complete)
 end
 
 return M

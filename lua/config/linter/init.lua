@@ -1,13 +1,13 @@
 local fs = require("utils.fs")
-local os_util = require("utils.os")
+local os_utils = require("utils.os")
 local sqlfluff_util = require("utils.sqlfluff")
 
 local function luacheck_command()
-  if os_util.is_win() then
+  if os_utils.is_win() then
     return "luacheck.bat"
   end
 
-  if os_util.is_linux() then
+  if os_utils.is_linux() then
     local home = os.getenv("HOME") or ""
     local luarocks = home .. "/.luarocks/bin/luacheck"
     if vim.fn.executable(luarocks) == 1 then

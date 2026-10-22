@@ -1,6 +1,4 @@
-local utils_lsp = require("utils.lsp")
 local ft = require("utils.ft")
-local icons = require("config.icons")
 
 ---@type LazySpec[]
 return {
@@ -10,23 +8,9 @@ return {
     init = function()
       require("core.theme").load_cache("mason")
     end,
-    opts = {
-      PATH = "skip",
-
-      ui = {
-        icons = {
-          package_pending = icons.mason.package_pending,
-          package_installed = icons.mason.package_installed,
-          package_uninstalled = icons.mason.package_uninstalled,
-        },
-      },
-
-      max_concurrent_installers = 10,
-
-      registries = {
-        "github:mason-org/mason-registry",
-      },
-    },
+    opts = function()
+      return require("config.lsp.mason")
+    end,
   },
 
   {
@@ -34,25 +18,14 @@ return {
     event = { "VeryLazy" },
 
     opts = function()
-      return require("config.lsp.config")
+      return require("config.lsp")
     end,
 
-    ---@module "config.lsp.config"
+    ---@module "config.lsp"
     ---@param _ LazyPlugin
     ---@param opts Lsp.Config.Spec
     config = function(_, opts)
-      local setup = require("runtime.lsp")
-
-      utils_lsp.setup()
-      utils_lsp.on_attach(function(client, buffer)
-        require("runtime.lsp.keymaps").on_attach(client, buffer)
-      end)
-      utils_lsp.on_dynamic_capability(require("runtime.lsp.keymaps").on_attach)
-
-      setup.configure_diagnostics(opts)
-      setup.install_diagnostic_filter()
-      setup.activate_features(opts)
-      setup.register_servers(opts)
+      require("runtime.lsp").setup(opts)
     end,
   },
 

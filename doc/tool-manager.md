@@ -1,5 +1,7 @@
 # Tool Manager
 
+Tool operations save intent before applying runtime changes. If a backend raises or returns a failure, the operation reports failure and the tool's details retain the error. The saved choice remains available for the next startup. A later successful operation clears the error.
+
 Open `:ToolManager` or `<leader>us`. Repeating the command focuses the existing view. A new view captures the source buffer's filename and filetype and starts in buffer scope; `s` switches between that scope and all registered tool states.
 
 ## Categories and selection
@@ -16,7 +18,7 @@ The selected tool stays selected after priority changes, resize, and live refres
 
 Space toggles LSP, DAP, formatter, and linter tools. An already installed or external tool updates saved state and its runtime adapter immediately. With the default `missing_package_policy = "auto"`, enabling a missing Mason-backed tool first installs its package and enables it only after success. Concurrent requests for the same package share one installation. Failure leaves enablement unchanged.
 
-Set `missing_package_policy = "manual"` in `lua/config/tool_manager.lua` to require `i` before enabling a missing package. An unavailable registry or unknown package reports an error and does not enable the tool. External tools, such as Python's environment-provided debugpy, require preparation outside Mason.
+Set `tool_manager.missing_package_policy` to `"manual"` in `settings.json` to require `i` before enabling a missing package. An unavailable registry or unknown package reports an error and does not enable the tool. External tools, such as Python's environment-provided debugpy, require preparation outside Mason.
 
 An installation continues if you close Tool Manager. Successful enablement still updates saved state and the runtime. Its completion callback cannot redraw a closed session or a later session.
 
@@ -39,11 +41,13 @@ Installed packages do not guarantee active runtime wiring. The canonical registr
 
 ## Priority and storage
 
-Select a formatter or linter in buffer scope, or inside an all-state filetype group, and use `[` / `]`. Tool Manager saves the complete logical order, including disabled tools. Enablement applies globally to that tool; priority applies to the selected filetype. It applies enabled tools to the runtime and preserves unrelated runtime entries. Re-enabling a tool restores its saved position.
+Select a formatter or linter in buffer scope, or inside an all-state filetype group, and use `[` / `]`. Tool Manager saves the complete logical order, including disabled tools. Enablement applies globally to that tool; priority applies to the selected filetype. Reordering changes the priority of currently configured tools and preserves unrelated runtime entries; it does not activate every supported tool. Re-enabling a tool restores its saved position.
 
 `lua/config/tools.lua` owns logical identities, supported filetypes, Mason packages, and default priority. A `runtime_name` handles a different backend identifier: the saved YAML formatter key remains `yaml`, while Conform receives `yamlfmt`.
 
-State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists. State writes use an atomic replacement: if saving fails, the previous persisted state remains and the runtime is not updated from the unsaved change.
+State lives in `stdpath('data')/tools.json`. A missing current file allows loading legacy `service.json`; malformed current state falls back to defaults. Valid saved enablement and order are merged with current definitions. Removed tools and stale/duplicate order entries do not enter active derived lists. State writes lock, reread the latest disk values, merge the selected change and replace the file atomically. Separate instances therefore retain each other's unrelated changes. A refused replacement preserves the previous persisted state and does not apply the unsaved change to the runtime.
+
+A busy `tools.json.lock` reports an error instead of overwriting another writer. Retry after the other operation completes. If a process crashed and left a stale lock, close all Neovim instances before removing that exact lock file. Other instances' writes do not automatically refresh an already open manager or its runtime.
 
 ## View lifecycle
 

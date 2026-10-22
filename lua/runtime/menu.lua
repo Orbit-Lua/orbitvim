@@ -104,6 +104,7 @@ local function menu_items()
         item("󰕮  Dashboard", "<leader>uD"),
         item("󰂚  Notification History", "<leader>un"),
         item("󰒋  Tool Manager", "<leader>us"),
+        item("󰒓  Settings", "<leader>uc"),
         item("󰏘  Theme Picker", "<leader>ut", "ExBlue"),
         item("󰑓  Reload Theme", "<leader>ur"),
         item("󰊢  LazyGit", "<leader>gg", "ExGreen"),

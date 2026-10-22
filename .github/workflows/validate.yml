@@ -51,6 +51,11 @@ jobs:
           pipx install sqlfluff==4.2.2
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Install JSON language server
+        run: |
+          npm install --prefix "$RUNNER_TEMP/json-lsp" --no-audit --no-fund vscode-langservers-extracted@4.10.0
+          echo "$RUNNER_TEMP/json-lsp/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Install Tree-sitter CLI
         env:
           TREE_SITTER_VERSION: 0.26.11
@@ -106,7 +111,7 @@ jobs:
       - name: Smoke-test startup
         run: nvim --headless "+qall"
 
-  windows-core:
+  windows-validation:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -126,14 +131,37 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v3
 
-      - name: Cache core-test dependencies
+      - name: Install JSON language server
+        shell: pwsh
+        run: |
+          $serverRoot = Join-Path $env:RUNNER_TEMP 'json-lsp'
+          npm install --prefix $serverRoot --no-audit --no-fund vscode-langservers-extracted@4.10.0
+          if ($LASTEXITCODE -ne 0) { throw 'JSON language server installation failed' }
+          Join-Path $serverRoot 'node_modules/.bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Prepare native build tools
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          install: make git mingw-w64-ucrt-x86_64-gcc
+
+      - name: Expose native build tools
+        shell: pwsh
+        run: |
+          $toolRoot = '${{ steps.msys2.outputs.msys2-location }}'
+          Join-Path $toolRoot 'ucrt64/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+          Join-Path $toolRoot 'usr/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Cache test dependencies
         id: nvim-cache
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\nvim-data\lazy
-          key: nvim-windows-core-${{ hashFiles('lazy-lock.json') }}
+          key: nvim-windows-validation-${{ hashFiles('lazy-lock.json', '.github/workflows/validate.yml') }}
 
-      - name: Install locked core-test dependencies
+      - name: Install locked test dependencies
         if: steps.nvim-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
@@ -143,6 +171,8 @@ jobs:
           $repositories = @{
             'plenary.nvim' = 'nvim-lua/plenary.nvim'
             'nui.nvim' = 'MunifTanjim/nui.nvim'
+            'LuaSnip' = 'L3MON4D3/LuaSnip'
+            'markdown-preview.nvim' = 'iamcco/markdown-preview.nvim'
           }
           foreach ($name in $repositories.Keys) {
             $target = Join-Path $pluginRoot $name
@@ -154,3 +184,18 @@ jobs:
 
       - name: Run Windows core tests
         run: just test-core
+
+      - name: Build locked LuaSnip jsregexp
+        shell: pwsh
+        run: nvim --headless -u NONE -l scripts/tests/build_luasnip.lua
+
+      - name: Install locked Markdown preview executable
+        run: nvim --headless -u NONE -l scripts/tests/build_markdown_preview.lua
+
+      - name: Run Windows integration contracts
+        shell: pwsh
+        run: |
+          foreach ($spec in @('settings_schema', 'plugin_build', 'bootstrap')) {
+            nvim --headless --noplugin -u scripts/tests/minimal.vim -c "lua require('plenary.busted').run('tests/integration/${spec}_spec.lua')" -c qall
+            if ($LASTEXITCODE -ne 0) { throw "Integration failed: $spec" }
+          }

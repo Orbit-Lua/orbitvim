@@ -67,14 +67,6 @@ describe("runtime.formatter", function()
     assert.is_nil(vim.b.orbit_formatting)
   end)
 
-  it("filters the persisted yaml identity before mapping to yamlfmt", function()
-    local state = require("tool.state")
-    state.set_enabled("formatter", "yaml", false)
-    local options = require("runtime.formatter").options()
-    assert.is_false(vim.tbl_contains(options.formatters_by_ft.yaml, "yamlfmt"))
-    state.set_enabled("formatter", "yaml", true)
-  end)
-
   it("reports formatter errors and clears runtime state", function()
     package.loaded.conform = {
       format = function(_, callback)

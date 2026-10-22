@@ -1,6 +1,4 @@
-local lsp = require("utils.lsp")
-
-local data_path = vim.fs.normalize(vim.fn.stdpath("data"))
+local lsp = require("runtime.lsp.client")
 
 ---@type Lsp.Server.Module
 return {

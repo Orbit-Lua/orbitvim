@@ -16,8 +16,16 @@ function M.check(root)
       local path = root .. "/" .. name
       local lines = vim.fn.readfile(path)
       local source = table.concat(lines, "\n")
-      local has_pending = source:match("%f[%a]pending%s*%(") ~= nil
-      assert(not has_pending, "pending tests are not allowed: " .. path)
+      for _, skipped in ipairs({ "pending", "skip", "xit", "xdescribe" }) do
+        assert(
+          not source:match("%f[%a]" .. skipped .. "%s*%("),
+          "skipped tests are not allowed: " .. path
+        )
+      end
+      assert(
+        not source:match("%.skip%s*%("),
+        "skipped tests are not allowed: " .. path
+      )
     end
   end
 

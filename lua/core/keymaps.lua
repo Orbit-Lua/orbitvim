@@ -4,6 +4,8 @@ local fs = require("utils.fs")
 local term = require("utils.term")
 local utils_cmp = require("utils.cmp")
 
+map("n", "<leader>uc", "<cmd>OrbitSettings<CR>", { desc = "open settings" })
+
 ---@param direction 'down' | 'up'
 local function move_visual(direction)
   vim.api.nvim_feedkeys(k("<esc>"), "x", false)

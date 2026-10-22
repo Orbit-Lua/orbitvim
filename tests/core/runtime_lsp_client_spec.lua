@@ -1,4 +1,4 @@
-describe("utils.lsp", function()
+describe("LSP client lifecycle", function()
   local lsp
   local autocmds
   local buffers
@@ -7,10 +7,15 @@ describe("utils.lsp", function()
   local original_get_clients
   local original_inlay_enable
   local original_inlay_is_enabled
+  local original_module
+  local original_registration
+  local original_hint_global
 
   before_each(function()
-    package.loaded["utils.lsp"] = nil
-    lsp = require("utils.lsp")
+    original_module = package.loaded["runtime.lsp.client"]
+    original_registration = vim.lsp.handlers["client/registerCapability"]
+    package.loaded["runtime.lsp.client"] = nil
+    lsp = require("runtime.lsp.client")
     autocmds = {}
     buffers = {}
     original_code_action = vim.lsp.buf.code_action
@@ -18,6 +23,7 @@ describe("utils.lsp", function()
     original_get_clients = vim.lsp.get_clients
     original_inlay_enable = vim.lsp.inlay_hint.enable
     original_inlay_is_enabled = vim.lsp.inlay_hint.is_enabled
+    original_hint_global = original_inlay_is_enabled()
   end)
 
   after_each(function()
@@ -34,7 +40,9 @@ describe("utils.lsp", function()
     vim.lsp.get_clients = original_get_clients
     vim.lsp.inlay_hint.enable = original_inlay_enable
     vim.lsp.inlay_hint.is_enabled = original_inlay_is_enabled
-    package.loaded["utils.lsp"] = nil
+    original_inlay_enable(original_hint_global)
+    package.loaded["runtime.lsp.client"] = original_module
+    vim.lsp.handlers["client/registerCapability"] = original_registration
   end)
 
   local function track_autocmd(id)
@@ -167,24 +175,62 @@ describe("utils.lsp", function()
       end
     end, { refresh = true }))
 
-    lsp._check_methods(client, buf)
+    lsp.setup()
+    vim.api.nvim_exec_autocmds(
+      "LspAttach",
+      { buffer = buf, data = { client_id = client.id } }
+    )
     lsp.refresh_supported_methods(client, buf)
 
     assert.equals(1, normal_calls)
     assert.equals(2, refreshable_calls)
   end)
 
-  it("toggles inlay hints from their current state", function()
-    local enabled
-    vim.lsp.inlay_hint.is_enabled = function()
-      return true
-    end
-    vim.lsp.inlay_hint.enable = function(value)
-      enabled = value
-    end
-
+  it("toggles only the current buffer's hints using its local state", function()
+    local a, b = listed_buffer(), listed_buffer()
+    vim.api.nvim_set_current_buf(a)
+    vim.lsp.inlay_hint.enable(true, { bufnr = a })
+    vim.lsp.inlay_hint.enable(false, { bufnr = b })
     lsp.toggle_inlay_hints()
-
-    assert.is_false(enabled)
+    assert.is_false(vim.lsp.inlay_hint.is_enabled({ bufnr = a }))
+    assert.is_false(vim.lsp.inlay_hint.is_enabled({ bufnr = b }))
+    lsp.toggle_inlay_hints()
+    assert.is_true(vim.lsp.inlay_hint.is_enabled({ bufnr = a }))
+    assert.is_false(vim.lsp.inlay_hint.is_enabled({ bufnr = b }))
   end)
+
+  it(
+    "initializes supported methods again after the same client reattaches",
+    function()
+      local buffer = listed_buffer()
+      local client = {
+        id = 101,
+        supports_method = function()
+          return true
+        end,
+      }
+      vim.lsp.get_client_by_id = function()
+        return client
+      end
+      local calls = 0
+      track_autocmd(lsp.on_supports_method("textDocument/inlayHint", function()
+        calls = calls + 1
+      end))
+      lsp.setup()
+      vim.api.nvim_exec_autocmds(
+        "LspAttach",
+        { buffer = buffer, data = { client_id = client.id } }
+      )
+      assert.equals(1, calls)
+      vim.api.nvim_exec_autocmds(
+        "LspDetach",
+        { buffer = buffer, data = { client_id = client.id } }
+      )
+      vim.api.nvim_exec_autocmds(
+        "LspAttach",
+        { buffer = buffer, data = { client_id = client.id } }
+      )
+      assert.equals(2, calls)
+    end
+  )
 end)

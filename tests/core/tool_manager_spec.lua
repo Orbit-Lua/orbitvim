@@ -196,7 +196,13 @@ describe("tool.manager", function()
         install_count = install_count + 1
         return true
       end
-      policy.missing_package_policy = "manual"
+      vim.g.orbitvim_settings_path = test.temp_dir("manager-policy")
+        .. "/settings.json"
+      test.write_file(
+        vim.g.orbitvim_settings_path,
+        '{"tool_manager":{"missing_package_policy":"manual"}}'
+      )
+      require("core.settings").setup()
       local manual
       assert.is_false(
         manager.toggle({ category = "lsp", name = "lua_ls" }, function(ok, err)
@@ -241,6 +247,45 @@ describe("tool.manager", function()
     assert.is_true(state.is_enabled("formatter", "prisma_fmt"))
     assert.is_true(applied)
   end)
+
+  it(
+    "reports runtime failures while retaining saved intent and clears them after success",
+    function()
+      categories.formatter.apply_runtime = function()
+        error("backend refused the change")
+      end
+      local result
+      local accepted = manager.toggle(
+        { category = "formatter", name = "prisma_fmt" },
+        function(ok, err)
+          result = { ok, err }
+        end
+      )
+      assert.is_false(accepted)
+      assert.is_false(result[1])
+      assert.is_truthy(result[2]:find("backend refused", 1, true))
+      assert.is_false(state.is_enabled("formatter", "prisma_fmt"))
+      local snapshot = manager.snapshot({
+        category = "formatter",
+        source = { filetype = "prisma" },
+      })
+      assert.is_true(snapshot.tools[1].health_status.attention)
+      assert.is_truthy(
+        snapshot.tools[1].health_status.reason:find("backend refused", 1, true)
+      )
+      categories.formatter.apply_runtime = function()
+        return true
+      end
+      assert.is_true(
+        manager.toggle({ category = "formatter", name = "prisma_fmt" })
+      )
+      snapshot = manager.snapshot({
+        category = "formatter",
+        source = { filetype = "prisma" },
+      })
+      assert.is_nil(snapshot.tools[1].health_status.reason)
+    end
+  )
 
   it(
     "rejects category capabilities without mutating persisted or runtime state",
@@ -309,4 +354,103 @@ describe("tool.manager", function()
       state.get_order("formatter", "python")
     )
   end)
+  it(
+    "reorders configured formatters without activating other supported tools",
+    function()
+      package.loaded.conform = {
+        formatters_by_ft = {
+          markdown = { "markdownlint-cli2", "markdown-toc", "external_fmt" },
+        },
+      }
+      assert.is_true(manager.reorder({
+        category = "formatter",
+        filetype = "markdown",
+        name = "markdown-toc",
+        direction = -1,
+      }))
+      assert.same(
+        { "markdown-toc", "markdownlint-cli2", "external_fmt" },
+        package.loaded.conform.formatters_by_ft.markdown
+      )
+      assert.same(
+        { "deno_fmt", "markdown-toc", "markdownlint-cli2" },
+        state.get_order("formatter", "markdown")
+      )
+    end
+  )
+
+  it(
+    "reports an unavailable backend while retaining the saved choice",
+    function()
+      package.loaded.conform = nil
+      package.preload.conform = function()
+        error("formatter backend unavailable")
+      end
+      assert.is_true(state.set_enabled("formatter", "prisma_fmt", false))
+      local result
+      assert.is_false(
+        manager.toggle(
+          { category = "formatter", name = "prisma_fmt" },
+          function(ok, err)
+            result = { ok, err }
+          end
+        )
+      )
+      assert.is_false(result[1])
+      assert.is_truthy(result[2]:find("unavailable", 1, true))
+      assert.is_true(state.is_enabled("formatter", "prisma_fmt"))
+    end
+  )
+
+  it("checks formatter availability in the captured source buffer", function()
+    local source = vim.api.nvim_create_buf(true, false)
+    vim.bo[source].filetype = "prisma"
+    vim.api.nvim_buf_set_name(
+      source,
+      test.temp_dir("formatter-source") .. "/schema.prisma"
+    )
+    local popup = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(popup)
+    local inspected
+    package.loaded.conform = {
+      formatters_by_ft = { prisma = { "prisma_fmt" } },
+      get_formatter_info = function(_, buffer)
+        inspected =
+          { requested = buffer, current = vim.api.nvim_get_current_buf() }
+        return { available = true }
+      end,
+    }
+    local snapshot = manager.snapshot({
+      category = "formatter",
+      source = { bufnr = source, filetype = "prisma" },
+    })
+    assert.same({ requested = source, current = source }, inspected)
+    assert.equals("Configured", snapshot.tools[1].health_status.runtime)
+    assert.equals(popup, vim.api.nvim_get_current_buf())
+  end)
+  it(
+    "installs a dependency by logical identity without changing toggle state",
+    function()
+      local selected, result
+      local before = vim.deepcopy(state.get())
+      mason.install = function(name, callback)
+        selected = name
+        callback(false, "installer offline")
+        return true
+      end
+      assert.is_true(
+        manager.install(
+          { category = "package", name = "typescript-language-server" },
+          function(ok, err)
+            result = { ok, err }
+          end
+        )
+      )
+      assert.equals("typescript-language-server", selected)
+      assert.same({ false, "installer offline" }, result)
+      assert.is_false(manager.toggle({ category = "package", name = selected }))
+      assert.same(before, state.get())
+      assert.equals(0, vim.fn.filereadable(vim.g.tool_state_path))
+    end
+  )
 end)

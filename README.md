@@ -10,7 +10,7 @@ A Lua Neovim configuration for C#, Python, JavaScript, TypeScript, Go, SQL and M
 Requirements:
 
 - Neovim 0.12 or newer, Git, and network access for the first plugin installation.
-- A C compiler and Tree-sitter CLI 0.26.1 or newer to build parsers.
+- A C compiler and Tree-sitter CLI 0.26.1 or newer to build parsers, plus GNU Make for LuaSnip's native extension.
 - The runtimes and package managers for your languages; `:checkhealth mason` lists the installers it can use.
 
 Clone into Neovim's configuration directory, after moving any existing configuration aside:
@@ -22,7 +22,7 @@ nvim
 
 On Windows, clone into the path printed by `:echo stdpath('config')`.
 
-Lazy installs the plugins on first start. Language tools are installed separately: open Tool Manager and press `i` on a tool, or run `:TSInstallAll` to build every configured parser.
+Lazy installs the locked plugin versions on first start. Language tools are installed separately: open Tool Manager and press `i` on a tool, or run `:TSInstallAll` to build every configured parser.
 
 ## Usage
 
@@ -64,13 +64,33 @@ Roslyn starts for C# files when `dotnet` and `roslyn-language-server` are on PAT
 
 T-SQL uses Tree-sitter highlighting, SQLFluff formatting and linting, and LuaSnip templates. See the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md) and [SQL conventions](doc/tsql-conventions.md).
 
+### Python
+
+`:PyrightReCreateStub` regenerates a selected package in the current project's `typings` directory. It retains the previous stub until generation succeeds and restores it after a failed process. Recovery errors include the retained backup's location.
+
 ### Windows notes
 
 nvim-tree's filesystem watchers are off on Windows to avoid event storms: the tree refreshes on save or when entered, and `R` refreshes it in place. Terminal image previews are off on every platform; press `s` on an image in nvim-tree to open the system viewer.
 
+Shell setup preserves an explicitly configured shell and `CC`. Otherwise it selects an available PowerShell and C compiler. LuaSnip's optional jsregexp build needs `make`, a C compiler and a Unix-compatible shell on PATH.
+
 ## Configuration
 
-Edit settings in `lua/config/`: language servers in `lua/config/lsp/`, tool definitions and default formatter/linter order in `lua/config/tools.lua`, Tool Manager mappings and install policy in `lua/config/tool_manager.lua`. Plugin choices live in `lua/plugins/`. [Architecture](doc/architecture.md) describes the module boundaries.
+Press `<leader>uc` or run `:OrbitSettings` to open `settings.json`. The command creates a minimal file linked to the bundled JSON Schema. Install `json-lsp` and enable `jsonls` in Tool Manager for completion, hover descriptions and validation. The personal settings file is ignored by Git.
+
+```json
+{
+  "$schema": "./settings.schema.json",
+  "editor": { "relativenumber": false, "shiftwidth": 4 },
+  "tool_manager": { "width": 100, "missing_package_policy": "manual" }
+}
+```
+
+Saving applies supported settings automatically. `:OrbitSettings reload` reloads from disk; `:OrbitSettings info` shows effective values, their sources and changes requiring a restart. Editor options, Tool Manager options and inlay hints update live. Server settings, code lenses and initial tool priorities take effect after restarting. Invalid settings preserve the last valid values.
+
+Omitted settings use the defaults in `settings.schema.json`; `{}` uses all defaults. Tool Manager continues saving enablement and priority in the data directory's `tools.json`, which takes precedence over initial priorities in settings. See the [settings guide](doc/settings.md) for merge rules and scope.
+
+Plugin choices and loading rules remain in `lua/plugins/`; Lua callbacks and language-specific options remain with their owners in `lua/config/` and `lua/runtime/`. [Architecture](doc/architecture.md) describes the module responsibilities.
 
 ## License
 

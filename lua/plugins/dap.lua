@@ -6,23 +6,11 @@ return {
     -- refer to: https://github.com/mfussenegger/nvim-dap/issues/1551
     "Orbit-Lua/nvim-dap",
     config = function()
-      local config = require("config.dap.config")
-      local state = require("tool.state")
-      local dap = require("dap")
-      require("runtime.dap").setup(dap, config, state)
-      if state.is_enabled("dap", "coreclr") then
-        local ok, plugin = pcall(require, "dotnet-cli")
-        if ok then
-          local registered, err = plugin.setup_dap()
-          if not registered then
-            vim.notify(err, vim.log.levels.WARN, { title = "Dotnet" })
-          end
-        else
-          vim.notify("dotnet-cli.nvim is unavailable", vim.log.levels.WARN, {
-            title = "Dotnet",
-          })
-        end
-      end
+      require("runtime.dap").setup(
+        require("dap"),
+        require("config.dap"),
+        require("tool.state")
+      )
     end,
     keys = {
       {
@@ -95,18 +83,7 @@ return {
     },
     dependencies = { "Orbit-Lua/nvim-dap", "nvim-neotest/nvim-nio" },
     config = function(_, opts)
-      local dap = require("dap")
-      local dapui = require("dapui")
-
-      dapui.setup(opts)
-      dap.set_log_level("TRACE")
-
-      dap.listeners.before.terminate["dapui_config"] = function()
-        dapui.close()
-      end
-      dap.listeners.before.event_exited["dapui_config"] = function()
-        dapui.close()
-      end
+      require("runtime.dap").setup_ui(opts)
     end,
   },
 }

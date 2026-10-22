@@ -29,12 +29,14 @@ local function dimensions()
   local position = "50%"
   local tall = vim.o.lines - vim.o.cmdheight >= 22
   if tall and vim.o.columns >= 150 then
-    size.width = math.min(size.width, vim.o.columns - config.details.width - 10)
+    local details_width =
+      math.min(config.details.width, math.floor((vim.o.columns - 10) / 2))
+    size.width = math.min(size.width, vim.o.columns - details_width - 10)
     position = {
       row = math.max(1, math.floor((vim.o.lines - size.height) / 2) - 1),
       col = math.max(
         1,
-        math.floor((vim.o.columns - size.width - config.details.width - 6) / 2)
+        math.floor((vim.o.columns - size.width - details_width - 6) / 2)
       ),
     }
   elseif tall and vim.o.columns >= 85 then

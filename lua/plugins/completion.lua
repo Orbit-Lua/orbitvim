@@ -1,5 +1,3 @@
-local os = require("utils.os")
-
 ---@type LazySpec[]
 return {
   {
@@ -12,15 +10,12 @@ return {
         -- https://github.com/L3MON4D3/LuaSnip/blob/master/DOC.md
         "L3MON4D3/LuaSnip",
         dependencies = "rafamadriz/friendly-snippets",
-        build = (function()
-          if os.is_win() then
-            return "make CC=gcc INCLUDE_DIR=-I../lua51_include LDLIBS='C:/Program Files/Neovim/bin/lua51.dll'"
-              .. "install_jsregexp"
-          end
-
-          return "make install_jsregexp"
-        end)(),
-        opts = { history = true, updateevents = "TextChanged,TextChangedI" },
+        build = function(plugin)
+          require("runtime.completion").build_luasnip(plugin)
+        end,
+        opts = function()
+          return require("config.completion").luasnip
+        end,
         config = function(_, opts)
           require("runtime.completion").setup_luasnip(opts)
         end,
@@ -28,10 +23,9 @@ return {
 
       {
         "windwp/nvim-autopairs",
-        opts = {
-          fast_wrap = {},
-          disable_filetype = { "TelescopePrompt", "vim" },
-        },
+        opts = function()
+          return require("config.completion").autopairs
+        end,
         config = function(_, opts)
           require("nvim-autopairs").setup(opts)
         end,
@@ -53,20 +47,9 @@ return {
           { "justinsgithub/wezterm-types", lazy = true },
         },
 
-        opts = {
-          library = {
-            {
-              path = "nv-ui/nvchad_types",
-              mods = { "ui" },
-              words = { "nvchad", "nvui" },
-            },
-            { path = "snacks.nvim", words = { "snacks", "snacks.nvim" } },
-            { path = "noice.nvim", words = { "noice", "noice.nvim" } },
-            { path = "comet.nvim", words = { "Comet", "comet.nvim" } },
-            { path = "blink.cmp/lua/blink/cmp", words = { "blink%.cmp" } },
-            { path = "wezterm-types", mods = { "wezterm", "module.wezterm" } },
-          },
-        },
+        opts = function()
+          return require("config.completion").lazydev
+        end,
       },
     },
 
@@ -75,7 +58,7 @@ return {
       return require("config.blink").build()
     end,
 
-    main = "utils.cmp",
+    main = "runtime.completion.blink",
     opts_extend = {
       "sources.completion.enabled_providers",
       "sources.compat",

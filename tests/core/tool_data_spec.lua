@@ -100,12 +100,6 @@ describe("tool.data", function()
     assert.same(sorted, names)
   end)
 
-  it("summarizes enabled and disabled tools", function()
-    local summary = data.state_summary("formatter")
-    assert.equals(vim.tbl_count(tools.formatter), summary.total)
-    assert.equals(summary.total, summary.enabled + summary.disabled)
-  end)
-
   it("keeps external installation separate from configured runtime", function()
     package.loaded.conform =
       { formatters_by_ft = { prisma = { "prisma_fmt" } } }

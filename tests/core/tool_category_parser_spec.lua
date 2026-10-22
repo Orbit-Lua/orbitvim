@@ -27,24 +27,6 @@ describe("tool.category.parser", function()
     package.loaded["tool.category.parser"] = original_handler
   end)
 
-  it("reports installed and missing parsers", function()
-    assert.same(
-      { "installed", "DiagnosticOk" },
-      { parser.entry_status({ name = "lua", meta = {} }) }
-    )
-    assert.same(
-      { "not installed", "DiagnosticError" },
-      { parser.entry_status({ name = "tsx", meta = {} }) }
-    )
-  end)
-
-  it("summarizes installed and missing parsers", function()
-    assert.same(
-      { total = 3, installed = 2, missing = 1 },
-      parser.summary({ lua = {}, python = {}, tsx = {} })
-    )
-  end)
-
   it(
     "reports success only when the async installer confirms installation",
     function()

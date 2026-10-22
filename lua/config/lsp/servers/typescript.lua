@@ -1,4 +1,4 @@
-local lsp = require("utils.lsp")
+local lsp = require("runtime.lsp.client")
 local ft = require("utils.ft")
 
 -- https://github.com/yioneko/vtsls/blob/main/packages/service/configuration.schema.json
@@ -106,7 +106,7 @@ return {
   setup = {
     vtsls = function()
       -- Copy typescript settings to javascript so both share the same configuration.
-      local spec = require("config.lsp.config")
+      local spec = require("config.lsp")
       spec.servers["vtsls"].settings.javascript = vim.tbl_deep_extend(
         "force",
         {},

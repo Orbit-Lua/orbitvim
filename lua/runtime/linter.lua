@@ -43,8 +43,14 @@ end
 local function apply_tool_order(linters_by_ft)
   local order = require("tool.order")
   for filetype, linters in pairs(linters_by_ft) do
-    linters_by_ft[filetype] =
-      order.enabled_names_for_ft("linter", filetype, linters)
+    linters_by_ft[filetype] = order.to_runtime(
+      "linter",
+      order.enabled_names_for_ft(
+        "linter",
+        filetype,
+        order.from_runtime("linter", linters)
+      )
+    )
   end
 end
 
@@ -137,6 +143,7 @@ end
 
 ---@param opts Linter.Opts
 function M.setup(opts)
+  vim.env.ESLINT_D_PPID = vim.fn.getpid()
   setup_generation = setup_generation + 1
   local generation = setup_generation
   for bufnr, timer in pairs(active_timers) do

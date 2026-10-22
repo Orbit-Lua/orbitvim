@@ -11,7 +11,7 @@ describe("plugins.ui.noice", function()
   end)
 
   it("routes formatter lifecycle notifications to the mini view", function()
-    local opts = require("plugins.ui.noice")[1].opts
+    local opts = require("plugins.ui.noice")[1].opts()
     local formatter_route
 
     for _, route in ipairs(opts.routes) do

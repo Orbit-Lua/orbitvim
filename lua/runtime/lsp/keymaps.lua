@@ -1,5 +1,5 @@
 local window = require("utils.window")
-local utils_lsp = require("utils.lsp")
+local lsp_client = require("runtime.lsp.client")
 local borders = require("config.borders")
 
 local M = {}
@@ -111,7 +111,7 @@ function M.get()
     },
     {
       "<leader>ci",
-      utils_lsp.toggle_inlay_hints,
+      lsp_client.toggle_inlay_hints,
       desc = "toggle inlay hints",
       mode = { "n" },
       has = "inlayHint",
@@ -128,7 +128,7 @@ function M.get()
     { "<leader>cr", vim.lsp.buf.rename, desc = "rename", has = "rename" },
     {
       "<leader>cA",
-      utils_lsp.action.source,
+      lsp_client.action.source,
       desc = "code source action",
       has = "codeAction",
     },
@@ -192,9 +192,9 @@ function M.has(buffer, method)
     return false
   end
   method = method:find("/") and method or "textDocument/" .. method
-  local clients = utils_lsp.get_clients({ bufnr = buffer })
+  local clients = lsp_client.get_clients({ bufnr = buffer })
   for _, client in ipairs(clients) do
-    if client:supports_method(method) then
+    if client:supports_method(method, buffer) then
       return true
     end
   end
@@ -208,8 +208,8 @@ function M.resolve(buffer)
     return {}
   end
   local spec = vim.tbl_extend("force", {}, M.get())
-  local opts = require("config.lsp.config")
-  local clients = utils_lsp.get_clients({ bufnr = buffer })
+  local opts = require("config.lsp")
+  local clients = lsp_client.get_clients({ bufnr = buffer })
   for _, client in ipairs(clients) do
     local maps = opts.servers[client.name] and opts.servers[client.name].keys
       or {}

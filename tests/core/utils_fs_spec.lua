@@ -40,6 +40,7 @@ describe("utils.fs", function()
     }
 
     for index, case in ipairs(cases) do
+      fs.root_pattern = { case.marker }
       local root = test.temp_dir("root-marker-" .. index)
       local nested = root .. "/src/deep"
       vim.fn.mkdir(nested, "p")

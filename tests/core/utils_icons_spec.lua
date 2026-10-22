@@ -66,28 +66,6 @@ describe("utils.icons", function()
     assert.is_true(setup_called)
   end)
 
-  it("formats mini.icons highlight groups when colored", function()
-    package.preload["mini.icons"] = function()
-      return {
-        setup = function()
-          _G.MiniIcons = {}
-        end,
-        get = function()
-          return "M", "MiniIconsBlue"
-        end,
-      }
-    end
-
-    local icons = reload_icons()
-
-    assert.equals(
-      "%#MiniIconsBlue#M%*",
-      icons.get_file_icon("init.lua", {
-        colored = true,
-      })
-    )
-  end)
-
   it("falls back to nvim-web-devicons compatibility", function()
     package.preload["mini.icons"] = function()
       error("mini.icons unavailable")

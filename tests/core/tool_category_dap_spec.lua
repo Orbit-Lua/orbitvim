@@ -12,7 +12,7 @@ describe("tool.category.dap", function()
     previous_loaded_dap = package.loaded.dap
     previous_preload_dap = package.preload.dap
     previous_dotnet = package.loaded["dotnet-cli"]
-    previous_config = package.loaded["config.dap.config"]
+    previous_config = package.loaded["config.dap"]
     dap_category = require("tool.category.dap")
   end)
 
@@ -21,10 +21,10 @@ describe("tool.category.dap", function()
     package.preload.dap = previous_preload_dap
     package.loaded["tool.category.dap"] = previous_category
     package.loaded["dotnet-cli"] = previous_dotnet
-    package.loaded["config.dap.config"] = previous_config
+    package.loaded["config.dap"] = previous_config
   end)
 
-  it("returns nil status when nvim-dap is unavailable", function()
+  it("reports unavailable nvim-dap and refuses runtime changes", function()
     package.loaded.dap = nil
     package.preload.dap = function()
       error("dap unavailable")
@@ -34,6 +34,10 @@ describe("tool.category.dap", function()
 
     assert.is_nil(status)
     assert.is_nil(hl)
+    local ok, err =
+      dap_category.apply_runtime({ name = "python", is_enabled = true })
+    assert.is_false(ok)
+    assert.matches("nvim%-dap is unavailable", err)
   end)
 
   it("reports registered adapter and matching configuration count", function()
@@ -98,8 +102,7 @@ describe("tool.category.dap", function()
           return true
         end,
       }
-      package.loaded["config.dap.config"] =
-        { adapters = {}, configurations = {} }
+      package.loaded["config.dap"] = { adapters = {}, configurations = {} }
 
       dap_category.apply_runtime({ name = "coreclr", is_enabled = true })
       assert.equals(1, setup_calls)

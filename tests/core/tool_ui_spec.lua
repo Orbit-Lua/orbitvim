@@ -109,6 +109,12 @@ describe("Tool Manager Nui sessions", function()
     callbacks, operations, snapshots = {}, {}, {}
     order = { "ruff_fix", "ruff_format" }
     package.loaded["tool.manager"] = {
+      details = function(selection)
+        return {
+          logs = logger.get_entries("linter", selection.name),
+          diagnostics = linter.get_linter_diagnostics(selection.name),
+        }
+      end,
       snapshot = function(opts)
         table.insert(snapshots, vim.deepcopy(opts))
         local names = opts.category == "formatter" and order
@@ -452,6 +458,66 @@ describe("Tool Manager Nui sessions", function()
       assert.equals(count, #snapshots)
       assert.is_nil(buffer_for("ToolManager"))
       tool.close()
+    end
+  )
+  it(
+    "fits schema-valid details preferences inside the available editor",
+    function()
+      local test = require("tests.helpers")
+      vim.o.columns, vim.o.lines = 160, 40
+      test.write_file(
+        vim.g.orbitvim_settings_path,
+        '{"tool_manager":{"details":{"width":300}}}'
+      )
+      require("core.settings").setup()
+      tool.open()
+      press("K")
+      for _, window in ipairs(vim.api.nvim_list_wins()) do
+        local buffer = vim.api.nvim_win_get_buf(window)
+        if vim.bo[buffer].filetype:match("^ToolManager") then
+          local position = vim.api.nvim_win_get_position(window)
+          assert.is_true(position[2] >= 0)
+          assert.is_true(
+            position[2] + vim.api.nvim_win_get_width(window) <= vim.o.columns
+          )
+          assert.is_true(
+            position[1] + vim.api.nvim_win_get_height(window) <= vim.o.lines
+          )
+        end
+      end
+      assert.is_not_nil(buffer_for("ToolManagerDetails"))
+    end
+  )
+
+  it(
+    "refreshes an open view from saved settings while preserving help and selection",
+    function()
+      local test = require("tests.helpers")
+      vim.o.columns, vim.o.lines = 180, 50
+      vim.g.orbitvim_settings_path = test.temp_dir("ui-settings")
+        .. "/settings.json"
+      local runtime = require("core.settings")
+      runtime.setup()
+      tool.open()
+      select("ruff")
+      press("?")
+      local count = #snapshots
+      test.write_file(
+        vim.g.orbitvim_settings_path,
+        '{"tool_manager":{"width":90}}'
+      )
+      vim.api.nvim_exec_autocmds(
+        "BufWritePost",
+        { pattern = vim.g.orbitvim_settings_path }
+      )
+      assert.is_true(vim.wait(200, function()
+        return #snapshots > count
+      end))
+      assert.equals(90, vim.api.nvim_win_get_width(vim.fn.bufwinid(body())))
+      press("<Space>")
+      assert.same({}, operations)
+      press("?")
+      assert.is_truthy(vim.api.nvim_get_current_line():find("ruff", 1, true))
     end
   )
 end)

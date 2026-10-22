@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OrbitVim settings",
+  "description": "Optional user overrides. Omitted fields use defaults. Saved tool state remains in the data directory's tools.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Local schema used for completion and validation."
+    },
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "number": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show line numbers. Applies to existing normal editing windows and new windows."
+        },
+        "relativenumber": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show relative line numbers. Applies to existing normal editing windows and new windows."
+        },
+        "cursorline": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight the cursor line in normal editing windows."
+        },
+        "expandtab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Insert spaces for tabs in normal editing buffers and new buffers."
+        },
+        "shiftwidth": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 16,
+          "description": "Indent width for normal editing buffers. Filetype plugins may override it for newly opened files."
+        },
+        "tabstop": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 16,
+          "description": "Display width of tabs in normal editing buffers."
+        },
+        "softtabstop": {
+          "type": "integer",
+          "default": 2,
+          "minimum": -1,
+          "maximum": 16,
+          "description": "Tab editing width in normal editing buffers."
+        },
+        "ignorecase": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ignore case when searching; applies immediately."
+        },
+        "smartcase": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use case-sensitive searching for patterns with capitals."
+        },
+        "splitbelow": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open horizontal splits below the current window."
+        },
+        "splitright": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open vertical splits to the right of the current window."
+        },
+        "timeoutlen": {
+          "type": "integer",
+          "default": 400,
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Mapping timeout in milliseconds; applies immediately."
+        },
+        "updatetime": {
+          "type": "integer",
+          "default": 250,
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Idle update interval in milliseconds; applies immediately."
+        }
+      }
+    },
+    "tool_manager": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "default": 120,
+          "minimum": 24,
+          "maximum": 500,
+          "description": "Preferred Tool Manager width; updates the open view."
+        },
+        "height": {
+          "type": "integer",
+          "default": 40,
+          "minimum": 5,
+          "maximum": 200,
+          "description": "Preferred Tool Manager height; updates the open view."
+        },
+        "missing_package_policy": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "manual"
+          ],
+          "default": "auto",
+          "description": "auto installs a missing package when enabling a tool; manual leaves enablement unchanged."
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": {
+              "type": "integer",
+              "default": 54,
+              "minimum": 20,
+              "maximum": 300,
+              "description": "Preferred details width; updates the open view."
+            },
+            "max_messages": {
+              "type": "integer",
+              "default": 8,
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Maximum diagnostic messages shown in tool details."
+            }
+          }
+        },
+        "refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "debounce_ms": {
+              "type": "integer",
+              "default": 500,
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Diagnostic refresh debounce in milliseconds."
+            }
+          }
+        }
+      }
+    },
+    "lsp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inlay_hints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable supported inlay hints. Applies immediately to attached clients."
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "default": [],
+              "description": "Filetypes excluded from inlay hints. Arrays replace the previous list."
+            }
+          }
+        },
+        "codelens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable code lenses on next startup."
+            }
+          },
+          "x-reload": "restart",
+          "description": "Code lens activation requires a restart."
+        },
+        "servers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "settings": {
+                "type": "object",
+                "additionalProperties": true,
+                "default": {}
+              }
+            }
+          },
+          "default": {},
+          "x-reload": "restart",
+          "description": "Server settings keyed by logical LSP ID. Merges into existing server settings on next startup."
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "formatter_defaults": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "default": {},
+          "description": "Default formatter order by filetype. Saved tools.json order takes precedence."
+        },
+        "linter_defaults": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "default": {},
+          "description": "Default linter order by filetype. Saved tools.json order takes precedence."
+        }
+      },
+      "x-reload": "restart",
+      "description": "Initial tool priorities. Requires a restart; does not change saved enablement or ordering."
+    }
+  }
+}

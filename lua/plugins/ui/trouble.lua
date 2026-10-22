@@ -1,5 +1,3 @@
-local borders = require("config.borders")
-
 ---@type LazySpec[]
 return {
   {
@@ -7,26 +5,9 @@ return {
     "folke/trouble.nvim",
     lazy = false,
 
-    opts = {
-
-      ---@type table<string, trouble.Mode>
-      modes = {
-        ---@diagnostic disable-next-line
-        diagnostic_preview_float = {
-          mode = "diagnostics",
-          preview = {
-            type = "float",
-            relative = "editor",
-            border = borders.default,
-            title = " Preview ",
-            title_pos = "center",
-            position = { 0, -2 },
-            size = { width = 0.3, height = 0.3 },
-            zindex = 200,
-          },
-        },
-      },
-    },
+    opts = function()
+      return require("config.ui.trouble").trouble
+    end,
     cmd = "Trouble",
     keys = {
       {
@@ -48,18 +29,7 @@ return {
         "<leader>cL",
         --- WORKAROUND: refresh will cause syntax highlight mess, so close and open again
         function()
-          local trouble = require("trouble")
-
-          ---@diagnostic disable-next-line
-          trouble.close({ mode = "lsp" })
-          trouble.open({
-            mode = "lsp",
-            auto_refresh = false,
-            win = {
-              position = "right",
-            },
-            focus = false,
-          })
+          require("runtime.ui").open_lsp_references()
         end,
         desc = "lsp definitions / references / ... (trouble)",
       },
@@ -103,14 +73,9 @@ return {
 
     ---@module "todo-comments"
     ---@type TodoConfig
-    opts = {
-      keywords = {
-        WORKAROUND = {
-          icon = " ",
-          color = "warning",
-        },
-      },
-    },
+    opts = function()
+      return require("config.ui.trouble").todo
+    end,
 
     config = function(_, opts)
       require("core.theme").load_cache("lsp")

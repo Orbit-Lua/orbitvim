@@ -6,8 +6,10 @@ describe("runtime.linter", function()
   local buffers
   local test_buffers
   local original_buffer
+  local original_ppid
 
   before_each(function()
+    original_ppid = vim.env.ESLINT_D_PPID
     previous_lint = package.loaded.lint
     previous_runtime = package.loaded["runtime.linter"]
     package.loaded["runtime.linter"] = nil
@@ -28,6 +30,7 @@ describe("runtime.linter", function()
   end)
 
   after_each(function()
+    vim.env.ESLINT_D_PPID = original_ppid
     for _, bufnr in ipairs(test_buffers) do
       if vim.api.nvim_buf_is_valid(bufnr) then
         pcall(vim.api.nvim_buf_delete, bufnr, { force = true })

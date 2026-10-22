@@ -48,11 +48,19 @@ describe("config.linter", function()
       vim.fn.mkdir(root .. "/.git", "p")
       vim.api.nvim_buf_set_name(test_buf, filename)
 
-      local sqlfluff = require("utils.sqlfluff")
       local linter = require("config.linter").linters.sqlfluff()
 
-      assert.same(sqlfluff.lint_args(filename), linter.args)
-      assert.same(sqlfluff.cwd(filename), linter.cwd)
+      assert.same({
+        "lint",
+        "--format=json",
+        "--stdin-filename",
+        filename,
+        "--config",
+        require("utils.fs").config_path
+          .. "/lua/config/db/template/sqlfluff.cfg",
+        "-",
+      }, linter.args)
+      test.assert_path(root, linter.cwd)
       assert.is_true(linter.stdin)
       assert.same("1", linter.env.PYTHONUTF8)
     end

@@ -169,12 +169,31 @@ local function node_line(node, width)
     local health = tool.health_status
     local status = health and health.label or tool.status or "Unknown"
     local severity = health and health.severity or tool.status_hl
-    local icon = health and health.icon
-      or (tool.enabled and icons.enabled or icons.disabled)
-    if not health and tool.enabled and severity == "DiagnosticError" then
+    local icon = tool.enabled and icons.enabled or icons.disabled
+    if health and health.installation == "installing" then
+      icon = icons.installing
+    elseif
+      health
+      and health.enabled == false
+      and severity ~= "DiagnosticError"
+    then
+      icon = icons.disabled
+    elseif
+      health
+      and (
+        health.installation == "unknown"
+        or health.installation == "unavailable"
+      )
+    then
+      icon = icons.unknown
+    elseif severity == "DiagnosticError" then
       icon = icons.error
-    elseif not health and tool.enabled and severity == "DiagnosticWarn" then
+    elseif severity == "DiagnosticWarn" then
       icon = icons.warning
+    elseif tool.enabled and health and health.runtime == "Idle" then
+      icon = icons.idle
+    elseif tool.enabled and severity == "DiagnosticInfo" then
+      icon = icons.info
     end
     local name = node.rank and (node.rank .. ". " .. tool.name) or tool.name
     local enabled_text = (

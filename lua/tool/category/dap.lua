@@ -5,13 +5,13 @@ local M = {
 function M.apply_runtime(opts)
   local dap_ok, dap = pcall(require, "dap")
   if not dap_ok then
-    return
+    return false, "nvim-dap is unavailable: " .. tostring(dap)
   end
-  require("runtime.dap").apply_adapter(
+  return require("runtime.dap").apply_adapter(
     dap,
     opts.name,
     opts.is_enabled,
-    require("config.dap.config")
+    require("config.dap")
   )
 end
 
