@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -52,7 +52,7 @@ jobs:
           Join-Path $env:RUNNER_TEMP "$name/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Install StyLua
         run: |
@@ -106,12 +106,12 @@ jobs:
           Join-Path $toolRoot 'usr/bin' | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -149,7 +149,7 @@ jobs:
           "NVIM_DATA_PATH=$data" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Cache plugins and parsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ${{ env.NVIM_DATA_PATH }}/lazy
