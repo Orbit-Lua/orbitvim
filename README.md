@@ -1,131 +1,77 @@
 # OrbitVim
 
-[![Validate on main](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml?query=branch%3Amain)
+[![Validate](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml?query=branch%3Amain)
 [![Neovim 0.12+](https://img.shields.io/badge/Neovim-0.12%2B-57A143?style=flat-square&logo=neovim&logoColor=white)](https://neovim.io/)
-[![lazy.nvim](https://img.shields.io/badge/plugins-lazy.nvim-blue?style=flat-square)](https://github.com/folke/lazy.nvim)
-[![Nui UI](https://img.shields.io/badge/Tool_Manager-nui.nvim-blue?style=flat-square)](https://github.com/MunifTanjim/nui.nvim)
 
-A Lua Neovim configuration with language tooling, debugging, completion, Nv UI/base46 themes, and a Nui-based Tool Manager. It supports C#, Python, JavaScript, TypeScript, Go, SQL, Markdown, and related files. Tool Manager brings tool availability, runtime health, installation, and formatter/linter priority into one view.
+A Lua Neovim configuration for C#, Python, JavaScript, TypeScript, Go, SQL and Markdown, with LSP, debugging, completion, Nv UI/base46 themes, and a Tool Manager that installs, enables and orders language tools from one view.
 
-[Getting started](#getting-started) · [Tool Manager](#tool-manager) · [Customization](#customization) · [Development](#development)
+## Install
 
-## Getting started
+Requirements:
 
-You need **Neovim 0.12 or newer**, Git, and network access for the first plugin installation. Building Tree-sitter parsers also requires a C compiler and **Tree-sitter CLI 0.26.1 or newer**. Install the runtimes and package managers required by the languages you use; `:checkhealth mason` reports the available installation tools.
+- Neovim 0.12 or newer, Git, and network access for the first plugin installation.
+- A C compiler and Tree-sitter CLI 0.26.1 or newer to build parsers.
+- The runtimes and package managers for your languages; `:checkhealth mason` lists the installers it can use.
 
-On Linux or macOS, clone into Neovim's configuration directory. Move any existing configuration aside before using this destination:
+Clone into Neovim's configuration directory, after moving any existing configuration aside:
 
 ```sh
 git clone https://github.com/Orbit-Lua/orbitvim.git ~/.config/nvim
 nvim
 ```
 
-On Windows, use the configuration path returned by `:echo stdpath('config')`.
+On Windows, clone into the path printed by `:echo stdpath('config')`.
 
-Let Lazy finish installing plugins, then run `:ToolManager` or press `<leader>us` (Space, `u`, `s`). The category navigation and tools for your source buffer confirm that the configuration loaded. Press `s` to see all registered tool states.
+Lazy installs the plugins on first start. Language tools are installed separately: open Tool Manager and press `i` on a tool, or run `:TSInstallAll` to build every configured parser.
 
-Missing language tools are installed separately from plugins. Select a tool and press `i`, or enable a missing Mason-backed tool with Space: the default policy installs it before enabling it. To download and build every configured parser, run `:TSInstallAll`.
+## Usage
 
-## Tool Manager
-
-The navigation, source scope, tool list, and action hints share one outer frame. The list uses Tool, Enabled, and Status columns. The six categories are **LSP, DAP, Linter, Formatter, Parser, Package**. The view opens in the current buffer's scope; switching to all states lets you inspect tools for other filetypes. Formatter and linter ranks appear inline in buffer scope and stay grouped by filetype in all-state scope.
+Run `:ToolManager` or press `<leader>us` (Space, `u`, `s`). The view opens on the tools for the current buffer's filetype.
 
 | Key | Action |
 | --- | --- |
-| `1`–`6` | Select a category |
-| `<Tab>` / `<S-Tab>` | Next / previous category |
-| `s` | Current buffer / all tool states |
-| `<Space>` | Enable or disable a tool |
-| `i` | Install its package or parser |
-| `[` / `]` | Move a formatter or linter earlier / later |
-| `o` / `<CR>` / `za` | Expand or collapse an entry |
-| `K` | Focus scrollable details, including linter errors and diagnostics |
+| `1`–`6`, `<Tab>` / `<S-Tab>` | Switch category: LSP, DAP, Linter, Formatter, Parser, Package |
+| `s` | Toggle between current-buffer and all tool states |
+| `<Space>` | Enable or disable a tool; a missing Mason package is installed first |
+| `i` | Install the package or parser without changing enablement |
+| `[` / `]` | Move a formatter or linter earlier or later for the filetype |
+| `o` / `<CR>` / `za` | Expand or collapse a filetype group |
+| `K` | Focus the scrollable details pane |
 | `?` / `g?` | Toggle help |
-| `q` / `<Esc>` | Close the view |
+| `q` / `<Esc>` | Close |
 
-Wrapped details follow the selection without moving focus on wide and medium editors. Press `K` to focus and scroll the details, then `q` or Escape to return to the list. Narrow editors open details only after `K`.
+Parsers and dependency packages can only be installed, not toggled or reordered. Enablement and priority persist in `tools.json` in Neovim's data directory. The [Tool Manager guide](doc/tool-manager.md) explains each status and the install policy.
 
-Parsers and dependency packages can be installed but cannot be toggled or reordered. Enabling a tool and installing its package are separate operations: `i` alone does not change enablement. A failed automatic installation leaves the tool disabled.
+Other mappings:
 
-Enablement and priority are saved as `tools.json` in Neovim's data directory. An older `service.json` is read when `tools.json` is absent. Tool support and initial runtime activation are distinct: a registered tool can support your filetype while its status reports that it is not configured.
-
-See the [Tool Manager guide](doc/tool-manager.md) for status interpretation, install policy, and persistence behavior.
-
-## Everyday workflows
-
-| Mapping | Action |
+| Key | Action |
 | --- | --- |
-| `<leader>fm` | Format the current buffer |
+| `<leader>fm` | Format the buffer |
 | `<leader>tf` | Show diagnostics for the current line |
-| `<C-n>` | Toggle the file tree |
-| `<leader>fe` | Focus the file tree |
-| `<C-e>` | Open Harpoon's quick menu |
-| `<leader>dt` | Toggle a breakpoint |
-| `<leader>du` | Toggle the debug UI |
+| `<C-n>` / `<leader>fe` | Toggle / focus the file tree |
+| `<C-e>` | Harpoon quick menu |
+| `<leader>dt` / `<leader>du` | Toggle breakpoint / debug UI |
 | `<M-i>` / `<M-h>` / `<M-v>` | Floating / horizontal / vertical terminal |
 | `<leader>ut` | Choose a theme |
 
 ### .NET
 
-Roslyn loads for C# files when both `dotnet` and `roslyn-language-server` are executable. Install the server through Tool Manager or `:MasonInstall roslyn-language-server`, then restart Neovim. Solution discovery searches upward from the C# file, independently of cwd. When multiple valid solutions are found, OrbitVim prefers the unique `.sln` directly in the nearest Git root, provided Roslyn confirms it contains the current project. Otherwise, normal Roslyn selection applies; use `:Roslyn target` to select a solution manually. This preference is configured in `lua/config/lsp/roslyn.lua`.
+Roslyn starts for C# files when `dotnet` and `roslyn-language-server` are on PATH; install the server from Tool Manager and restart Neovim. When several solutions are found above the file, OrbitVim prefers the single `.sln` at the Git root if it contains the current project; `:Roslyn target` picks one manually.
 
-In an SDK-style C# workspace, `:DotnetManager` provides startup-project selection, build, test, package, EF Core, diagnostics, and publish actions. `:DotnetDebug` builds and launches the selected project; `:DotnetAttach` attaches to a local process. Install `netcoredbg` and enable `coreclr` in Tool Manager. [dotnet-cli.nvim](https://github.com/Orbit-Lua/dotnet-cli.nvim) owns the launch/attach configurations; OrbitVim supplies generic DAP mappings and UI.
+`:DotnetManager` (`<leader>ud`) runs build, test, package, EF Core and publish actions for SDK-style projects. `:DotnetDebug` builds and launches the startup project and `:DotnetAttach` attaches to a process; both need `netcoredbg` installed and `coreclr` enabled in Tool Manager.
 
 ### SQL
 
-T-SQL support combines Tree-sitter highlighting, focused syntax fallbacks, SQLFluff formatting/linting adapters, and LuaSnip templates. Read the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md), and [SQL conventions](doc/tsql-conventions.md).
+T-SQL uses Tree-sitter highlighting, SQLFluff formatting and linting, and LuaSnip templates. See the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md) and [SQL conventions](doc/tsql-conventions.md).
 
-### File explorer
+### Windows notes
 
-`<C-n>` toggles nvim-tree; `<leader>fe` focuses it. On Windows, filesystem
-watchers are disabled to avoid event storms. The tree refreshes when you save a
-buffer or enter the tree; press `R` inside it to refresh external changes while
-it stays focused. Other platforms retain filesystem watching. Settings live in
-[lua/config/nvimtree.lua](lua/config/nvimtree.lua).
+nvim-tree's filesystem watchers are off on Windows to avoid event storms: the tree refreshes on save or when entered, and `R` refreshes it in place. Terminal image previews are off on every platform; press `s` on an image in nvim-tree to open the system viewer.
 
-Terminal image previews are disabled to avoid overlapping images and terminal
-instability. Select an image in nvim-tree and press `s` to open it with the
-system viewer.
+## Configuration
 
-## Customization
+Edit settings in `lua/config/`: language servers in `lua/config/lsp/`, tool definitions and default formatter/linter order in `lua/config/tools.lua`, Tool Manager mappings and install policy in `lua/config/tool_manager.lua`. Plugin choices live in `lua/plugins/`. [Architecture](doc/architecture.md) describes the module boundaries.
 
-| Responsibility | Owner |
-| --- | --- |
-| Editor options, events, filetypes, keys, theme activation | `lua/core/` |
-| Plugin identities, dependencies, lazy triggers, plugin keys | `lua/plugins/` |
-| Editable plugin and language settings | `lua/config/` |
-| Canonical tools, filetypes, installer packages, default priority | `lua/config/tools.lua` |
-| Tool Manager dimensions, categories, mappings, install policy | `lua/config/tool_manager.lua` |
-| LSP, DAP, completion, formatting, linting, snippets, Tree-sitter activation | `lua/runtime/` |
-| User command registration | `lua/commands/` |
-| Tool operations, persistence, category adapters | `lua/tool/` |
-| Nui view sessions, rendering, details | `lua/tool/ui/` |
-| Shared helpers | `lua/utils/` |
+## License
 
-`lua/chadrc.lua` is the Nv UI/base46 entry point. `init.lua` preserves three startup phases: editor setup, Lazy bootstrap/import, then commands and final UI setup. See [architecture](doc/architecture.md) for the module boundaries.
-
-## Development
-
-Install Neovim, `just`, StyLua, and Luacheck. Open Neovim once to bootstrap the locked plugins, including Plenary and Nui. Integration tests additionally require the configured parsers, LuaSnip, and SQLFluff; use `:TSInstallAll` to prepare parsers.
-
-Run commands from the repository root:
-
-| Command | Effect |
-| --- | --- |
-| `just` or `just all` | Check formatting, lint, and run hermetic core specs |
-| `just test-integration` | Run parser, snippet, and executable integration specs |
-| `just test-all` | Run both suites |
-| `just fmt` | Rewrite Lua formatting |
-| `nvim --headless "+qall"` | Smoke-test startup with installed plugins |
-
-For one core spec:
-
-```sh
-nvim --headless --noplugin -u scripts/tests/minimal.vim \
-  -c "lua require('plenary.busted').run('tests/core/tool_state_spec.lua')" \
-  -c 'qall'
-```
-
-Core tests use isolated files and mocked installation/runtime seams; they do not install tools or update plugins. UI contract specs exercise the installed Nui library. Integration suites fail when a required dependency is missing.
-
-[AGENTS.md](AGENTS.md) defines editing and test admission rules. Tests protect behavior, safety, persistence, ordering, or external seams; moving a file or adding a constant does not require another test.
+No license has been published; all rights are reserved by the authors.

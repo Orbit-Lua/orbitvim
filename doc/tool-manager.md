@@ -6,7 +6,7 @@ Open `:ToolManager` or `<leader>us`. Repeating the command focuses the existing 
 
 One outer frame contains category navigation, source scope, the tool list, and action hints. The list keeps `Tool`, `Enabled`, and `Status` columns. The selected category has a filled highlight. Narrow views retain its name; short views omit separators to keep the list usable. Formatter/linter views show priority hints when space permits.
 
-Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand a formatter/linter group with `o`, Enter, or `za` in all-state scope. Buffer-scope formatter/linter lists are flat and show ranks inline.
+Use `1`–`6` or Tab / Shift-Tab for LSP, DAP, Linter, Formatter, Parser, and Package. Expand a formatter/linter group with `o`, Enter, or `za` in all-state scope.
 
 The selected tool stays selected after priority changes, resize, and live refreshes. Buffer-scope formatter/linter lists are flat and show saved ranks; all-state views retain filetype groups for reordering. Other categories show a flat tool list. Category and explicit expansion choices survive closing and reopening the manager. Help (`?` or `g?`) suspends tool actions and remains visible during background refreshes. A wrapped details preview follows selection without moving focus on wide and medium editors. `K` focuses the details so they can be scrolled; close it with `q` or Escape to return to the tool list. Wide views place details beside the list, medium views below it, and tiny views show details only after `K`.
 

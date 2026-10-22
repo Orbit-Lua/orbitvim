@@ -1,10 +1,20 @@
 # AGENTS Instructions
 
-## Project and contracts
+## Git
 
-OrbitVim is a Lua Neovim configuration. Read `init.lua` before changing startup or plugin loading. Preserve its three phases: editor setup → Lazy bootstrap/spec import → commands and final UI setup. Preserve user-visible commands, mappings, and persisted state unless the task explicitly changes them.
+- Write commits in [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) format.
+- Author commits as the user alone, with no `Co-Authored-By` or other co-author trailers.
+- Commit as the plan progresses. Before pushing, squash related commits into one to keep history clean.
+- Push only after the user approves that push.
+- Version releases with [Semantic Versioning 2.0.0](https://semver.org/).
+- Keep `lazy-lock.json` unchanged unless plugin versions are in scope.
+- Archive removed features with an annotated `archive/<name>` tag on the last commit that contains them, not with a branch.
 
-Tool Manager manages LSP, DAP, linters, formatters, parsers, and dependency packages. Its public UI interface is `require("tool").open()` / `.close()`. The tool-operation interface is `tool.manager`; operations receive logical selections, never cursor positions, Nui objects, or render callbacks. Read [architecture](doc/architecture.md) before changing these boundaries and [Tool Manager behavior](doc/tool-manager.md) before changing its workflows.
+## Contracts
+
+OrbitVim is a Lua Neovim configuration. `init.lua` runs three phases in order: editor setup, Lazy bootstrap and spec import, then commands and final UI setup. Preserve user-visible commands, mappings and persisted state unless the task changes them.
+
+Tool Manager's UI interface is `require("tool").open()` / `.close()`; its operation interface is `tool.manager`, which takes logical selections, never cursor positions, Nui objects or render callbacks. Read [architecture](doc/architecture.md) before changing these boundaries and the [Tool Manager guide](doc/tool-manager.md) before changing its workflows.
 
 ## Ownership
 
@@ -12,69 +22,59 @@ Tool Manager manages LSP, DAP, linters, formatters, parsers, and dependency pack
 | --- | --- |
 | Startup order | `init.lua` |
 | Editor options, PATH, autocmds, filetypes, general keys, theme activation | `lua/core/` |
-| Lazy plugin identity, dependencies, triggers, plugin keys and lifecycle callbacks | `lua/plugins/` |
+| Lazy plugin identity, dependencies, triggers, plugin keys, lifecycle callbacks | `lua/plugins/` |
 | Editable plugin and language options | `lua/config/` |
 | Canonical tool IDs, runtime aliases, filetypes, Mason packages, default priority | `lua/config/tools.lua` |
-| Derived sorted package, LSP server, parser lists | `lua/config/packages.lua` |
-| Tool Manager options, mapping/help descriptions and install policy | `lua/config/tool_manager.lua` |
-| LSP, DAP, completion, formatting, linting, snippets and Tree-sitter activation | `lua/runtime/` |
+| Derived sorted package, LSP server and parser lists | `lua/config/packages.lua` |
+| Tool Manager options, mapping/help descriptions, install policy | `lua/config/tool_manager.lua` |
+| LSP, DAP, completion, formatting, linting, snippets, Tree-sitter activation | `lua/runtime/` |
 | User command registration | `lua/commands/` |
 | Tool operations, persistence, ordering, Mason seam, category adapters | `lua/tool/` |
 | Nui view sessions, rendering, selected-tool details | `lua/tool/ui/` |
 | Shared helpers with concrete local interfaces | `lua/utils/` |
 | Nv UI/base46 entry point | `lua/chadrc.lua` |
 | Hermetic core and external integration specs | `tests/core/`, `tests/integration/` |
-| Test fixtures/bootstrap/validation | `tests/helpers.lua`, `scripts/tests/` |
+| Test fixtures, bootstrap, suite validation | `tests/helpers.lua`, `scripts/tests/` |
 
-Importing a plugin spec must not register commands, events, mappings, or load highlight caches. Put editable values in config and runtime mutation in its feature owner; Lazy lifecycle callbacks may invoke that owner. Prefer direct imports. Do not add forwarding facades or proxy Lazy/Mason internal utilities. Add a module only when its interface hides meaningful complexity.
+- Importing a plugin spec must not register commands, events or mappings, or load highlight caches. Editable values go in config, runtime mutation in the feature owner; Lazy lifecycle callbacks may call that owner.
+- Import owners directly. Do not add forwarding facades or proxy Lazy/Mason internals. Add a module only when its interface hides meaningful complexity.
 
-Keep tool definitions canonical. Use `runtime_name` when a backend identifier differs from the persisted logical ID; translate at the runtime boundary. Supported filetypes and initial activation are distinct: do not replace intentional runtime lists/conditions by activating every supported tool. Ordered defaults belong in `formatter_defaults` and `linter_defaults`. Preserve sorted, unique derivation of packages, servers and parsers. Parser definitions map parser names to Neovim filetypes; package definitions describe non-toggleable dependencies. Declare Mason packages and supported filetypes for managed runtime tools; external tools may have `mason = nil`.
+## Tool registry and state
 
-Tool Manager must accept missing, malformed and stale `tools.json` and legacy `service.json`. Preserve logical state keys and valid saved values. Persist complete formatter/linter order including disabled tools, apply enabled tools to runtime, and retain unrelated runtime entries. Parser/package actions cannot toggle or reorder. Automatic installation enables only after success; failed/manual installation leaves enablement unchanged.
+- Keep tool definitions canonical. Use `runtime_name` when a backend identifier differs from the persisted logical ID and translate at the runtime boundary.
+- Supported filetypes and initial activation are distinct: do not replace intentional runtime lists or conditions by activating every supported tool.
+- Ordered defaults belong in `formatter_defaults` and `linter_defaults`. Keep derived package, server and parser lists sorted and unique.
+- Parser definitions map parser names to Neovim filetypes; package definitions describe non-toggleable dependencies. Managed runtime tools declare Mason packages and filetypes; external tools may set `mason = nil`.
+- Tool Manager must accept missing, malformed and stale `tools.json` and legacy `service.json`, keep logical keys and valid saved values, persist the complete formatter/linter order including disabled tools, and retain unrelated runtime entries.
+- Parser and package actions cannot toggle or reorder. Automatic installation enables a tool only after success; failed or manual installation leaves enablement unchanged.
+- A view session owns its subscriptions, timers, selection, help and details, and disposes them on normal close, external close and buffer deletion. An installation may finish after close but must not redraw a closed or later session. Keep help visible through refresh and preserve selection by logical identity, not line number.
 
-Nui owns Tool Manager windows, buffers, layout and text rendering. A view session owns subscriptions, timers, selection, help and details. Dispose resources on normal/external close and buffer deletion. An installation may complete after closing, but its callback must not redraw a closed or later session. Keep help visible through refresh, and preserve selection by logical identity rather than line number.
+## Tests
 
-Keep `lazy-lock.json` unchanged unless plugin versions are intentionally in scope. Update README for user workflows, `doc/tool-manager.md` for Tool Manager behavior, `doc/architecture.md` for boundaries, and owning SQL documents for SQL changes. Update this file when ownership or validation rules change.
-
-## Test admission
-
-Add or update a test only to protect a reproduced regression, persistence/safety behavior, ordering/state transition, cross-module invariant, external seam, or branch-heavy behavior not already covered more deeply. Identify the observable contract and a plausible behavior-breaking mutation in the implementation report. File moves, renames and new constants alone require no tests.
-
-Reject tests whose only evidence is:
-
-- A constant value, export existence, primitive type, alias equality, or label/icon/file inventory.
-- Source-code substrings or private wiring used as proof that runtime behavior works.
-- An expected result computed by repeating the implementation under test.
-- Cosmetic snapshots or fixed collection counts without a user-visible contract.
-- Compatibility for unused APIs, or shallow cases already superseded by deeper coverage.
-- Pure configuration, parameter/timeout tuning, or option tables without an observable contract transition.
-- Trivial wrappers, monkey-patches, or lifecycle hooks verified only by feeding synthetic mocks that mirror the implementation's own branch conditions without testing actual subsystem behavior.
-- Tests written purely for the sake of testing or to satisfy a coverage expectation; state `No tests added` when an edit is adequately protected by existing invariant suites, represents platform-specific glue, or cannot be meaningfully verified hermetically.
-
-The audit removed the old Tool Manager cursor/table/renderer/help/layout wiring specs; public Nui interaction and lifecycle coverage replaces them. Do not restore helper tests for removed APIs (`buf_hl`, `get_file_icons`, `make_relative_path`, `rstrip_slash`, window offsets, or unused OS environment/date wrappers). Exact snippet counts/trigger inventories, README/source substring assertions, formatter constant inventories, Noice icon/format tokens, ambient clock/platform checks, and Tab callback existence checks were removed or replaced with behavior tests. Do not add them back merely to accompany an implementation change.
-
-Registry schema/default references and deterministic cross-module derivation are valid invariants. Persisted JSON and external configuration/templates are valid outputs/seams; inspecting them is not a source-wiring test. Execute parser queries, snippet expansions and executable adapters to verify their behavior. Do not remove safety/behavior coverage because an assertion happens to be simple.
-
-Test outputs, errors, side effects and transitions through the owning interface. Prefer table-driven invariants. Replace superseded cases rather than layering both. Do not change expected values just to pass: state whether the contract changed, the old test was wrong, or production regressed. For more than three cases or roughly 80 lines for one change, explain why a smaller/deeper or table-driven test cannot cover the independent branches. Test count and coverage growth are not goals.
-
-Core specs must be deterministic and hermetic: no network, Mason installation, plugin updates or external executables. Mock dependencies at the owning seam. Public UI specs use installed Nui; they must not mock its window API to assert our own calls. Restore buffers/windows, current context, globals/options/mappings, runtimepath, timers and changed `package.loaded`/`package.preload` entries, including after assertion failure. Write fixtures, logs and state only below `vim.g.orbitvim_test_root`; use `tests.helpers`. Restore previous values, not assumed defaults. Integration tests must fail when a required dependency is missing; pending/skipped tests are prohibited.
+- A test enters the repo only when it guards behaviour no existing test covers and fails when that behaviour breaks. Weigh this before adding each one.
+- Run throwaway tests freely to check your work; keep them out of the repo unless they pass that bar.
+- Qualifying behaviour here: a reproduced regression, persistence or safety, ordering or state transitions, cross-module invariants, external seams, or branch-heavy logic not covered more deeply. Name the contract and a mutation that would break it in your report.
+- Do not add tests whose only evidence is constant values, export existence, label/icon inventories, source substrings, expected values recomputed by the implementation, cosmetic snapshots, fixed counts, option tables, or mocks that mirror the implementation's own branches. Do not restore removed helper specs (`buf_hl`, `get_file_icons`, `make_relative_path`, `rstrip_slash`, window offsets, OS/date wrappers).
+- Registry schema references, deterministic cross-module derivation, persisted JSON and external templates are valid outputs. Execute parser queries, snippet expansions and executable adapters instead of inspecting them.
+- Never change an expected value just to pass: state whether the contract changed, the test was wrong, or production regressed. Explain any single change that needs more than three cases or about 80 lines of test.
+- Core specs are hermetic: no network, Mason installs, plugin updates or external executables. Mock at the owning seam; use the installed Nui without mocking its window API. Restore buffers, windows, globals, options, mappings, runtimepath, timers and `package.loaded`/`package.preload` entries even after a failed assertion. Write fixtures and state only below `vim.g.orbitvim_test_root` via `tests.helpers`.
+- Integration specs must fail when a dependency is missing; pending or skipped tests are prohibited.
+- End each report with `Tests added`, `Tests updated` or `No tests added` and the contract protected.
 
 ## Validation
 
-From the repository root, prepare Neovim 0.12+, StyLua, Luacheck, Tree-sitter CLI 0.26.1+ and `just`. Open Neovim once to bootstrap plugins: core specs require Plenary and Nui in Lazy's data directory. Install configured parsers with `:TSInstallAll` before parser integration checks. Integration tests also require LuaSnip and SQLFluff.
+Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open Neovim once so Lazy installs Plenary and Nui, which core specs load from Lazy's data directory. Integration specs also need `:TSInstallAll`, LuaSnip and SQLFluff.
 
 | Command | Effect |
 | --- | --- |
-| `just fmt` | Rewrite Lua formatting, including tests and `init.lua` |
-| `just fmt-check` | Check formatting without rewriting |
-| `just lint` | Run Luacheck |
-| `just test` / `just test-core` | Run hermetic core specs |
-| `just test-integration` | Run parser, snippet and executable integration specs |
-| `just test-all` | Run both suites |
-| `just all` | Format check, lint and core specs |
-| `nvim --headless "+qall"` | Smoke-test startup with installed plugins/user state |
+| `just fmt` / `just fmt-check` | Rewrite / check StyLua formatting |
+| `just lint` | Luacheck |
+| `just test-core` | Hermetic core specs |
+| `just test-integration` | Parser, snippet and executable integration specs |
+| `just all` | `fmt-check`, `lint`, `test-core` |
+| `nvim --headless "+qall"` | Startup smoke test with installed plugins and user state |
 
-For one core spec:
+One core spec:
 
 ```sh
 nvim --headless --noplugin -u scripts/tests/minimal.vim \
@@ -82,12 +82,17 @@ nvim --headless --noplugin -u scripts/tests/minimal.vim \
   -c 'qall'
 ```
 
-Run `just all` before completion. Run `just test-integration` for changes to Tree-sitter queries/parsers/runtime, LuaSnip collections, SQLFluff executable behavior, or their adapters. Run startup smoke checks when startup/plugin loading changes. Report checks actually run and missing dependencies; do not silently skip them.
+- Run `just all` before finishing. Add `just test-integration` for Tree-sitter queries, parsers or runtime, LuaSnip collections, SQLFluff behaviour, or their adapters, and the smoke test for startup or plugin-loading changes. Report the checks run and any missing dependency.
+- On Windows the `justfile` runs recipes through PowerShell. MSYS `make` dropped `LOCALAPPDATA`, so Plenary was not found and the headless runner hung on E492; a headless suite that never exits means that kind of startup error.
 
-## Safety and style
+## Docs
 
-Follow `.stylua.toml` and `.editorconfig`; use comments for non-obvious behavior. Avoid broad rewrites without an ownership, readability or contract benefit.
+- Keep this file, `README.md` and every other doc concise and plain: each sentence carries information, with no filler.
+- `README.md` covers user installation and usage; contributor workflow belongs here. Update `doc/tool-manager.md` for Tool Manager behaviour, `doc/architecture.md` for boundaries, and the owning `doc/tsql-*.md` for SQL changes.
 
-Do not commit secrets, tokens, credentials or private machine paths. Treat `lua/config/*/template/` as reusable templates. Preserve the Windows `ClearShada` rule that skips `main.shada`. Resolve exact targets before destructive filesystem operations.
+## Safety
 
-In the final report, state `Tests added`, `Tests updated`, or `No tests added` and name the behavior or contract protected.
+- Follow `.stylua.toml` and `.editorconfig`; comment only non-obvious behaviour.
+- Never commit secrets, tokens, credentials or private machine paths.
+- Treat `lua/config/*/template/` as reusable templates.
+- Keep the Windows `ClearShada` rule that skips `main.shada`. Resolve exact targets before destructive filesystem operations.
