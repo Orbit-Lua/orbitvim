@@ -74,7 +74,6 @@ return {
     Collapsed = " ",
     Constant = "󰏿 ",
     Constructor = " ",
-    Minuet = " ",
     Enum = " ",
     EnumMember = " ",
     Event = " ",

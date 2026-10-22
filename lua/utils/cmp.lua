@@ -188,7 +188,7 @@ local function setup_tab_mapping(opts)
   end
 
   local tab_actions = {
-    M.map({ "snippet_forward", "ai_nes", "ai_accept" }),
+    M.map({ "snippet_forward" }),
     "fallback",
   }
 

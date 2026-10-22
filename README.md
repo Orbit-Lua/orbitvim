@@ -87,10 +87,6 @@ Terminal image previews are disabled to avoid overlapping images and terminal
 instability. Select an image in nvim-tree and press `s` to open it with the
 system viewer.
 
-### AI completion
-
-Minuet/Ollama completion is included but disabled by default. `:MinuetEndpoint` manages endpoint settings; it does not enable the plugin. Its plugin specification is in [lua/plugins/ai.lua](lua/plugins/ai.lua).
-
 ## Customization
 
 | Responsibility | Owner |
@@ -104,7 +100,6 @@ Minuet/Ollama completion is included but disabled by default. `:MinuetEndpoint` 
 | User command registration | `lua/commands/` |
 | Tool operations, persistence, category adapters | `lua/tool/` |
 | Nui view sessions, rendering, details | `lua/tool/ui/` |
-| AI endpoint persistence and statusline | `lua/ai/` |
 | Shared helpers | `lua/utils/` |
 
 `lua/chadrc.lua` is the Nv UI/base46 entry point. `init.lua` preserves three startup phases: editor setup, Lazy bootstrap/import, then commands and final UI setup. See [architecture](doc/architecture.md) for the module boundaries.

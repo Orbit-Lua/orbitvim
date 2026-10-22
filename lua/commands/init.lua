@@ -1,7 +1,6 @@
 local M = {}
 
 function M.setup()
-  require("commands.ai").setup()
   require("commands.python").setup()
   require("commands.system").setup()
   require("commands.treesitter").setup()

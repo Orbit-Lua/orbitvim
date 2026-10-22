@@ -21,7 +21,6 @@ Tool Manager manages LSP, DAP, linters, formatters, parsers, and dependency pack
 | User command registration | `lua/commands/` |
 | Tool operations, persistence, ordering, Mason seam, category adapters | `lua/tool/` |
 | Nui view sessions, rendering, selected-tool details | `lua/tool/ui/` |
-| AI endpoint persistence and statusline integration | `lua/ai/` |
 | Shared helpers with concrete local interfaces | `lua/utils/` |
 | Nv UI/base46 entry point | `lua/chadrc.lua` |
 | Hermetic core and external integration specs | `tests/core/`, `tests/integration/` |

@@ -89,7 +89,7 @@ function M.build()
       },
       ["<C-y>"] = { "select_and_accept" },
       ["<Tab>"] = {
-        utils_cmp.map({ "snippet_forward", "ai_nes", "ai_accept" }),
+        utils_cmp.map({ "snippet_forward" }),
         "fallback",
       },
       ["<S-Tab>"] = { "snippet_backward", "fallback" },
@@ -158,7 +158,7 @@ function M.build()
         },
       },
       ghost_text = {
-        enabled = vim.g.ai_cmp,
+        enabled = false,
       },
     },
 

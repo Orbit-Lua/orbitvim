@@ -145,9 +145,6 @@ M.ui = {
     show_lsp_msg = false,
     order = nil,
     modules = nil,
-    ai = {
-      is_available = require("ai.statusline").is_available,
-    },
     truncation_length = 3,
   },
 

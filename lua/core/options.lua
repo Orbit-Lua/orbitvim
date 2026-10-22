@@ -58,4 +58,3 @@ g.loaded_ruby_provider = 0
 
 -- Feature globals
 g.snacks_animate = false
-g.ai_cmp = false
