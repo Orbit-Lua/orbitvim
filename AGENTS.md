@@ -4,7 +4,7 @@ OrbitVim supports Linux and Windows. Preserve commands, mappings and persisted s
 
 ## Git
 
-- Write commits in [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) format.
+- Write commits in [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) format, with a body explaining why for non-trivial changes. Mark breaking changes with `!` and a `BREAKING CHANGE:` footer.
 - Author commits as the user alone, with no `Co-Authored-By` or other co-author trailers.
 - Commit as the plan progresses. Before pushing, squash related commits into one to keep history clean.
 - Push only after the user approves that push.
@@ -16,9 +16,9 @@ OrbitVim supports Linux and Windows. Preserve commands, mappings and persisted s
 
 `init.lua` runs three phases in order: editor setup, Lazy bootstrap and spec import, then commands and final UI setup. Keep settings available even when personal input is invalid.
 
-Tool Manager's UI interface is `require("tool").open()` / `.close()`. Its operation interface, `tool.manager`, takes logical selections, never cursor positions, Nui objects or render callbacks. Read [architecture](doc/architecture.md) before moving these boundaries and the [Tool Manager guide](doc/tool-manager.md) before changing its workflows.
+Tool Manager's UI interface is `require("tool").open()` / `.close()`. Its operation interface, `tool.manager`, takes logical selections, never cursor positions, Nui objects or render callbacks.
 
-Read the [settings guide](doc/settings.md) before changing schema defaults, merge rules, reload scope or settings/state precedence. `settings.schema.json` owns public defaults. `settings.json` is personal and ignored by Git. Tool enablement and saved order stay in the data directory's `tools.json`.
+`settings.schema.json` owns public defaults. `settings.json` is personal and ignored by Git. Tool enablement and saved order stay in the data directory's `tools.json`.
 
 ## Ownership
 
@@ -100,6 +100,10 @@ Prepare Neovim 0.12+, `just`, StyLua, Luacheck and Tree-sitter CLI 0.26.1+. Open
 ## Docs
 
 - Keep this file, `README.md` and every other doc concise and plain: each sentence carries information, with no filler.
+- Read [architecture](doc/architecture.md) before moving the Tool Manager's UI or operation boundaries.
+- Read the [Tool Manager guide](doc/tool-manager.md) before changing its workflows.
+- Read the [settings guide](doc/settings.md) before changing schema defaults, merge rules, reload scope or settings/state precedence.
+- Read the owning `doc/tsql-*.md` before changing SQL highlighting, snippets or conventions.
 - `README.md` is for users: install, usage, configuration and platform notes. Contributor workflow belongs here.
 - Update `doc/tool-manager.md` for Tool Manager behaviour, `doc/architecture.md` for boundaries, `doc/settings.md` for settings, and the owning `doc/tsql-*.md` for SQL changes.
 - Do not write counts, test totals or change history into docs; they drift. Git history records past audits.

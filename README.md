@@ -2,7 +2,7 @@
 
 Lua configuration for Neovim with language tooling for C#, Python, JavaScript, TypeScript, Go, SQL and Markdown.
 
-[![check](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
+[![check](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
 [![Neovim](https://img.shields.io/badge/Neovim-0.12%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 
 ## Install
@@ -73,7 +73,3 @@ Set `notes.vault` to an Obsidian vault path to enable obsidian.nvim for Markdown
 ## Supported platforms
 
 Linux and Windows run the same core, integration, native build and startup checks in CI. On Windows, keep native Git and expose MSYS2 UCRT64 GCC, Make and Bash without replacing Git. Explicit `shell` and `CC` choices are preserved; otherwise OrbitVim selects available defaults. nvim-tree refreshes on save or entry and with `R`, with filesystem watchers disabled. `:ClearShada` removes temporary ShaDa files while preserving `main.shada`.
-
-## License
-
-No license is granted; all rights are reserved by the authors.
