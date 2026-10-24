@@ -1,12 +1,12 @@
 # Architecture
 
-`init.lua` applies editor options and settings, bootstraps the locked Lazy revision and imports plugin specs, then registers commands and finishes theme, shell, highlights and general mappings. Plugin imports describe loading; their lifecycle callbacks delegate activation to feature owners.
+`init.lua` applies editor options and settings. It bootstraps the locked Lazy revision and imports plugin specs. Then it registers commands and finishes theme, shell, highlights and general mappings. Plugin imports describe loading. Their lifecycle callbacks give activation to feature owners.
 
-Editable options live under `lua/config/`, Lazy metadata under `lua/plugins/`, and backend activation under `lua/runtime/`. Shared helpers expose concrete local interfaces without forwarding facades.
+Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugins/`, and backend activation under `lua/runtime/`. Shared helpers expose concrete local interfaces without forwarding facades.
 
 ## Settings
 
-`config.settings` validates personal JSON against the bundled schema and registry before plugins load. `core.settings` applies live changes with rollback and observes saves to the exact configured path. `commands.settings` exposes the settings editor and effective-value view. [Settings](settings.md) defines precedence and recovery.
+`config.settings` validates personal JSON against the bundled schema and registry before plugins load. `core.settings` applies live changes with rollback. It observes saves to the exact configured path. `commands.settings` gives the settings editor and the effective-value view. [Settings](settings.md) defines precedence and recovery.
 
 ## Tool Manager
 
@@ -26,13 +26,13 @@ flowchart TD
 
 `config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists.
 
-`tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before state changes or installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
+`tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before a state change or an installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
 
-`tool.state` reads current or legacy JSON. Writes lock and reread current disk state before merging one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases at the runtime boundary and retain unrelated backend entries. Re-enabling formatters and linters respects initial activation in `config.formatter` and `config.linter`, rather than activating all supported filetypes.
+`tool.state` reads current or legacy JSON. A write locks the file and reads the current disk state again before it merges one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases at the runtime boundary. They keep unrelated backend entries. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
 
-`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`; mappings and help come from `config.tool_manager`.
+`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`. Mappings and help come from `config.tool_manager`.
 
-An asynchronous operation can outlive the view. Completion updates state and runtime, then refreshes only its originating session if still open. See [Tool Manager](tool-manager.md) for user-visible behaviour.
+An asynchronous operation can outlive the view. On completion, it updates state and runtime. Then it refreshes only the session that started it, if that session is still open. See [Tool Manager](tool-manager.md) for user-visible behaviour.
 
 ## Runtime boundaries
 
@@ -47,6 +47,6 @@ An asynchronous operation can outlive the view. Completion updates state and run
 | `runtime.notes` | Markdown highlight override that preserves fences at `conceallevel=2` |
 | `core.shell` | Windows shell and compiler defaults while preserving explicit choices |
 
-Native build owners execute argument lists independently of the interactive shell. LuaSnip links the running Neovim directory on Windows. Review the notes highlight override against upstream query changes.
+Native build owners execute argument lists without the interactive shell. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.
 
-The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason); [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.
+The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.

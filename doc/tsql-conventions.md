@@ -4,9 +4,9 @@ SQL Server conventions used by [OrbitVim snippets](tsql-snippets.md). Examples a
 
 ## Common rules
 
-Use explicit schemas, target columns and meaningful aliases. Terminate statements with semicolons, prefer ANSI joins and set-based operations, and order results when order affects their meaning. Use `CREATE OR ALTER` for supported programmable objects and `SET NOCOUNT ON` in procedures and triggers.
+Use explicit schemas, target columns and meaningful aliases. Terminate statements with semicolons. Prefer ANSI joins and set-based operations. Order results when the order affects their meaning. Use `CREATE OR ALTER` for supported programmable objects. Use `SET NOCOUNT ON` in procedures and triggers.
 
-Keep transactions short and define whether a procedure owns or joins its caller's transaction. Use `XACT_ABORT`, `TRY`/`CATCH` and `THROW` for transaction-owning code. Parameterize dynamic values and allowlist identifiers before `QUOTENAME`.
+Keep transactions short. Define whether a procedure owns or joins the transaction of its caller. Use `XACT_ABORT`, `TRY`/`CATCH` and `THROW` for transaction-owning code. Parameterize dynamic values. Allowlist identifiers before `QUOTENAME`.
 
 ## Names and data types
 
@@ -57,7 +57,7 @@ GO
 
 ### Schema
 
-Use domain schemas when useful; consistent `dbo` also suits smaller systems.
+Use domain schemas when they are useful. Consistent `dbo` also suits smaller systems.
 
 ```sql
 CREATE SCHEMA app;
@@ -188,7 +188,7 @@ DROP CONSTRAINT UQ_Entity_Name;
 
 ### Drop and truncate
 
-`IF EXISTS` suppresses a missing-object error; it does not make deletion safe. Review data loss and foreign-key dependencies before execution.
+`IF EXISTS` suppresses a missing-object error. It does not make deletion safe. Review data loss and foreign-key dependencies before execution.
 
 ```sql
 DROP TABLE IF EXISTS dbo.Entity;
@@ -205,7 +205,7 @@ WHERE CreatedAt < @ExpiredAt;
 
 ### Indexes
 
-Choose key order from predicates and sorting. Includes can cover queries without extending the key; filtered indexes suit stable queried subsets.
+Choose key order from predicates and sorting. Includes can cover queries without extending the key. Filtered indexes suit stable queried subsets.
 
 ```sql
 CREATE INDEX IX_Entity_Name
@@ -277,7 +277,7 @@ GO
 
 ### Read procedure
 
-Use parameters and explicit result columns; suppress informational row counts.
+Use parameters and explicit result columns. Suppress informational row counts.
 
 ```sql
 CREATE OR ALTER PROCEDURE dbo.GetEntity
@@ -601,7 +601,7 @@ CROSS JOIN dbo.Period AS p;
 
 ### Apply
 
-Use `CROSS APPLY` for a correlated relation; use `OUTER APPLY` when unmatched left rows must remain. Add a unique ordering tie-breaker when selecting one row.
+Use `CROSS APPLY` for a correlated relation. Use `OUTER APPLY` when unmatched left rows must remain. Add a unique ordering tie-breaker when selecting one row.
 
 ```sql
 SELECT
@@ -657,7 +657,7 @@ WHERE NOT EXISTS
 
 ### Grouping and having
 
-`WHERE` filters input rows; `GROUP BY` forms groups; `HAVING` filters the aggregates.
+`WHERE` filters input rows. `GROUP BY` forms groups. `HAVING` filters the aggregates.
 
 ```sql
 SELECT
@@ -671,7 +671,7 @@ HAVING COUNT(*) >= 10;
 
 ### Aggregates
 
-`COUNT(*)` counts rows; `COUNT(column)` excludes null values.
+`COUNT(*)` counts rows. `COUNT(column)` excludes null values.
 
 ```sql
 SELECT
@@ -686,7 +686,7 @@ FROM dbo.Entity AS e;
 
 ### Common table expression
 
-Terminate the preceding statement before `WITH`; a leading semicolon makes a standalone fragment safe to append.
+Terminate the preceding statement before `WITH`. A leading semicolon makes a standalone fragment safe to append.
 
 ```sql
 ;WITH ActiveEntity AS
@@ -736,7 +736,7 @@ LEFT JOIN RelatedCount AS r
 
 ### Recursive CTE
 
-Combine anchor and recursive members for hierarchy traversal; production recursion needs a termination and depth policy.
+Combine anchor and recursive members for hierarchy traversal. Production recursion needs a termination and depth policy.
 
 ```sql
 ;WITH EntityTree AS
@@ -770,7 +770,7 @@ FROM EntityTree;
 
 ### Subquery
 
-Use a subquery for membership; prefer `EXISTS` when only existence matters.
+Use a subquery for membership. Prefer `EXISTS` when only existence matters.
 
 ```sql
 SELECT
@@ -910,7 +910,7 @@ WHERE r.RowNo = 1;
 
 ### Ranking
 
-`RANK` leaves gaps after ties; `DENSE_RANK` does not.
+`RANK` leaves gaps after ties. `DENSE_RANK` does not.
 
 ```sql
 SELECT
@@ -1198,7 +1198,7 @@ WHERE e.Code = @Code;
 
 ### Iteration
 
-Prefer set-based changes; use loops only for sequential state.
+Prefer set-based changes. Use loops only for sequential state.
 
 ```sql
 DECLARE @Index INT = 1;
@@ -1282,7 +1282,7 @@ FROM dbo.Entity AS e;
 
 ## Transactions and errors
 
-The write-procedure template above shows transaction ownership with `XACT_ABORT`, `TRY`/`CATCH`, rollback and `THROW`. Keep only the atomic database unit inside that transaction; exclude user interaction, network calls and unrelated reports.
+The write-procedure template above shows transaction ownership with `XACT_ABORT`, `TRY`/`CATCH`, rollback and `THROW`. Keep only the atomic database unit inside that transaction. Keep user interaction, network calls and unrelated reports outside it.
 
 SQL Server nested transactions are not independently rollbackable. A plain rollback can abort the caller's transaction, so reusable procedures need an explicit ownership policy.
 
@@ -1339,7 +1339,7 @@ END;
 
 ### Values
 
-Pass values to `sys.sp_executesql`; concatenate neither user data nor quoted value strings.
+Pass values to `sys.sp_executesql`. Do not concatenate user data or quoted value strings.
 
 ```sql
 DECLARE @Sql NVARCHAR(MAX);
@@ -1360,7 +1360,7 @@ EXEC sys.sp_executesql
 
 ### Identifiers
 
-Identifiers cannot be parameters. Validate against an allowlist before `QUOTENAME`; quoting alone grants no authorization. Reject missing identifiers as part of input validation.
+Identifiers cannot be parameters. Validate them against an allowlist before `QUOTENAME`. Quoting alone grants no authorization. Reject missing identifiers as part of input validation.
 
 ```sql
 IF @SortColumn IS NULL OR @SortColumn NOT IN
@@ -1405,7 +1405,7 @@ WHERE e.OptionalValue IS NOT NULL
 
 ### Fallback values
 
-`ISNULL` and `COALESCE` differ in type and nullability rules; choose deliberately.
+`ISNULL` and `COALESCE` have different type and nullability rules. Choose one deliberately.
 
 ```sql
 SELECT
@@ -1435,7 +1435,7 @@ FROM dbo.EntityStatistics;
 
 ### Conversion
 
-Use `CAST` for general conversion; use `CONVERT` when a SQL Server style code is required.
+Use `CAST` for general conversion. Use `CONVERT` when a SQL Server style code is necessary.
 
 ```sql
 CAST(@Value AS INT)
@@ -1493,7 +1493,7 @@ TO ApplicationUser;
 
 ### Revoke and deny
 
-`REVOKE` removes a grant; `DENY` explicitly blocks permission through many resolution paths.
+`REVOKE` removes a grant. `DENY` explicitly blocks permission through many resolution paths.
 
 ```sql
 REVOKE SELECT
@@ -1541,7 +1541,7 @@ GO
 
 ### Existence checks
 
-Use object checks for legacy or migration cases; prefer `CREATE OR ALTER` for supported programmable objects.
+Use object checks for legacy or migration cases. Prefer `CREATE OR ALTER` for supported programmable objects.
 
 ```sql
 IF OBJECT_ID(N'dbo.Entity', N'U') IS NOT NULL

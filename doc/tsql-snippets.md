@@ -14,13 +14,13 @@ In a `.sql` buffer, type `sel` and choose the snippet from completion.
 | `<Tab>` | Move to the next placeholder |
 | `<S-Tab>` | Move to the previous placeholder |
 
-Repeated placeholders stay linked: changing `Entity` also updates related constraint names. `$0` marks the final cursor position.
+Repeated placeholders stay linked. A change to `Entity` also updates related constraint names. `$0` marks the final cursor position.
 
-LuaSnip extends the `sql` filetype with `tsql` templates; Tree-sitter and SQLFluff retain their normal SQL integration.
+LuaSnip extends the `sql` filetype with `tsql` templates. Tree-sitter and SQLFluff keep their normal SQL integration.
 
 ## Choosing a trigger
 
-Prefixes describe the operation; suffixes distinguish joined and output variants:
+Prefixes describe the operation. Suffixes identify joined and output variants:
 
 | Prefix or suffix | Meaning |
 | --- | --- |
@@ -127,7 +127,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `del` | Delete through an explicit table alias |
 | `delj` | Delete with a join |
 | `delo` | Delete and return removed values with `OUTPUT` |
-| `upsert` | Update then insert inside a transaction; add the required concurrency control |
+| `upsert` | Update then insert inside a transaction. Add the necessary concurrency control. |
 
 ### Control flow, temporary storage, and transactions
 
@@ -151,9 +151,9 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `dynsql` | Execute dynamic SQL with parameterized values through `sys.sp_executesql` |
 | `dynident` | Whitelist a dynamic identifier, wrap it with `QUOTENAME`, and execute it |
 
-Values belong in `sp_executesql` parameters. Identifiers cannot be
-parameterized, so `dynident` validates the identifier before applying
-`QUOTENAME`; quoting alone is not authorization.
+Put values in `sp_executesql` parameters. Identifiers cannot be
+parameters, so `dynident` validates the identifier before it applies
+`QUOTENAME`. Quoting alone is not authorization.
 
 ### Security and object lifecycle
 
@@ -200,13 +200,13 @@ parameterized, so `dynident` validates the identifier before applying
 ## Safety notes
 
 - Review `droptable`, `dropobj`, `truncate`, `del`, `delj`, and `delo` before
-  execution. Snippets generate text; they do not confirm destructive actions.
+  execution. Snippets generate text. They do not confirm destructive actions.
 - `cprocw`, `txn`, and `upsert` assume ownership of the transaction. Reusable
   procedures that participate in a caller-owned transaction need an explicit
   transaction-ownership design.
 - `GO` is understood by clients such as `sqlcmd` and SQL Server Management
   Studio. Do not send it through application APIs such as `SqlCommand`.
-- `upsert` still requires an appropriate unique constraint and concurrency
-  strategy; the template does not make an unsafe data model race-free.
+- `upsert` still needs an appropriate unique constraint and concurrency
+  strategy. The template does not make an unsafe data model race-free.
 - Index templates are starting points. Choose keys, includes, and filters from
   real predicates, ordering needs, and execution plans.
