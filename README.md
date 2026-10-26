@@ -1,18 +1,26 @@
 # OrbitVim
 
-Lua configuration for Neovim with language tooling for C#, Python, JavaScript, TypeScript, Go, SQL and Markdown.
+Neovim configuration for programming, SQL and Markdown, with persistent language tooling on Linux and Windows.
 
-[![check](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml)
-[![Neovim](https://img.shields.io/badge/Neovim-0.12%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
+[![Validate OrbitVim](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Orbit-Lua/orbitvim/actions/workflows/validate.yml) [![Neovim](https://img.shields.io/badge/Neovim-0.12%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 
 ## Install
 
-Use Neovim 0.12+, Git and network access. Parser and native plugin builds need a C compiler, Tree-sitter CLI 0.26.1+, GNU Make and Bash. Language servers can also need the runtime or package manager of their language. `:checkhealth mason` reports the available installers.
+Use Neovim 0.12+, Git and network access. Parser and native plugin builds need a C compiler, Tree-sitter CLI 0.26.1+, GNU Make and Bash. Language servers can also need their language runtime or package manager. `:checkhealth mason` reports available installers.
 
-Move the existing configuration aside. Clone into `stdpath('config')`: `~/.config/nvim` on Linux or `%LOCALAPPDATA%\nvim` on Windows.
+Move any existing configuration aside before cloning.
+
+Linux:
 
 ```sh
 git clone https://github.com/Orbit-Lua/orbitvim.git ~/.config/nvim
+nvim
+```
+
+Windows, from `cmd.exe`:
+
+```bat
+git clone https://github.com/Orbit-Lua/orbitvim.git "%LOCALAPPDATA%\nvim"
 nvim
 ```
 
@@ -20,21 +28,23 @@ Lazy installs the locked plugins on first start. Install language tools through 
 
 ## Usage
 
-To manage tools for the current buffer, run `:ToolManager` or press `<leader>us` (Space, `u`, `s`).
+Open Tool Manager with `:ToolManager` or `<leader>us`. The leader key is Space.
 
 | Key | Action |
 | --- | --- |
-| `1`–`6`, Tab / Shift-Tab | Select LSP, DAP, Linter, Formatter, Parser or Package |
-| `s` | Switch between buffer scope and all tools |
-| Space | Install a missing Mason package, then toggle the runtime tool |
+| `1`–`6`, Tab / Shift-Tab | Select a tool category |
+| `s` | Switch between the source buffer and all tools |
+| Space | Toggle a runtime tool, with automatic installation when needed |
 | `i` | Install without changing enablement |
-| `[` / `]` | Reorder a formatter or linter for a filetype |
+| `[` / `]` | Reorder formatters or linters for a filetype |
 | `o`, Enter, `za` | Expand or collapse a filetype group |
 | `K` | Focus details |
 | `?`, `g?` | Toggle help |
 | `q`, Escape | Close |
 
-Parsers and dependency packages support installation only. Enablement and order persist in `tools.json` in the data directory. See [Tool Manager](doc/tool-manager.md).
+Parsers and dependency packages support installation only. Enablement and order persist in `stdpath('data')/tools.json`. See [Tool Manager](doc/tool-manager.md) for installation policy, status and recovery.
+
+Other common actions:
 
 | Key | Action |
 | --- | --- |
@@ -50,31 +60,37 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 ### Language workflows
 
-- **C#:**
-  1. Put `dotnet` and `roslyn-language-server` on PATH.
-  2. Install the server through Tool Manager.
-  3. Restart Neovim.
+For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Tool Manager. Restart Neovim after installation.
 
-  Roslyn prefers a single solution at the Git root that contains the current project. To select one manually, use `:Roslyn target`. `:DotnetManager` (`<leader>ud`) gives build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
-- **SQL:** SQLFluff formats and lints T-SQL. Linting runs on read, on save and when you exit Insert mode. Tree-sitter and a bounded syntax fallback give [highlighting](doc/tsql-highlighting.md). [LuaSnip templates](doc/tsql-snippets.md) follow the [SQL conventions](doc/tsql-conventions.md).
-- **Python:** `:PyrightReCreateStub` regenerates a package stub under the project's `typings` directory. It keeps the old stub until the new one succeeds. A failed recovery reports the backup path.
+Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
+
+SQLFluff formats and lints T-SQL. Linting runs on read, on save and when leaving Insert mode. See the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md) and [SQL conventions](doc/tsql-conventions.md).
+
+`:PyrightReCreateStub` regenerates a package stub under the project's `typings` directory. It keeps the old stub until generation succeeds. Failed recovery reports the backup path.
 
 ## Configuration
 
-`:OrbitSettings` or `<leader>uc` opens `stdpath('data')/settings.json`, which Git ignores. It creates the file only when it is missing. Enable `jsonls` for schema completion and validation.
+Open personal settings with `:OrbitSettings` or `<leader>uc`. The writable default is `stdpath('data')/settings.json`. Startup reads legacy config settings while that destination is absent.
+
+The command creates the destination only on explicit invocation. It copies legacy bytes unchanged and keeps the legacy file. Existing input is preserved, including invalid JSON. Enable `jsonls` for schema completion and validation.
+
+For example, set these overrides in the generated file:
 
 ```json
 {
-  "$schema": "./settings.schema.json",
   "editor": { "relativenumber": false, "shiftwidth": 4 },
   "tool_manager": { "width": 100, "missing_package_policy": "manual" }
 }
 ```
 
-A save applies editor options, Tool Manager options and inlay hints. Server configuration, code lenses, initial tool priorities and notes settings need a restart. Invalid input keeps the accepted values. `:OrbitSettings reload` reads the file again. `:OrbitSettings info` shows active values, sources and pending changes. See [settings](doc/settings.md) for merge and rollback rules.
+Saving applies editor options, Tool Manager options and inlay hints. Server configuration, code lenses, initial tool priorities and notes settings need a restart. Invalid input keeps accepted values. See [settings](doc/settings.md) for precedence, explicit paths and rollback.
 
-Set `notes.vault` to an Obsidian vault path to enable obsidian.nvim for Markdown.
+Set `notes.vault` to an Obsidian vault path to enable Markdown note integration.
 
 ## Supported platforms
 
-Linux and Windows run the same core, integration, native build and startup checks in CI. On Windows, keep native Git. Add MSYS2 UCRT64 GCC, Make and Bash to PATH, but not the MSYS Git. OrbitVim keeps explicit `shell` and `CC` choices. Otherwise it selects available defaults. On Windows, nvim-tree disables filesystem watchers. It refreshes on save, on entry and with `R`. `:ClearShada` removes temporary ShaDa files and keeps `main.shada`.
+Linux and Windows run the same validation recipes in CI. The justfile uses `sh` on Linux and native `cmd.exe` on Windows.
+
+On Windows, keep native Git before MSYS2 tools on PATH. Add MSYS2 UCRT64 GCC, Make and Bash for native builds. Keep explicit `shell` and `CC` choices when customizing the environment. OrbitVim selects available defaults otherwise.
+
+On Windows, nvim-tree disables filesystem watchers. It refreshes on save, on entry and with `R`. `:ClearShada` keeps `main.shada` while removing temporary ShaDa files.

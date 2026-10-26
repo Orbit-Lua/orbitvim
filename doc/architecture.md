@@ -32,7 +32,7 @@ flowchart TD
 
 `tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`. Mappings and help come from `config.tool_manager`.
 
-An asynchronous operation can outlive the view. On completion, it updates state and runtime. Then it refreshes only the session that started it, if that session is still open. See [Tool Manager](tool-manager.md) for user-visible behaviour.
+An asynchronous operation can outlive the view. On completion, it updates state and runtime. Then it refreshes only the session that started it, if that session is still open. See [Tool Manager](tool-manager.md) for user-visible behavior.
 
 ## Runtime boundaries
 

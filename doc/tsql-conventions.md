@@ -143,7 +143,7 @@ CREATE TABLE dbo.Item
 
 ### Computed column
 
-Persist an expression only when its storage and query behaviour fit the workload.
+Persist an expression only when its storage and query behavior fit the workload.
 
 ```sql
 CREATE TABLE dbo.LineItem
@@ -1509,7 +1509,7 @@ TO ApplicationUser;
 
 ### Trigger
 
-Handle multirow `inserted` and `deleted` sets. Prefer explicit application logic when a trigger would obscure behaviour.
+Handle multirow `inserted` and `deleted` sets. Prefer explicit application logic when a trigger would obscure behavior.
 
 ```sql
 CREATE OR ALTER TRIGGER dbo.TR_Entity_Update

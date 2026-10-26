@@ -151,7 +151,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | Trigger | Expansion |
 | --- | --- |
 | `dynsql` | Execute dynamic SQL with parameterized values through `sys.sp_executesql` |
-| `dynident` | Whitelist a dynamic identifier, wrap it with `QUOTENAME`, and execute it |
+| `dynident` | Allowlist a dynamic identifier, wrap it with `QUOTENAME`, and execute it |
 
 Put values in `sp_executesql` parameters. Identifiers cannot be
 parameters, so `dynident` validates the identifier before it applies
