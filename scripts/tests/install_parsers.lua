@@ -1,4 +1,4 @@
-local languages = { "c_sharp", "markdown", "sql" }
+local languages = { "c_sharp", "lua", "markdown", "sql", "vimdoc" }
 
 local installed =
   require("nvim-treesitter").install(languages, { summary = true }):wait(300000)

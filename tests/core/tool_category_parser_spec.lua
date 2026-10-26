@@ -2,8 +2,13 @@ describe("tool.category.parser", function()
   local parser
   local original_parser
   local original_handler
+  local notify, notifications
 
   before_each(function()
+    notify, notifications = vim.notify, {}
+    vim.notify = function(message, level)
+      notifications[#notifications + 1] = { message = message, level = level }
+    end
     original_parser = package.loaded["nvim-treesitter"]
     original_handler = package.loaded["tool.category.parser"]
     package.loaded["tool.category.parser"] = nil
@@ -23,6 +28,7 @@ describe("tool.category.parser", function()
   end)
 
   after_each(function()
+    vim.notify = notify
     package.loaded["nvim-treesitter"] = original_parser
     package.loaded["tool.category.parser"] = original_handler
   end)
@@ -58,6 +64,7 @@ describe("tool.category.parser", function()
     end))
     assert.is_false(failed[1])
     assert.equals("installation failed", failed[2])
+    assert.equals(vim.log.levels.ERROR, notifications[#notifications].level)
 
     package.loaded["nvim-treesitter"].install = function() end
     local missing
@@ -66,5 +73,6 @@ describe("tool.category.parser", function()
     end))
     assert.is_false(missing[1])
     assert.is_truthy(missing[2])
+    assert.equals(vim.log.levels.ERROR, notifications[#notifications].level)
   end)
 end)

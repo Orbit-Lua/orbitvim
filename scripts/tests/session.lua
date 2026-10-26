@@ -71,16 +71,12 @@ function M.open(repository, opts)
   write(root .. "/settings.json", "{}")
   local fixture_path = vim.env.PATH
   if opts.roslyn then
-    local bin = root .. "/bin"
-    vim.fn.mkdir(bin, "p")
-    for _, executable in ipairs({ "dotnet", "roslyn-language-server" }) do
-      local path = bin .. "/" .. executable .. (windows and ".cmd" or "")
-      write(path, windows and "@exit /b 0" or "#!/bin/sh\nexit 0")
-      if not windows then
-        assert(vim.uv.fs_chmod(path, 448))
-      end
-    end
-    fixture_path = bin .. (windows and ";" or ":") .. fixture_path
+    assert(
+      vim.fn.isdirectory(plugin_data .. "/lazy/roslyn.nvim") == 1,
+      "Roslyn sources are required; run just deps"
+    )
+    fixture_path =
+      require("scripts.tests.roslyn_fixture").path(root .. "/bin", fixture_path)
   end
   if opts.file then
     write(root .. "/project/" .. opts.file, "")

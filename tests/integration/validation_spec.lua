@@ -44,6 +44,11 @@ describe("validation commands", function()
         'describe("fixture", function() end)',
         "return",
         'describe("fixture", function() it("fails", function() error("failure") end) end)',
+        [[describe("fixture", function()
+  it("emits an uncaught runtime error", function()
+    vim.api.nvim_echo({{"runtime fixture error"}}, true, {err=true})
+  end)
+end)]],
       }) do
         test.write_file(path, source)
         local rejected = run(root, "test-core")
@@ -59,6 +64,7 @@ describe("validation commands", function()
         "justfile",
         "scripts/tests/smoke.lua",
         "scripts/tests/session.lua",
+        "scripts/tests/roslyn_fixture.lua",
       })
       test.write_file(
         root .. "/lua/config/tools.lua",
