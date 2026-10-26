@@ -1,3 +1,4 @@
+set shell := ["sh", "-cu"]
 set windows-shell := ["cmd.exe", "/d", "/c"]
 
 lua_paths := "init.lua lua luasnippets tests scripts/tests"
