@@ -108,4 +108,45 @@ describe("runtime.formatter", function()
     assert.same(vim.log.levels.WARN, notifications[2].level)
     assert.is_truthy(notifications[2].message:find("already"))
   end)
+
+  it(
+    "resolves buffer zero before asynchronous work and keeps another buffer untouched",
+    function()
+      local original = vim.api.nvim_get_current_buf()
+      local callback
+      package.loaded.conform = {
+        format = function(opts, done)
+          assert.equals(original, opts.bufnr)
+          callback = done
+        end,
+      }
+      require("runtime.formatter").format(0)
+      local other = vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_set_current_buf(other)
+      callback(nil, true)
+      assert.is_nil(vim.b[original].orbit_formatting)
+      assert.is_nil(vim.b[other].orbit_formatting)
+      assert.same("done", notifications[#notifications].opts.orbit_formatter)
+    end
+  )
+
+  it(
+    "finishes once when a pending buffer is deleted before its backend completes",
+    function()
+      local buffer = vim.api.nvim_create_buf(true, false)
+      local callback
+      package.loaded.conform = {
+        format = function(_, done)
+          callback = done
+        end,
+      }
+      require("runtime.formatter").format(buffer)
+      vim.api.nvim_buf_delete(buffer, { force = true })
+      assert.is_false(notifications[1].opts.keep())
+      assert.same("error", notifications[#notifications].opts.orbit_formatter)
+      local completed = #notifications
+      callback(nil, true)
+      assert.equals(completed, #notifications)
+    end
+  )
 end)

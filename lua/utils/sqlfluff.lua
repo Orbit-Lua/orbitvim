@@ -1,5 +1,6 @@
 local M = {}
 
+local project = require("utils.project")
 local fs = require("utils.fs")
 
 M.fallback_config = fs.config_path .. "/lua/config/db/template/sqlfluff.cfg"
@@ -15,7 +16,7 @@ M.config_files = {
 ---@return string
 local function file_dir(filename)
   if not filename or filename == "" then
-    return fs.get_cwd()
+    return project.get_cwd()
   end
   return vim.fn.fnamemodify(filename, ":p:h")
 end
@@ -52,9 +53,9 @@ end
 ---@return string
 function M.cwd(filename)
   if not filename or filename == "" then
-    return fs.get_root()
+    return project.get_root()
   end
-  return fs.get_root(filename)
+  return project.get_root(filename)
 end
 
 ---@param command "format"|"lint"

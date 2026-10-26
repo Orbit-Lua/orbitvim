@@ -159,15 +159,16 @@ M.configure_diagnostics = function(opts)
 end
 
 ---Installs a middleware that silently drops diagnostics matching configured ignore patterns.
+local diagnostic_filter
 M.install_diagnostic_filter = function()
+  if
+    vim.lsp.handlers["textDocument/publishDiagnostics"] == diagnostic_filter
+  then
+    return
+  end
   local default_handler = vim.lsp.handlers["textDocument/publishDiagnostics"]
 
-  vim.lsp.handlers["textDocument/publishDiagnostics"] = function(
-    err,
-    result,
-    ctx,
-    config
-  )
+  diagnostic_filter = function(err, result, ctx, config)
     if result and result.diagnostics then
       local suppressed_patterns = require("config.message_ignored").lsp
       local filtered = {}
@@ -187,11 +188,17 @@ M.install_diagnostic_filter = function()
     end
     default_handler(err, result, ctx, config)
   end
+  vim.lsp.handlers["textDocument/publishDiagnostics"] = diagnostic_filter
 end
 
 ---Activates optional LSP features (inlay hints, code lens).
 ---@param opts Lsp.Config.Spec
+local feature_generation = 0
 M.activate_features = function(opts)
+  feature_generation = feature_generation + 1
+  local generation = feature_generation
+  local group =
+    vim.api.nvim_create_augroup("OrbitVimLspFeatures", { clear = true })
   feature_options = opts
   local lsp_client = require("runtime.lsp.client")
 
@@ -216,7 +223,7 @@ M.activate_features = function(opts)
           end
         end
       end,
-      { refresh = true }
+      { refresh = true, group = group }
     )
   end
 
@@ -224,10 +231,26 @@ M.activate_features = function(opts)
   if opts.codelens.enabled then
     lsp_client.on_supports_method("textDocument/codeLens", function(_, buffer)
       vim.lsp.codelens.enable(true, { bufnr = buffer })
-    end)
+    end, { group = group })
   end
 
   local pending_refresh = {}
+  vim.api.nvim_create_autocmd({ "LspDetach", "BufWipeout" }, {
+    group = group,
+    callback = function(event)
+      for key, entry in pairs(pending_refresh) do
+        if
+          entry.buffer == event.buf
+          and (
+            event.event == "BufWipeout"
+            or entry.client == event.data.client_id
+          )
+        then
+          pending_refresh[key] = nil
+        end
+      end
+    end,
+  })
   vim.api.nvim_create_autocmd("LspProgress", {
     group = vim.api.nvim_create_augroup(
       "OrbitVimLspMethodRefresh",
@@ -244,11 +267,20 @@ M.activate_features = function(opts)
         if vim.api.nvim_buf_is_valid(buffer) then
           local key = client.id .. ":" .. buffer
           if not pending_refresh[key] then
-            pending_refresh[key] = true
+            local entry = { buffer = buffer, client = client.id }
+            pending_refresh[key] = entry
             vim.defer_fn(function()
+              if
+                generation ~= feature_generation
+                or pending_refresh[key] ~= entry
+              then
+                return
+              end
               pending_refresh[key] = nil
               local refreshed_client = vim.lsp.get_client_by_id(client.id)
-              if refreshed_client then
+              if
+                refreshed_client and refreshed_client.attached_buffers[buffer]
+              then
                 lsp_client.refresh_supported_methods(refreshed_client, buffer)
               end
             end, 100)
@@ -263,8 +295,10 @@ function M.setup(opts)
   local lsp_client = require("runtime.lsp.client")
   local keymaps = require("runtime.lsp.keymaps")
   lsp_client.setup()
-  lsp_client.on_attach(keymaps.on_attach)
-  lsp_client.on_dynamic_capability(keymaps.on_attach)
+  local group =
+    vim.api.nvim_create_augroup("OrbitVimLspKeymaps", { clear = true })
+  lsp_client.on_attach(keymaps.on_attach, nil, group)
+  lsp_client.on_dynamic_capability(keymaps.on_attach, { group = group })
 
   M.configure_diagnostics(opts)
   M.install_diagnostic_filter()

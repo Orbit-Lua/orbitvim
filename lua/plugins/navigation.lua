@@ -71,10 +71,34 @@ return {
     "Orbit-Lua/harpoon",
     -- "ThePrimeagen/harpoon",
     keys = {
-      { "<C-e>", desc = "toggle harpoon quick menu" },
-      { "<M-S-p>", desc = "harpoon previous item" },
-      { "<M-S-n>", desc = "harpoon next item" },
-      { "<leader>ba", desc = "add buffer to harpoon" },
+      {
+        "<C-e>",
+        function()
+          local h = require("harpoon")
+          h.ui:toggle_quick_menu(h:list())
+        end,
+      },
+      {
+        "<M-S-p>",
+        function()
+          require("harpoon"):list():prev()
+        end,
+        desc = "harpoon previous item",
+      },
+      {
+        "<M-S-n>",
+        function()
+          require("harpoon"):list():next()
+        end,
+        desc = "harpoon next item",
+      },
+      {
+        "<leader>ba",
+        function()
+          require("harpoon"):list():add()
+        end,
+        desc = "add buffer to harpoon",
+      },
     },
     branch = "harpoon2",
     dependencies = { "nvim-lua/plenary.nvim" },
@@ -84,7 +108,10 @@ return {
     end,
     ---@param opts HarpoonPartialConfig
     config = function(_, opts)
-      require("runtime.harpoon").setup(opts)
+      require("runtime.harpoon").setup(
+        opts,
+        require("config.navigation").short_path_length
+      )
     end,
   },
 }

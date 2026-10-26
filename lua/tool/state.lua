@@ -73,7 +73,20 @@ function M.load(opts)
       if cat == "formatter_order" or cat == "linter_order" then
         for ft, order in pairs(val) do
           if type(ft) == "string" and is_string_list(order) then
-            state[cat][ft] = order
+            local category = cat:gsub("_order$", "")
+            local seen, normalized = {}, {}
+            for _, name in ipairs(order) do
+              local meta = require("config.tools")[category][name]
+              if
+                meta
+                and vim.tbl_contains(meta.ft or {}, ft)
+                and not seen[name]
+              then
+                seen[name] = true
+                table.insert(normalized, name)
+              end
+            end
+            state[cat][ft] = normalized
           end
         end
       elseif state[cat] then
@@ -95,41 +108,70 @@ function M.get()
   return _state
 end
 
--- A writer holds the lock for milliseconds; an older lock was left by a
--- process that exited mid-write.
-local stale_lock_seconds = 10
-
-local function is_stale(stat)
-  return stat ~= nil and os.time() - stat.mtime.sec > stale_lock_seconds
+-- A recovery guard serializes dead-owner reclamation with acquisition.
+-- Uncertain ownership requires operator inspection, never age-based deletion.
+local function owner(path)
+  local file = io.open(path, "rb")
+  if not file then
+    return nil
+  end
+  local raw = file:read("*a")
+  file:close()
+  local ok, value = pcall(vim.json.decode, raw)
+  if
+    ok
+    and type(value) == "table"
+    and type(value.pid) == "number"
+    and value.pid > 0
+    and value.pid % 1 == 0
+    and type(value.token) == "string"
+    and value.token ~= ""
+  then
+    return value
+  end
 end
 
-local function open_lock(lock_path)
-  local lock, lock_error = vim.uv.fs_open(lock_path, "wx", 384)
-  if lock or not is_stale(vim.uv.fs_stat(lock_path)) then
-    return lock, lock_error
+local function open_lock(path)
+  local guard = path .. ".recovery"
+  local guarded, guard_error = vim.uv.fs_mkdir(guard, 448)
+  if not guarded then
+    return nil, guard_error
   end
-  -- Claim the stale lock by renaming it: when two instances find it, only one
-  -- rename succeeds, and a fresh lock claimed after a replacement goes back.
-  local claimed = string.format(
-    "%s.%d-%d.stale",
-    lock_path,
-    vim.uv.os_getpid(),
-    vim.uv.hrtime()
-  )
-  if not vim.uv.fs_rename(lock_path, claimed) then
-    return nil, lock_error
+  local lock, err = vim.uv.fs_open(path, "wx", 384)
+  if not lock then
+    local previous = owner(path)
+    if previous then
+      local alive, _, code = vim.uv.kill(previous.pid, 0)
+      if not alive and code == "ESRCH" then
+        local removed, remove_error = vim.uv.fs_unlink(path)
+        if removed then
+          lock, err = vim.uv.fs_open(path, "wx", 384)
+        else
+          err = remove_error
+        end
+      end
+    end
   end
-  if is_stale(vim.uv.fs_stat(claimed)) then
-    vim.uv.fs_unlink(claimed)
-    return vim.uv.fs_open(lock_path, "wx", 384)
+  local token = tostring(vim.uv.os_getpid()) .. ":" .. tostring(vim.uv.hrtime())
+  if lock then
+    local payload = vim.json.encode({ pid = vim.uv.os_getpid(), token = token })
+    local written, write_error = vim.uv.fs_write(lock, payload, 0)
+    if written ~= #payload then
+      write_error = write_error or "incomplete lock ownership record"
+      vim.uv.fs_close(lock)
+      vim.uv.fs_unlink(path)
+      lock, err = nil, write_error
+    end
   end
-  -- Another instance replaced the stale lock first; return its fresh lock.
-  -- If a third writer already holds the path, keep the claimed file instead
-  -- of deleting a live lock.
-  if vim.uv.fs_link(claimed, lock_path) then
-    vim.uv.fs_unlink(claimed)
+  local released, release_error = vim.uv.fs_rmdir(guard)
+  if not released then
+    if lock then
+      vim.uv.fs_close(lock)
+    end
+    return nil,
+      "recovery guard requires inspection: " .. tostring(release_error)
   end
-  return nil, lock_error
+  return lock, err, token
 end
 
 local function update(category, key, value)
@@ -140,12 +182,11 @@ local function update(category, key, value)
     return false, tostring(mkdir_error)
   end
   local lock_path = path .. ".lock"
-  local lock, lock_error = open_lock(lock_path)
+  local lock, lock_error, token = open_lock(lock_path)
   if not lock then
     return false,
-      "could not lock tool state (another writer or stale lock): " .. tostring(
-        lock_error
-      )
+      "could not lock tool state; retry or inspect ownership before removing the lock: "
+        .. tostring(lock_error)
   end
   local ok, saved, save_error = pcall(function()
     local latest = M.load()
@@ -158,14 +199,22 @@ local function update(category, key, value)
     return written, err
   end)
   vim.uv.fs_close(lock)
-  local unlocked, unlock_error = vim.uv.fs_unlink(lock_path)
+  local current = owner(lock_path)
+  local unlocked, unlock_error
+  if current and current.token == token then
+    unlocked, unlock_error = vim.uv.fs_unlink(lock_path)
+  else
+    unlock_error = "lock ownership changed"
+  end
   if not ok then
     return false, tostring(saved)
   end
   if not unlocked then
-    return false, "could not remove state lock: " .. tostring(unlock_error)
+    return false,
+      "could not remove state lock: " .. tostring(unlock_error),
+      ok and saved == true
   end
-  return saved, save_error
+  return saved, save_error, saved == true
 end
 
 function M.is_enabled(cat, name)

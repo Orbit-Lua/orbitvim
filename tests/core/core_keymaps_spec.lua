@@ -1,6 +1,6 @@
 describe("core.keymaps", function()
   local test = require("tests.helpers")
-  local fs = require("utils.fs")
+  local project = require("utils.project")
   local original_mapleader
   local original_cwd
   local original_fs_root
@@ -11,7 +11,7 @@ describe("core.keymaps", function()
   before_each(function()
     original_mapleader = vim.g.mapleader
     original_cwd = vim.fn.getcwd()
-    original_fs_root = fs.get_root
+    original_fs_root = project.get_root
     original_get_clients = vim.lsp.get_clients
     original_core_keymaps = package.loaded["core.keymaps"]
     original_runtime_keymaps = package.loaded["runtime.lsp.keymaps"]
@@ -20,7 +20,7 @@ describe("core.keymaps", function()
   after_each(function()
     vim.g.mapleader = original_mapleader
     vim.api.nvim_set_current_dir(original_cwd)
-    fs.get_root = original_fs_root
+    project.get_root = original_fs_root
     vim.lsp.get_clients = original_get_clients
     package.loaded["core.keymaps"] = original_core_keymaps
     package.loaded["runtime.lsp.keymaps"] = original_runtime_keymaps
@@ -33,7 +33,7 @@ describe("core.keymaps", function()
     package.loaded["core.keymaps"] = nil
     require("core.keymaps")
 
-    fs.get_root = function()
+    project.get_root = function()
       return root
     end
 

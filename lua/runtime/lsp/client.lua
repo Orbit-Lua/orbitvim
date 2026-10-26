@@ -6,9 +6,9 @@ local M = {}
 
 ---@param on_attach fun(client:vim.lsp.Client, buffer)
 ---@param name? string
-function M.on_attach(on_attach, name)
+function M.on_attach(on_attach, name, group)
   return vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup(
+    group = group or vim.api.nvim_create_augroup(
       "OrbitVimLspAttach_" .. (name or "all"),
       { clear = false }
     ),
@@ -172,7 +172,7 @@ end
 
 ---@param method string
 ---@param fn fun(client:vim.lsp.Client, buffer, event?: Lsp.SupportsMethod.Event)
----@param opts? {refresh?: boolean}
+---@param opts? {refresh?: boolean, group?: integer}
 function M.on_supports_method(method, fn, opts)
   supported_methods[method] = supported_methods[method]
     or setmetatable({}, { __mode = "k" })
@@ -183,6 +183,7 @@ function M.on_supports_method(method, fn, opts)
 
   return vim.api.nvim_create_autocmd("User", {
     pattern = "LspSupportsMethod",
+    group = opts and opts.group,
     callback = function(args)
       local client = vim.lsp.get_client_by_id(args.data.client_id)
       local buffer = args.data.buffer ---@type number

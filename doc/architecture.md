@@ -50,3 +50,8 @@ An asynchronous operation can outlive the view. On completion, it updates state 
 Native build owners execute argument lists without the interactive shell. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.
 
 The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.
+
+
+Harpoon mappings belong to the Lazy spec. Its runtime receives display options directly and owns list construction and highlighting.
+
+Blink documentation uses its supplied renderer. Live resize needs the pinned revision's private window objects. The completion runtime contains that dependency. Noice progress adaptation stays in `utils.progress`. Integration checks exercise the installed plugin interfaces.

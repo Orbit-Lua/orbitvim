@@ -138,6 +138,44 @@ describe("tool.manager", function()
   end)
 
   it(
+    "keeps the newest toggle when an older installation finishes later",
+    function()
+      state.set_enabled("lsp", "lua_ls", false)
+      policy.missing_package_policy = "auto"
+      mason.package_status = function()
+        return false
+      end
+      local install_callback
+      mason.install = function(_, callback)
+        install_callback = callback
+        return true
+      end
+      local applied, first, second = {}, 0, 0
+      categories.lsp.apply_runtime = function(opts)
+        table.insert(applied, opts.is_enabled)
+      end
+      assert.is_true(
+        manager.toggle({ category = "lsp", name = "lua_ls" }, function(ok)
+          first = first + 1
+          assert.is_false(ok)
+        end)
+      )
+      assert.is_true(
+        manager.toggle({ category = "lsp", name = "lua_ls" }, function(ok)
+          second = second + 1
+          assert.is_true(ok)
+        end)
+      )
+      install_callback(true)
+      install_callback(true)
+      assert.same({ false }, applied)
+      assert.is_false(state.load().lsp.lua_ls)
+      assert.equals(1, first)
+      assert.equals(1, second)
+    end
+  )
+
+  it(
     "installs missing Mason packages before enabling and enables only on success",
     function()
       state.set_enabled("lsp", "lua_ls", false)

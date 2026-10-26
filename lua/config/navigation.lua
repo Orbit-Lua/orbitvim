@@ -26,19 +26,5 @@ return {
       preview_split = "right",
     },
   },
-  harpoon = {
-    -- https://github.com/ThePrimeagen/harpoon/blob/harpoon2/lua/harpoon/config.lua
-    default = {
-      -- refer to: https://github.com/ThePrimeagen/harpoon/issues/523#issuecomment-1984926994
-      --
-      create_list_item = function(config, value)
-        return require("runtime.harpoon").create_list_item(config, value)
-      end,
-
-      display = function(list_item)
-        local path = list_item.context.short_path or ""
-        return require("runtime.harpoon").format_display(path)
-      end,
-    },
-  },
+  harpoon = {},
 }

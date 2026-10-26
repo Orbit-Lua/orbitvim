@@ -1,3 +1,11 @@
+---@class Tool.Selection
+---@field category ToolCategory
+---@field name string
+---@class Tool.SnapshotOptions
+---@field category ToolCategory
+---@field scope? "buffer"|"states"
+---@field source? { bufnr?: integer, filetype?: string, name?: string }
+
 local M = {}
 
 local tools = require("config.tools")
@@ -7,10 +15,17 @@ local state = require("tool.state")
 local categories = require("tool.category")
 local mason = require("tool.mason")
 local failures = {}
+local pending = {}
 
 local function done(callback, success, err)
   if callback then
-    callback(success, err)
+    local ok, failure = pcall(callback, success, err)
+    if not ok then
+      vim.notify(
+        "ToolManager observer failed: " .. tostring(failure),
+        vim.log.levels.ERROR
+      )
+    end
   end
 end
 
@@ -50,7 +65,7 @@ local function policy()
   return setting == "manual" and "manual" or "auto"
 end
 
----@param opts { category: ToolCategory, scope?: "buffer"|"states", source?: table }
+---@param opts Tool.SnapshotOptions
 ---@return table?
 function M.snapshot(opts)
   opts = opts or {}
@@ -144,7 +159,7 @@ function M.details(selection)
   return { logs = {}, diagnostics = { messages = {} } }
 end
 
----@param selection { category: ToolCategory, name: string }
+---@param selection Tool.Selection
 ---@param on_complete fun(success: boolean, err?: string)?
 ---@return boolean
 function M.toggle(selection, on_complete)
@@ -157,9 +172,45 @@ function M.toggle(selection, on_complete)
     return false
   end
 
-  local enabled = not state.is_enabled(category, name)
+  local key = category .. ":" .. name
+  local previous = pending[key]
+  local enabled
+  if previous then
+    enabled = not previous.enabled
+  else
+    enabled = not state.is_enabled(category, name)
+  end
+  local callback = on_complete
+  local completed = false
+  local operation = { enabled = enabled }
+  on_complete = function(success, err)
+    if completed then
+      return
+    end
+    completed = true
+    if pending[key] == operation then
+      pending[key] = nil
+    end
+    done(callback, success, err)
+  end
+  operation.finish = on_complete
+  pending[key] = operation
+  if previous then
+    previous.finish(false, "superseded by a newer toggle")
+  end
   local function apply_toggle()
-    local saved, save_error = state.set_enabled(category, name, enabled)
+    if pending[key] ~= operation then
+      return false
+    end
+    local saved, save_error, committed =
+      state.set_enabled(category, name, enabled)
+    if not saved and committed then
+      local message = "setting saved; runtime unchanged: "
+        .. tostring(save_error)
+      failures[key] = message
+      done(on_complete, false, message)
+      return false
+    end
     if not saved then
       done(
         on_complete,
@@ -201,7 +252,7 @@ function M.toggle(selection, on_complete)
   return apply_toggle()
 end
 
----@param selection { category: ToolCategory, name: string }
+---@param selection Tool.Selection
 ---@param on_complete fun(success: boolean, err?: string)?
 ---@return boolean
 function M.install(selection, on_complete)
@@ -261,7 +312,13 @@ function M.reorder(selection, on_complete)
   end
   names[index], names[index + direction] =
     names[index + direction], names[index]
-  local saved, save_error = state.set_order(category, ft, names)
+  local saved, save_error, committed = state.set_order(category, ft, names)
+  if not saved and committed then
+    local message = "order saved; runtime unchanged: " .. tostring(save_error)
+    failures[category .. ":" .. name] = message
+    done(on_complete, false, message)
+    return false
+  end
   if not saved then
     done(
       on_complete,

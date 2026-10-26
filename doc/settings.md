@@ -1,10 +1,26 @@
 # Settings
 
-`:OrbitSettings` or `<leader>uc` opens `settings.json` in the configuration directory. It creates the file only if it is absent. `:OrbitSettings reload` reads the saved input again. `:OrbitSettings info` shows active values, their sources, the last error and restart-pending changes. OrbitSettings never rewrites existing input, also when the file is invalid.
+`:OrbitSettings` or `<leader>uc` opens `stdpath('data')/settings.json`. The command creates it only when absent. Startup does not create personal settings.
+
+When the destination is absent, startup reads legacy `stdpath('config')/settings.json`. The command copies those bytes unchanged into the writable destination. This includes invalid input that needs repair. It keeps the legacy file. An existing destination always takes precedence, including invalid input.
+
+Creation publishes a complete file without replacing another instance's destination. Unreadable legacy input and unsupported publication operations report an error. They do not create replacement defaults.
+
+`vim.g.orbitvim_settings_path` overrides both locations. Set it before initialization. The command uses that exact destination.
+
+`:OrbitSettings reload` reads saved input again. `:OrbitSettings info` shows active values, sources, the last error and restart-pending changes. Existing input is never rewritten by these commands.
+
+To use the writable file with an older revision, start that revision with:
+
+```sh
+nvim --cmd "lua vim.g.orbitvim_settings_path=vim.fn.stdpath('data')..'/settings.json'"
+```
+
+The legacy file remains available for rollback. Future edits are not copied back automatically.
 
 `settings.schema.json` owns keys, types, bounds, defaults and restart annotations. The loader supports the schema keywords that this schema uses. It validates tool, filetype and server references against the registry. It does not interpret arbitrary external schemas.
 
-The command adds a `$schema` reference. jsonls also associates the exact settings path with the bundled schema, with normalized Windows drive letters. Thus an empty object also gets completion.
+The command adds a `$schema` reference. jsonls also associates both eligible settings paths with the bundled schema, with normalized Windows drive letters. Thus an empty object also gets completion.
 
 ## Merge and precedence
 

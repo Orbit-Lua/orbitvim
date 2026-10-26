@@ -1,3 +1,10 @@
+---@alias ToolCategory "lsp"|"dap"|"linter"|"formatter"|"parser"|"package"
+---@class Tool.Definition
+---@field ft string[]?
+---@field mason string?
+---@field runtime_name string?
+---@field note string?
+---@field source string?
 local M = {}
 
 -- This registry is the canonical source for managed development tools,

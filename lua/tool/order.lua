@@ -1,3 +1,6 @@
+---@class Tool.FtGroup
+---@field ft string
+---@field names string[]
 local M = {}
 
 local tools = require("config.tools")

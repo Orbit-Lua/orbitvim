@@ -22,7 +22,7 @@ return {
   bigfile = { enabled = true },
   explorer = { enabled = false },
   image = { enabled = false },
-  indent = { enabled = true },
+  indent = { enabled = false },
   input = {
     enabled = true,
     icon = " ",

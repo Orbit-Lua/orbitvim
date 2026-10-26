@@ -4,6 +4,8 @@
 
 [Local LuaSnip templates](../luasnippets/tsql.lua) replace friendly-snippets' generic SQL collection and follow the [T-SQL conventions](tsql-conventions.md).
 
+The loader assembles statement families from `lua/config/snippets/tsql/` in explicit order.
+
 ## Using a snippet
 
 In a `.sql` buffer, type `sel` and choose the snippet from completion.

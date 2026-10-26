@@ -61,7 +61,7 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 ## Configuration
 
-`:OrbitSettings` or `<leader>uc` opens `settings.json`, which Git ignores. It creates the file only when it is missing. Enable `jsonls` for schema completion and validation.
+`:OrbitSettings` or `<leader>uc` opens `stdpath('data')/settings.json`, which Git ignores. It creates the file only when it is missing. Enable `jsonls` for schema completion and validation.
 
 ```json
 {
@@ -77,4 +77,4 @@ Set `notes.vault` to an Obsidian vault path to enable obsidian.nvim for Markdown
 
 ## Supported platforms
 
-Linux and Windows run the same core, integration, native build and startup checks in CI. On Windows, keep native Git. Add MSYS2 UCRT64 GCC, Make and Bash to PATH, but not the MSYS Git. OrbitVim keeps explicit `shell` and `CC` choices. Otherwise it selects available defaults. nvim-tree has no filesystem watchers. It refreshes on save, on entry and with `R`. `:ClearShada` removes temporary ShaDa files and keeps `main.shada`.
+Linux and Windows run the same core, integration, native build and startup checks in CI. On Windows, keep native Git. Add MSYS2 UCRT64 GCC, Make and Bash to PATH, but not the MSYS Git. OrbitVim keeps explicit `shell` and `CC` choices. Otherwise it selects available defaults. On Windows, nvim-tree disables filesystem watchers. It refreshes on save, on entry and with `R`. `:ClearShada` removes temporary ShaDa files and keeps `main.shada`.

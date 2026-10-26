@@ -14,7 +14,7 @@ end
 
 ---Returns a harpoon extension table that highlights the current file entry.
 ---@return table harpoon extension spec
-M.highlight_current_file = function()
+M.highlight_current_file = function(short_path_length)
   return {
     UI_CREATE = function(cx)
       for line_number, name_of_harpoon in pairs(cx.contents) do
@@ -23,7 +23,7 @@ M.highlight_current_file = function()
         end
 
         local short_path = fs.pretty_path(cx.current_file, {
-          length = require("config.navigation").short_path_length,
+          length = short_path_length,
           only_cwd = true,
         })
 
@@ -58,7 +58,7 @@ M.highlight_current_file = function()
   }
 end
 
-function M.create_list_item(config, value)
+function M.create_list_item(config, value, short_path_length)
   value = value
     or fs.plenary_make_relative_path(
       vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()),
@@ -77,37 +77,26 @@ function M.create_list_item(config, value)
       row = pos[1],
       col = pos[2],
       short_path = fs.pretty_path(value, {
-        length = require("config.navigation").short_path_length,
+        length = short_path_length,
         only_cwd = true,
       }),
     },
   }
 end
 
-function M.setup(opts)
+function M.setup(opts, short_path_length)
   local harpoon = require("harpoon")
-
+  opts = vim.deepcopy(opts)
+  opts.default = vim.tbl_extend("force", opts.default or {}, {
+    create_list_item = function(config, value)
+      return M.create_list_item(config, value, short_path_length)
+    end,
+    display = function(item)
+      return M.format_display(item.context.short_path or "")
+    end,
+  })
   harpoon:setup(opts)
-
-  -- this will set cursor to current file
-  harpoon:extend(M.highlight_current_file())
-
-  vim.keymap.set("n", "<leader>ba", function()
-    harpoon:list():add()
-  end, { desc = "add buffer to harpoon" })
-
-  -- Toggle previous & next buffers stored within Harpoon list
-  vim.keymap.set("n", "<M-S-p>", function()
-    harpoon:list():prev()
-  end, { desc = "harpoon previous item" })
-
-  vim.keymap.set("n", "<M-S-n>", function()
-    harpoon:list():next()
-  end, { desc = "harpoon next item" })
-
-  vim.keymap.set("n", "<C-e>", function()
-    harpoon.ui:toggle_quick_menu(harpoon:list())
-  end)
+  harpoon:extend(M.highlight_current_file(short_path_length))
 end
 
 return M

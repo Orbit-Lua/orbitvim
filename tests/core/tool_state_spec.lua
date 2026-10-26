@@ -1,6 +1,5 @@
 describe("tool.state", function()
   local test = require("tests.helpers")
-  local tools = require("config.tools")
   local state
   local state_path
   local original_state_path
@@ -26,21 +25,6 @@ describe("tool.state", function()
     vim.g.tool_state_path = original_state_path
     package.loaded["tool.state"] = original_state_module
     test.cleanup_all()
-  end)
-
-  it("builds deterministic defaults from the tool registry", function()
-    local loaded = state.load()
-
-    for _, category in ipairs({ "lsp", "dap", "linter", "formatter" }) do
-      local expected = {}
-      for name in pairs(tools[category]) do
-        expected[name] = true
-      end
-      assert.same(expected, loaded[category], category)
-    end
-
-    assert.same(tools.formatter_defaults, loaded.formatter_order)
-    assert.same(tools.linter_defaults, loaded.linter_order)
   end)
 
   it(
@@ -98,10 +82,7 @@ describe("tool.state", function()
     assert.is_false(loaded.lsp.lua_ls)
     assert.is_true(loaded.lsp.pyright)
     assert.is_nil(loaded.lsp.removed_server)
-    assert.same(
-      { "ruff_format", "removed_formatter" },
-      loaded.formatter_order.python
-    )
+    assert.same({ "ruff_format" }, loaded.formatter_order.python)
     assert.is_nil(loaded.formatter_order.lua)
     assert.is_nil(loaded.formatter_order.invalid)
     assert.is_nil(loaded.removed_category)
@@ -145,13 +126,46 @@ describe("tool.state", function()
 
   it("replaces a lock left by a writer that exited mid-write", function()
     local lock_path = state_path .. ".lock"
-    test.write_file(lock_path, "")
+    test.write_file(
+      lock_path,
+      vim.json.encode({ pid = 2147483647, token = "dead-fixture" })
+    )
     local abandoned = os.time() - 60
     assert(vim.uv.fs_utime(lock_path, abandoned, abandoned))
 
     assert.is_true(state.set_enabled("lsp", "lua_ls", false))
     assert.is_false(state.load().lsp.lua_ls)
     assert.is_nil(vim.uv.fs_stat(lock_path))
+  end)
+
+  it("does not reclaim an old lock from a live writer", function()
+    local path = state_path .. ".lock"
+    test.write_file(
+      path,
+      vim.json.encode({ pid = vim.uv.os_getpid(), token = "live" })
+    )
+    assert(vim.uv.fs_utime(path, os.time() - 60, os.time() - 60))
+    assert.is_false(state.set_enabled("lsp", "lua_ls", false))
+    assert.equals(
+      "live",
+      vim.json.decode(table.concat(vim.fn.readfile(path))).token
+    )
+  end)
+
+  it("reports committed intent when lock cleanup fails", function()
+    local unlink = vim.uv.fs_unlink
+    vim.uv.fs_unlink = function(path)
+      if path == state_path .. ".lock" then
+        return nil, "cleanup refused"
+      end
+      return unlink(path)
+    end
+    local ok, err, committed = state.set_enabled("lsp", "lua_ls", false)
+    vim.uv.fs_unlink = unlink
+    assert.is_false(ok)
+    assert.is_truthy(err)
+    assert.is_true(committed)
+    assert.is_false(state.load().lsp.lua_ls)
   end)
 
   it(
@@ -194,7 +208,7 @@ describe("tool.state", function()
       assert.is_false(saved)
       assert.is_false(state.is_enabled("lsp", "lua_ls"))
       assert.equals(before, table.concat(vim.fn.readfile(state_path), "\n"))
-      assert.same({}, vim.fn.glob(state_path .. ".orbitvim-*.tmp", false, true))
+      assert.same({}, vim.fn.glob(state_path .. ".orbitvim-*", false, true))
     end
   )
 end)

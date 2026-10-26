@@ -44,7 +44,13 @@ local function finish_install(pkg_name, success, err)
   local callbacks = pending[pkg_name] or {}
   pending[pkg_name] = nil
   for _, callback in ipairs(callbacks) do
-    callback(success, err)
+    local ok, failure = pcall(callback, success, err)
+    if not ok then
+      vim.notify(
+        "ToolManager observer failed: " .. tostring(failure),
+        vim.log.levels.ERROR
+      )
+    end
   end
 end
 

@@ -2,11 +2,15 @@ local M = {}
 
 function M.setup_snacks(opts)
   local snacks = require("snacks")
-  local redraw_range = snacks.util.redraw_range
-
-  -- Wrap to suppress invalid window id error popups.
-  snacks.util.redraw_range = function(...)
-    pcall(redraw_range, ...)
+  if not M.redraw_wrapped then
+    local redraw_range = snacks.util.redraw_range
+    snacks.util.redraw_range = function(...)
+      local ok, err = pcall(redraw_range, ...)
+      if not ok and not tostring(err):match("Invalid window id: %d+") then
+        error("Snacks redraw failed: " .. tostring(err), 0)
+      end
+    end
+    M.redraw_wrapped = true
   end
 
   snacks.setup(opts)

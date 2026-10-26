@@ -27,7 +27,7 @@ Keep settings available also when the personal input is invalid.
 
 Tool Manager's UI interface is `require("tool").open()` / `.close()`. Its operation interface is `tool.manager`. It takes logical selections, never cursor positions, Nui objects or render callbacks.
 
-`settings.schema.json` owns the public defaults. `settings.json` is personal, and Git ignores it. Tool enablement and saved order stay in `tools.json` in the data directory.
+`settings.schema.json` owns the public defaults. Personal settings default to `stdpath('data')/settings.json`. Startup can read the legacy config path but never creates personal files. Tool enablement and saved order stay in `tools.json` in the data directory.
 
 ## Ownership
 
@@ -45,6 +45,7 @@ Tool Manager's UI interface is `require("tool").open()` / `.close()`. Its operat
 | User commands | `lua/commands/` |
 | Tool operations, persistence, ordering, Mason seam, category adapters | `lua/tool/` |
 | Nui view sessions, rendering, details | `lua/tool/ui/` |
+| Project-root precedence and marker discovery | `lua/utils/project.lua` |
 | Shared helpers with concrete local interfaces | `lua/utils/` |
 | Nv UI/base46 entry point | `lua/chadrc.lua` |
 | Test bootstrap and fixtures | `tests/helpers.lua`, `scripts/tests/` |

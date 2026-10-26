@@ -1,6 +1,6 @@
 local map = vim.keymap.set
 local k = vim.keycode
-local fs = require("utils.fs")
+local project = require("utils.project")
 local term = require("utils.term")
 local utils_cmp = require("utils.cmp")
 
@@ -65,7 +65,7 @@ map("n", "<C-l>", "<C-w>l", { desc = "switch window right" })
 map("n", "<C-j>", "<C-w>j", { desc = "switch window down" })
 map("n", "<C-k>", "<C-w>k", { desc = "switch window up" })
 map("n", "<leader>fd", function()
-  vim.api.nvim_set_current_dir(fs.get_root())
+  vim.api.nvim_set_current_dir(project.get_root())
 end, { desc = "set cwd to file root" })
 
 -------------------- terminal --------------------

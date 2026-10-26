@@ -1,6 +1,6 @@
 -- config for conform.nvim
 
-local fs = require("utils.fs")
+local project = require("utils.project")
 local os_utils = require("utils.os")
 local sqlfluff = require("utils.sqlfluff")
 
@@ -54,9 +54,9 @@ return {
     },
     ["prisma_fmt"] = {
       command = function(_, ctx)
-        local root = fs.get_root(ctx.filename)
+        local root = project.get_root(ctx.filename)
         if os_utils.is_win() then
-          return root .. "/node_modules/.bin/prisma.CMD"
+          return "node"
         end
 
         return root .. "/node_modules/.bin/prisma"
@@ -64,7 +64,18 @@ return {
       condition = function(_, ctx)
         return vim.bo[ctx.buf].filetype == "prisma"
       end,
-      args = { "format" },
+      args = function(_, ctx)
+        local arguments = { "format", "--schema", "$FILENAME" }
+        if os_utils.is_win() then
+          table.insert(
+            arguments,
+            1,
+            project.get_root(ctx.filename)
+              .. "/node_modules/prisma/build/index.js"
+          )
+        end
+        return arguments
+      end,
       stdin = false,
     },
   },

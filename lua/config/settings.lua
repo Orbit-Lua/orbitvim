@@ -10,13 +10,38 @@ local schema =
 local active, overrides
 
 function M.path()
+  local destination = M.edit_path()
+  local _, _, code = vim.uv.fs_stat(destination)
+  if not vim.g.orbitvim_settings_path and code == "ENOENT" then
+    local legacy = M.legacy_path()
+    local _, _, legacy_code = vim.uv.fs_stat(legacy)
+    if legacy_code ~= "ENOENT" then
+      return legacy
+    end
+  end
+  return destination
+end
+
+function M.legacy_path()
+  return vim.fs.normalize(vim.fn.stdpath("config") .. "/settings.json")
+end
+
+function M.edit_path()
   return vim.fs.normalize(
     vim.fn.fnamemodify(
       vim.g.orbitvim_settings_path
-        or (vim.fn.stdpath("config") .. "/settings.json"),
+        or (vim.fn.stdpath("data") .. "/settings.json"),
       ":p"
     )
   )
+end
+
+function M.schema_paths()
+  local paths = { M.edit_path() }
+  if not vim.g.orbitvim_settings_path then
+    table.insert(paths, M.legacy_path())
+  end
+  return paths
 end
 
 local function defaults(node)
@@ -160,6 +185,7 @@ function M.info()
     values = M.get(),
     overrides = vim.deepcopy(overrides or vim.empty_dict()),
     path = M.path(),
+    destination = M.edit_path(),
   }
 end
 

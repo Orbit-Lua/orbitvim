@@ -178,6 +178,9 @@ end
 
 function M.start(buf)
   buf = buf or 0
+  if vim.bo[buf].filetype == "bigfile" then
+    return
+  end
   pcall(vim.treesitter.start, buf)
 
   local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })

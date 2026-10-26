@@ -1,13 +1,13 @@
 describe("config.formatter", function()
   local formatter = require("config.formatter")
-  local fs = require("utils.fs")
+  local project = require("utils.project")
   local os_utils = require("utils.os")
   local sqlfluff = require("utils.sqlfluff")
   local originals
 
   before_each(function()
     originals = {
-      get_root = fs.get_root,
+      get_root = project.get_root,
       is_win = os_utils.is_win,
       format_args = sqlfluff.format_args,
       cwd = sqlfluff.cwd,
@@ -15,14 +15,14 @@ describe("config.formatter", function()
   end)
 
   after_each(function()
-    fs.get_root = originals.get_root
+    project.get_root = originals.get_root
     os_utils.is_win = originals.is_win
     sqlfluff.format_args = originals.format_args
     sqlfluff.cwd = originals.cwd
   end)
 
   it("uses the formatted file's project Prisma formatter on Unix", function()
-    fs.get_root = function(path)
+    project.get_root = function(path)
       assert.equals("/tmp/project/schema.prisma", path)
       return "/tmp/project"
     end
@@ -40,7 +40,7 @@ describe("config.formatter", function()
   end)
 
   it("uses the project-local Prisma formatter on Windows", function()
-    fs.get_root = function()
+    project.get_root = function()
       return "C:/project"
     end
     os_utils.is_win = function()
@@ -48,8 +48,20 @@ describe("config.formatter", function()
     end
 
     assert.equals(
-      "C:/project/node_modules/.bin/prisma.CMD",
+      "node",
       formatter.formatters.prisma_fmt.command(
+        nil,
+        { filename = "C:/project/schema.prisma" }
+      )
+    )
+    assert.same(
+      {
+        "C:/project/node_modules/prisma/build/index.js",
+        "format",
+        "--schema",
+        "$FILENAME",
+      },
+      formatter.formatters.prisma_fmt.args(
         nil,
         { filename = "C:/project/schema.prisma" }
       )

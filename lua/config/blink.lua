@@ -3,57 +3,6 @@ local borders = require("config.borders")
 local utils_cmp = require("utils.cmp")
 local window = require("utils.window")
 
-local function get_detail(item)
-  local detail = item.detail
-  if type(detail) == "table" then
-    detail = table.concat(detail, "\n")
-  end
-
-  if type(detail) ~= "string" or detail == "" then
-    return nil
-  end
-
-  return vim.trim(detail)
-end
-
-local function draw_documentation(opts)
-  local item = opts.item
-  local lines = {}
-  local documentation_lines = {}
-
-  if
-    type(item.documentation) == "string"
-    or type(item.documentation) == "table"
-  then
-    documentation_lines = vim.lsp.util.convert_input_to_markdown_lines(
-      item.documentation,
-      documentation_lines
-    )
-  end
-
-  local detail = get_detail(item)
-  if
-    detail and not table.concat(documentation_lines, "\n"):find(detail, 1, true)
-  then
-    local filetype = vim.bo.filetype:gsub("%..*$", "")
-    table.insert(lines, ("```%s"):format(filetype))
-    vim.list_extend(lines, vim.split(detail, "\n", { trimempty = true }))
-    table.insert(lines, "```")
-  end
-
-  vim.list_extend(lines, documentation_lines)
-
-  if #lines == 0 then
-    opts.default_implementation()
-    return
-  end
-
-  -- FIXME: deprecated
-  vim.lsp.util.stylize_markdown(opts.window:get_buf(), lines, {
-    max_width = opts.window.config.max_width,
-  })
-end
-
 local M = {}
 
 ---@return blink.cmp.Config
@@ -149,7 +98,9 @@ function M.build()
       documentation = {
         auto_show = true,
         auto_show_delay_ms = 200,
-        draw = draw_documentation,
+        draw = function(opts)
+          return require("runtime.completion.blink").draw_documentation(opts)
+        end,
         window = {
           border = borders.cmp.window.documentation,
           max_width = initial_sizes.documentation.width,

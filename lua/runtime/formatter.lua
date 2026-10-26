@@ -38,7 +38,9 @@ end
 
 ---@param bufnr? integer
 function M.format(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if not bufnr or bufnr == 0 then
+    bufnr = vim.api.nvim_get_current_buf()
+  end
   if vim.b[bufnr].orbit_formatting then
     vim.notify("This buffer is already being formatted", vim.log.levels.WARN, {
       orbit_formatter = "error",
@@ -64,11 +66,16 @@ function M.format(bufnr)
   })
 
   local finished = false
+  local disposal
   local function finish(err, did_edit)
     if finished then
       return
     end
     finished = true
+    if disposal then
+      pcall(vim.api.nvim_del_autocmd, disposal)
+      disposal = nil
+    end
     if vim.api.nvim_buf_is_valid(bufnr) then
       vim.b[bufnr].orbit_formatting = nil
     end
@@ -85,6 +92,14 @@ function M.format(bufnr)
       },
     })
   end
+
+  disposal = vim.api.nvim_create_autocmd("BufWipeout", {
+    buffer = bufnr,
+    once = true,
+    callback = function()
+      finish("buffer deleted", false)
+    end,
+  })
 
   local ok, err = pcall(require("conform").format, {
     async = true,

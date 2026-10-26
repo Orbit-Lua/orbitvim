@@ -1,36 +1,23 @@
----@param root string
-local function check(root)
-  local handle = assert(vim.uv.fs_scandir(root), "missing test suite: " .. root)
-  local count = 0
+local M = {}
 
-  while true do
-    local name, entry_type = vim.uv.fs_scandir_next(handle)
-    if not name then
-      break
-    end
-
-    if entry_type == "file" and name:match("_spec%.lua$") then
-      count = count + 1
-      local path = root .. "/" .. name
-      local lines = vim.fn.readfile(path)
-      local source = table.concat(lines, "\n")
-      for _, skipped in ipairs({ "pending", "skip", "xit", "xdescribe" }) do
-        assert(
-          not source:match("%f[%a]" .. skipped .. "%s*%("),
-          "skipped tests are not allowed: " .. path
-        )
-      end
-      assert(
-        not source:match("%.skip%s*%("),
-        "skipped tests are not allowed: " .. path
-      )
-    end
+function M.install(path)
+  local busted = require("plenary.busted")
+  local original = busted.format_results
+  busted.format_results = function(results)
+    local summary =
+      { passed = #results.pass, failed = #results.fail, errors = #results.errs }
+    assert(vim.fn.writefile({ vim.json.encode(summary) }, path) == 0)
+    original(results)
   end
-
-  assert(count > 0, "test suite contains no specs: " .. root)
+  busted.pending = function()
+    error("skipped tests are not allowed", 0)
+  end
+  _G.pending = busted.pending
 end
 
-assert(#arg > 0, "provide at least one test suite")
-for _, root in ipairs(arg) do
-  check(root)
+function M.check(result)
+  assert(result.passed > 0, "test spec executed no tests")
+  assert(result.failed == 0 and result.errors == 0, "test spec failed")
 end
+
+return M

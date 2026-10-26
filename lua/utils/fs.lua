@@ -1,12 +1,11 @@
 local M = {}
 
-local atomic_write_sequence = 0
-
 ---Write a complete file beside its destination, then atomically replace it.
 ---@param path string
 ---@param contents string
----@return boolean, string?
-function M.atomic_write(path, contents)
+---@param opts? { exclusive?: boolean }
+---@return boolean, string?, string?
+function M.atomic_write(path, contents, opts)
   local parent = vim.fn.fnamemodify(path, ":h")
   if vim.fn.isdirectory(parent) == 0 then
     local mkdir_ok, created = pcall(vim.fn.mkdir, parent, "p")
@@ -18,29 +17,36 @@ function M.atomic_write(path, contents)
     end
   end
 
-  atomic_write_sequence = atomic_write_sequence + 1
-  local temporary = string.format(
-    "%s.orbitvim-%s-%d.tmp",
-    path,
-    tostring(vim.uv.hrtime()),
-    atomic_write_sequence
-  )
-  local file, open_error = io.open(temporary, "wb")
+  local file, temporary, open_code =
+    vim.uv.fs_mkstemp(path .. ".orbitvim-XXXXXX")
   if not file then
-    return false, open_error
+    return false, temporary, open_code
+  end
+  local offset, write_error = 0, nil
+  while offset < #contents do
+    local written, err = vim.uv.fs_write(file, contents:sub(offset + 1), offset)
+    if not written or written == 0 then
+      write_error = err or "temporary write made no progress"
+      break
+    end
+    offset = offset + written
+  end
+  local closed, close_error = vim.uv.fs_close(file)
+  if write_error or not closed then
+    vim.uv.fs_unlink(temporary)
+    return false, write_error or close_error
   end
 
-  local write_ok, write_error = file:write(contents)
-  local close_ok, close_error = file:close()
-  if not write_ok or not close_ok then
-    os.remove(temporary)
-    return false, write_error or close_error or "failed to write temporary file"
+  local publish = opts and opts.exclusive and vim.uv.fs_link or vim.uv.fs_rename
+  local rename_ok, rename_error, code = publish(temporary, path)
+  if not rename_ok or (opts and opts.exclusive) then
+    local cleaned, cleanup_error = vim.uv.fs_unlink(temporary)
+    if not cleaned then
+      return false, "temporary cleanup failed: " .. tostring(cleanup_error)
+    end
   end
-
-  local rename_ok, rename_error = vim.uv.fs_rename(temporary, path)
   if not rename_ok then
-    os.remove(temporary)
-    return false, rename_error
+    return false, rename_error, code
   end
   return true
 end
@@ -62,7 +68,7 @@ M.pretty_path = function(path, opts)
   full_path = vim.fs.normalize(full_path)
 
   if opts.only_cwd then
-    local cwd = M.get_cwd()
+    local cwd = require("utils.project").get_cwd()
 
     -- remove cwd prefix
     if full_path:find(cwd, 1, true) == 1 then
@@ -91,89 +97,6 @@ M.pretty_path = function(path, opts)
   )
 
   return table.concat(short_parts, sep)
-end
-
-M.root_pattern = {
-  ".git",
-  ".hg",
-  ".svn",
-  ".bzr",
-  "package.json",
-  "pyproject.toml",
-  "setup.py",
-  "requirements.txt",
-  "Pipfile",
-  "Cargo.toml",
-  "go.mod",
-  "composer.json",
-  "Gemfile",
-  "Makefile",
-  "CMakeLists.txt",
-  "meson.build",
-  "build.gradle",
-  "build.gradle.kts",
-  "pom.xml",
-  ".idea",
-  ".vscode",
-}
-
----@param startpath string
----@param markers string[]
----@return string?
-local function find_root_marker(startpath, markers)
-  local search_path = vim.fn.expand(startpath)
-  for _, marker in ipairs(markers) do
-    local found = vim.fn.finddir(marker, search_path .. ";")
-    if type(found) == "string" and found ~= "" then
-      return vim.fn.fnamemodify(found, ":p:h:h")
-    end
-    local found_file = vim.fn.findfile(marker, search_path .. ";")
-    if type(found_file) == "string" and found_file ~= "" then
-      return vim.fn.fnamemodify(found_file, ":p:h")
-    end
-  end
-end
-
----@return string
-M.get_cwd = function()
-  return vim.fs.normalize(vim.fn.getcwd())
-end
-
----Return the project root, optionally starting from *path*.
----When *path* is omitted the current buffer is used and LSP root-dir is
----consulted first (LSP is buffer-scoped, so it is skipped for explicit paths).
----@param path? string
----@return string
-function M.get_root(path)
-  local bufname = path or vim.api.nvim_buf_get_name(0)
-
-  -- lsp root (only meaningful for the current buffer context)
-  if not path then
-    local clients = vim.lsp.get_clients({ bufnr = 0 })
-    if #clients > 0 then
-      for _, client in ipairs(clients) do
-        if client.config and client.config.root_dir then
-          return client.config.root_dir
-        end
-      end
-    end
-  end
-
-  -- marker files
-  if bufname ~= "" then
-    local root = find_root_marker(bufname, M.root_pattern)
-    if root then
-      return root
-    end
-  end
-
-  -- current path of current file
-  if bufname ~= "" then
-    return vim.fn.fnamemodify(bufname, ":p:h")
-  end
-
-  -- fallback: cwd
-  return M.get_cwd()
 end
 
 ---@param buf_name string
@@ -214,7 +137,12 @@ M.scandir = function(path, mode)
   return names
 end
 
-M.config_path = vim.fn.stdpath("config")
+M.config_path = vim.fs.dirname(
+  assert(
+    vim.api.nvim_get_runtime_file("settings.schema.json", false)[1],
+    "OrbitVim source root is missing"
+  )
+)
 M.data_path = vim.fn.stdpath("data")
 M.mason_pkg_path = vim.fn.stdpath("data") .. "/mason/packages"
 

@@ -101,7 +101,7 @@ local function build_runner(lint, skip_while_editing)
     end
 
     vim.api.nvim_buf_call(bufnr, function()
-      if vim.bo.buftype ~= "" then
+      if vim.bo.buftype ~= "" or vim.bo.filetype == "bigfile" then
         return
       end
 
@@ -140,24 +140,8 @@ local function build_runner(lint, skip_while_editing)
             { kind = "definition_not_found" }
           )
         end
-        return linter
-          and not (
-            type(linter) == "table"
-            and linter.condition
-            and not linter.condition(ctx)
-          )
+        return linter ~= nil
       end, linter_names)
-
-      -- Pre-flight executable check for each resolved linter.
-      for _, linter_name in ipairs(linter_names) do
-        local linter = lint.linters[linter_name]
-        local err = health.executable_error(linter)
-        if err then
-          logger.write("linter", "ERROR", linter_name, err, {
-            kind = "binary_not_found",
-          })
-        end
-      end
 
       -- Run linters and notify listeners so the Tool Manager can refresh
       -- run-error state. NvimLintRunPost only fires when a run actually happens
@@ -167,7 +151,24 @@ local function build_runner(lint, skip_while_editing)
           "User",
           { pattern = "NvimLintRunPost", modeline = false }
         )
-        lint.try_lint(linter_names)
+        lint.try_lint(linter_names, {
+          filter = function(linter)
+            if linter.condition and not linter.condition(ctx) then
+              return false
+            end
+            local err = health.executable_error(linter)
+            if err then
+              logger.write(
+                "linter",
+                "ERROR",
+                linter.name,
+                err,
+                { kind = "binary_not_found" }
+              )
+            end
+            return true
+          end,
+        })
       end
     end)
   end

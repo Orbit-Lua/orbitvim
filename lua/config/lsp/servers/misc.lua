@@ -8,10 +8,9 @@ return {
         {
           "<leader>fP",
           function()
-            require("conform").format({ lsp_fallback = true })
-            vim.cmd("e!")
+            require("runtime.formatter").format()
           end,
-          desc = "prisma format file and force reload",
+          desc = "prisma format buffer",
         },
       },
     },

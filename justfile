@@ -1,7 +1,6 @@
 set windows-shell := ["cmd.exe", "/d", "/c"]
 
 lua_paths := "init.lua lua luasnippets tests scripts/tests"
-minimal_init := "scripts/tests/minimal.vim"
 
 # Check formatting, lint, and run hermetic core specs
 all: fmt-check lint test-core
@@ -18,23 +17,20 @@ fmt-check:
 lint:
     luacheck {{ lua_paths }}
 
-validate-test-suites:
-    nvim --headless --clean -l scripts/tests/validate.lua tests/core tests/integration
-
 # Alias of test-core
 test: test-core
 
 # Run one core or integration spec
 test-spec spec:
-    nvim --headless --noplugin -u {{ minimal_init }} -c "lua require('plenary.busted').run([[{{ spec }}]])" -c "qall"
+    nvim --headless --clean -i NONE -l scripts/tests/run_suite.lua "{{ spec }}"
 
 # Run hermetic core specs
-test-core: validate-test-suites
-    nvim --headless --noplugin -u {{ minimal_init }} -c "PlenaryBustedDirectory tests/core/ {minimal_init = '{{ minimal_init }}'}"
+test-core:
+    nvim --headless --clean -i NONE -l scripts/tests/run_suite.lua tests/core
 
 # Run parser, snippet, and executable integration specs
-test-integration: validate-test-suites
-    nvim --headless --noplugin -u {{ minimal_init }} -c "PlenaryBustedDirectory tests/integration/ {minimal_init = '{{ minimal_init }}'}"
+test-integration:
+    nvim --headless --clean -i NONE -l scripts/tests/run_suite.lua tests/integration
 
 # Run both suites
 test-all: test-core test-integration

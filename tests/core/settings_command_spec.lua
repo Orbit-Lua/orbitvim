@@ -6,6 +6,47 @@ describe("settings command", function()
   end)
 
   it(
+    "copies legacy bytes to writable storage and observes the destination",
+    function()
+      vim.g.orbitvim_settings_path = nil
+      local settings = require("config.settings")
+      local legacy, destination = settings.legacy_path(), settings.edit_path()
+      test.write_file(legacy, '{"editor":{"shiftwidth":4}}')
+      assert.equals(legacy, settings.path())
+      require("core.settings").setup()
+      assert.is_nil(vim.uv.fs_stat(destination))
+      require("commands.settings").setup()
+      vim.cmd.OrbitSettings()
+      assert.equals(destination, settings.path())
+      test.assert_path(destination, vim.api.nvim_buf_get_name(0))
+      assert.same(
+        vim.fn.readfile(legacy, "b"),
+        vim.fn.readfile(destination, "b")
+      )
+      test.write_file(destination, '{"editor":{"shiftwidth":6}}')
+      vim.api.nvim_exec_autocmds("BufWritePost", { pattern = destination })
+      assert.equals(6, require("core.settings").info().values.editor.shiftwidth)
+      test.write_file(legacy, '{"editor":{"shiftwidth":8}}')
+      vim.api.nvim_exec_autocmds("BufWritePost", { pattern = legacy })
+      assert.equals(6, require("core.settings").info().values.editor.shiftwidth)
+      test.write_file(destination, "{invalid")
+      assert.is_nil(settings.read())
+      vim.cmd.OrbitSettings()
+      assert.same({ "{invalid" }, vim.fn.readfile(destination))
+    end
+  )
+
+  it("publishes without replacing a concurrent settings creator", function()
+    local path = test.temp_dir("exclusive settings") .. "/settings.json"
+    local fs = require("utils.fs")
+    assert.is_true(fs.atomic_write(path, "first", { exclusive = true }))
+    local ok, _, code = fs.atomic_write(path, "second", { exclusive = true })
+    assert.is_false(ok)
+    assert.equals("EEXIST", code)
+    assert.same({ "first" }, vim.fn.readfile(path))
+  end)
+
+  it(
     "opens a schema-linked file through its mapping and preserves existing contents",
     function()
       vim.g.mapleader = " "
