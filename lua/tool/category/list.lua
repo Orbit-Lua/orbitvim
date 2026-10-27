@@ -4,12 +4,18 @@ local M = {}
 ---@field module string
 ---@field field string
 ---@field category "formatter"|"linter"
----@field activation string config module whose `field` lists initial runtime names by filetype
 
 ---@param spec Tool.ListAdapterSpec
 ---@return Tool.CategoryHandler
 function M.new(spec)
   local order = require("tool.order")
+  local config = require("tool.config")
+
+  -- The injected activation lists initial runtime names by filetype; it is read
+  -- per call so live configuration changes apply.
+  local function initial_activation()
+    return config.get().adapters.activation[spec.category]()
+  end
   local adapter = {
     capabilities = { toggle = true, install = true, reorder = true },
   }
@@ -30,7 +36,7 @@ function M.new(spec)
 
     -- Enabling restores a tool only where the configuration activates it;
     -- other supported filetypes stay unwired, matching the next startup.
-    local activation = require(spec.activation)[spec.field]
+    local activation = initial_activation()
     local runtime_name = opts.meta.runtime_name or opts.name
     for _, ft in ipairs(opts.meta.ft or {}) do
       local list = module[spec.field][ft] or {}
@@ -63,7 +69,7 @@ function M.new(spec)
     end
     local old = module[spec.field][opts.ft] or {}
     local known = {}
-    for name, meta in pairs(require("config.tools")[spec.category] or {}) do
+    for name, meta in pairs(config.get().registry[spec.category] or {}) do
       if vim.tbl_contains(meta.ft or {}, opts.ft) then
         known[meta.runtime_name or name] = true
       end
@@ -93,7 +99,7 @@ function M.new(spec)
 
     -- Measure against the configured activation, the set enabling restores.
     local runtime_name = opts.meta.runtime_name or opts.name
-    local activation = require(spec.activation)[spec.field]
+    local activation = initial_activation()
     local total, configured = 0, 0
     for _, ft in ipairs(filetypes) do
       if vim.tbl_contains(activation[ft] or {}, runtime_name) then

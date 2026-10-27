@@ -24,6 +24,11 @@ describe("tool.category.dap", function()
     package.loaded["config.dap"] = previous_config
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it("reports unavailable nvim-dap and refuses runtime changes", function()
     package.loaded.dap = nil
     package.preload.dap = function()

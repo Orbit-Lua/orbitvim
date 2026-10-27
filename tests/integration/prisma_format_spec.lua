@@ -3,6 +3,7 @@ describe("Prisma formatting shortcut", function()
     "formats unsaved buffer content through a temporary schema without writing the original",
     function()
       local test = require("tests.helpers")
+      test.configure_tool()
       assert.equals(
         1,
         vim.fn.executable("node"),

@@ -7,6 +7,7 @@ describe("tool.category.linter", function()
   local prior = {}
 
   before_each(function()
+    require("tests.helpers").configure_tool()
     prior = {
       state_path = vim.g.tool_state_path,
       state = package.loaded["tool.state"],

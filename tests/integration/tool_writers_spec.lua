@@ -3,6 +3,7 @@ describe("competing tool-state processes", function()
     "protects a live writer and merges the next process's unrelated choice",
     function()
       local test = require("tests.helpers")
+      test.configure_tool()
       local root = test.temp_dir("competing writers")
       local path, ready, release =
         root .. "/tools.json", root .. "/ready", root .. "/release"
@@ -12,6 +13,7 @@ describe("competing tool-state processes", function()
         string.format(
           [[
 vim.g.tool_state_path = %q
+require("core.tools").setup()
 local rename = vim.uv.fs_rename
 vim.uv.fs_rename = function(source, destination)
   if destination == vim.g.tool_state_path then

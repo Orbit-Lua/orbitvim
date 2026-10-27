@@ -1,8 +1,15 @@
 local Line = require("nui.line")
 local Tree = require("nui.tree")
-local config = require("config.tool_manager")
-local icons = require("config.icons").tool_manager
 local str = require("utils.str")
+local tool_config = require("tool.config")
+
+local function ui()
+  return tool_config.get().ui
+end
+
+local function icons()
+  return tool_config.get().icons
+end
 
 local M = {}
 
@@ -26,7 +33,7 @@ function M.chrome(view, snapshot)
   if width < 75 then
     tabs:append(
       str.trunc(
-        " " .. current .. " " .. config.labels[view:category()] .. " ",
+        " " .. current .. " " .. ui().labels[view:category()] .. " ",
         width
       ),
       active_highlight
@@ -36,10 +43,10 @@ function M.chrome(view, snapshot)
       "Comment"
     )
   else
-    for index, category in ipairs(config.categories) do
+    for index, category in ipairs(ui().categories) do
       local selected = index == current
       tabs:append(
-        " " .. index .. " " .. config.labels[category] .. " ",
+        " " .. index .. " " .. ui().labels[category] .. " ",
         selected and active_highlight or "ToolManagerCategoryInactive"
       )
       tabs:append(" ", "Normal")
@@ -130,7 +137,7 @@ local function node_line(node, width)
   local line = Line()
   local indent = string.rep("  ", node:get_depth() - 1)
   local arrow = node:has_children()
-      and (node:is_expanded() and icons.expanded or icons.collapsed)
+      and (node:is_expanded() and icons().expanded or icons().collapsed)
     or " "
   if node.kind ~= "columns" then
     line:append(
@@ -169,15 +176,15 @@ local function node_line(node, width)
     local health = tool.health_status
     local status = health and health.label or tool.status or "Unknown"
     local severity = health and health.severity or tool.status_hl
-    local icon = tool.enabled and icons.enabled or icons.disabled
+    local icon = tool.enabled and icons().enabled or icons().disabled
     if health and health.installation == "installing" then
-      icon = icons.installing
+      icon = icons().installing
     elseif
       health
       and health.enabled == false
       and severity ~= "DiagnosticError"
     then
-      icon = icons.disabled
+      icon = icons().disabled
     elseif
       health
       and (
@@ -185,15 +192,15 @@ local function node_line(node, width)
         or health.installation == "unavailable"
       )
     then
-      icon = icons.unknown
+      icon = icons().unknown
     elseif severity == "DiagnosticError" then
-      icon = icons.error
+      icon = icons().error
     elseif severity == "DiagnosticWarn" then
-      icon = icons.warning
+      icon = icons().warning
     elseif tool.enabled and health and health.runtime == "Idle" then
-      icon = icons.idle
+      icon = icons().idle
     elseif tool.enabled and severity == "DiagnosticInfo" then
-      icon = icons.info
+      icon = icons().info
     end
     local name = node.rank and (node.rank .. ". " .. tool.name) or tool.name
     local enabled_text = (
@@ -333,7 +340,7 @@ function M.help(view)
     " 1–6  Select category (LSP, DAP, Linter, Formatter, Parser, Package)",
     "Normal"
   )
-  for _, mapping in ipairs(config.mappings) do
+  for _, mapping in ipairs(ui().mappings) do
     add(
       " " .. table.concat(mapping.keys, " / ") .. "  " .. mapping.description,
       "Normal"

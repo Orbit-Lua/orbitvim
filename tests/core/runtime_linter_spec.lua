@@ -42,6 +42,11 @@ describe("runtime.linter", function()
     test.cleanup_all()
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it(
     "runs per captured buffer and cancels timers from an older setup",
     function()

@@ -1,6 +1,6 @@
 local M = {}
 
-local tools = require("config.tools")
+local config = require("tool.config")
 local order = require("tool.order")
 local mason = require("tool.mason")
 local state_mod = require("tool.state")
@@ -21,7 +21,7 @@ end
 ---@return { name: string, meta: Tool.Definition }[]
 function M.tool_entries(category, ft)
   local flat = {}
-  for name, meta in pairs(tools[category] or {}) do
+  for name, meta in pairs(config.get().registry[category] or {}) do
     if not ft or M.supports_ft(meta, ft) then
       table.insert(flat, { name = name, meta = meta })
     end

@@ -27,6 +27,11 @@ describe("tool.state", function()
     test.cleanup_all()
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it(
     "falls back to legacy service state when the current file is absent",
     function()

@@ -2,7 +2,6 @@ local M = require("tool.category.list").new({
   module = "lint",
   field = "linters_by_ft",
   category = "linter",
-  activation = "config.linter",
 })
 
 local logger = require("utils.logger")

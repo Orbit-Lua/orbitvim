@@ -8,7 +8,7 @@
 
 local M = {}
 
-local tools = require("config.tools")
+local config = require("tool.config")
 local data = require("tool.data")
 local order = require("tool.order")
 local state = require("tool.state")
@@ -51,7 +51,7 @@ end
 
 local function valid_category(category)
   return type(category) == "string"
-    and type(tools[category]) == "table"
+    and type(config.get().registry[category]) == "table"
     and categories[category] ~= nil
 end
 
@@ -59,11 +59,11 @@ local function definition(category, name)
   if not valid_category(category) or type(name) ~= "string" then
     return nil
   end
-  return tools[category][name]
+  return config.get().registry[category][name]
 end
 
 local function policy()
-  local setting = require("config.tool_manager").missing_package_policy
+  local setting = config.get().ui.missing_package_policy
   return setting == "manual" and "manual" or "auto"
 end
 

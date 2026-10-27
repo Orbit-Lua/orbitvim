@@ -2,19 +2,18 @@ local M = {}
 
 local _state = nil
 
+local config = require("tool.config")
+
 local function state_path()
-  return vim.g.tool_state_path or (vim.fn.stdpath("data") .. "/tools.json")
+  return config.get().state_path()
 end
 
 local function legacy_state_path()
-  if vim.g.tool_state_path then
-    return nil
-  end
-  return vim.fn.stdpath("data") .. "/service.json"
+  return config.get().legacy_state_path()
 end
 
 local function build_defaults()
-  local tools = require("config.tools")
+  local tools = config.get().registry
   local defaults = { formatter_order = {}, linter_order = {} }
   for _, cat in ipairs({ "lsp", "dap", "linter", "formatter" }) do
     defaults[cat] = {}
@@ -28,9 +27,9 @@ local function build_defaults()
   for ft, order in pairs(tools.linter_defaults or {}) do
     defaults.linter_order[ft] = vim.deepcopy(order)
   end
-  local settings = require("config.settings").get().tools
+  local configured = config.get().defaults()
   for _, category in ipairs({ "formatter", "linter" }) do
-    for ft, order in pairs(settings[category .. "_defaults"]) do
+    for ft, order in pairs(configured[category] or {}) do
       defaults[category .. "_order"][ft] = vim.deepcopy(order)
     end
   end
@@ -76,7 +75,7 @@ function M.load(opts)
             local category = cat:gsub("_order$", "")
             local seen, normalized = {}, {}
             for _, name in ipairs(order) do
-              local meta = require("config.tools")[category][name]
+              local meta = config.get().registry[category][name]
               if
                 meta
                 and vim.tbl_contains(meta.ft or {}, ft)

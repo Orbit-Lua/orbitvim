@@ -1,6 +1,7 @@
 describe("buffer-dependent linter execution", function()
   it("builds one definition for preflight and native execution", function()
     local test = require("tests.helpers")
+    test.configure_tool()
     vim.opt.runtimepath:append(test.plugin_path("nvim-lint"))
     local root = test.temp_dir("linter-execution")
     local script, marker = root .. "/probe.lua", root .. "/executed"

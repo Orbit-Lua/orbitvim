@@ -1,6 +1,10 @@
 local Popup = require("nui.popup")
 local Line = require("nui.line")
-local config = require("config.tool_manager")
+local tool_config = require("tool.config")
+
+local function ui()
+  return tool_config.get().ui
+end
 
 local M = {}
 
@@ -94,10 +98,10 @@ local function content(view, tool)
     end
     local diagnostics = facts.diagnostics
     for index, diagnostic in ipairs(diagnostics.messages) do
-      if index > config.details.max_messages then
+      if index > ui().details.max_messages then
         table.insert(lines, {
           "+"
-            .. (#diagnostics.messages - config.details.max_messages)
+            .. (#diagnostics.messages - ui().details.max_messages)
             .. " more diagnostics",
           "Comment",
         })
@@ -122,7 +126,7 @@ end
 local function geometry(view)
   local columns = vim.o.columns
   local rows = vim.o.lines - vim.o.cmdheight - 2
-  local width = math.max(20, math.min(config.details.width, columns - 4))
+  local width = math.max(20, math.min(ui().details.width, columns - 4))
   local height = math.max(4, math.min(rows - 2, 22))
   if columns >= 150 and rows >= 20 then
     return width, height, "right"
@@ -220,7 +224,7 @@ function M.preview(view, tool, force)
       relative = "editor",
       position = { row = 1, col = 1 },
       size = { width = 40, height = 10 },
-      border = require("config.borders").default,
+      border = tool_config.get().border,
       zindex = 60,
       buf_options = { filetype = "ToolManagerDetails", buflisted = false },
       win_options = { wrap = true, linebreak = true },

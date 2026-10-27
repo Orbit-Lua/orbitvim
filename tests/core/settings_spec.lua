@@ -9,6 +9,11 @@ describe("JSON settings", function()
     settings = require("config.settings")
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it(
     "resolves partial overrides without changing unrelated defaults",
     function()

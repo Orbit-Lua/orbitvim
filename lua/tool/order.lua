@@ -3,12 +3,16 @@
 ---@field names string[]
 local M = {}
 
-local tools = require("config.tools")
+local config = require("tool.config")
+
+local function tools()
+  return config.get().registry
+end
 local state_mod = require("tool.state")
 
 function M.from_runtime(category, names)
   local aliases = {}
-  for name, meta in pairs(tools[category] or {}) do
+  for name, meta in pairs(tools()[category] or {}) do
     aliases[meta.runtime_name or name] = name
   end
   return vim.tbl_map(function(name)
@@ -18,7 +22,7 @@ end
 
 function M.to_runtime(category, names)
   return vim.tbl_map(function(name)
-    local meta = tools[category][name]
+    local meta = tools()[category][name]
     return meta and (meta.runtime_name or name) or name
   end, names)
 end
@@ -50,7 +54,7 @@ end
 ---@return string[]
 local function tool_names_for_ft(category, ft)
   local names = {}
-  for name, meta in pairs(tools[category] or {}) do
+  for name, meta in pairs(tools()[category] or {}) do
     if vim.tbl_contains(meta.ft or {}, ft) then
       table.insert(names, name)
     end
@@ -67,7 +71,7 @@ local function configured_order(category, ft)
     return nil
   end
   return state_mod.get_order(category --[[@as "formatter"|"linter"]], ft)
-    or tools[category .. "_defaults"][ft]
+    or tools()[category .. "_defaults"][ft]
 end
 
 ---@param category ToolCategory
@@ -109,7 +113,7 @@ end
 ---@return Tool.FtGroup[]
 function M.build_ft_groups(category)
   local ft_set = {}
-  for _, meta in pairs(tools[category] or {}) do
+  for _, meta in pairs(tools()[category] or {}) do
     for _, ft in ipairs(meta.ft or {}) do
       ft_set[ft] = true
     end

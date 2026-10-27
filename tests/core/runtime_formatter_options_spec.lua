@@ -17,6 +17,11 @@ describe("runtime.formatter.options", function()
     package.loaded["runtime.formatter"] = originals.runtime
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it(
     "filters disabled tools and returns fresh configured runtime options",
     function()

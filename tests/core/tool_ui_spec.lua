@@ -192,6 +192,11 @@ describe("Tool Manager Nui sessions", function()
     require("tests.helpers").cleanup_all()
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it(
     "captures source scope, navigates categories, expands and retains reordered selection",
     function()

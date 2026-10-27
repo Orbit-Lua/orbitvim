@@ -1,15 +1,19 @@
 local Popup = require("nui.popup")
 local Layout = require("nui.layout")
-local config = require("config.tool_manager")
 local manager = require("tool.manager")
 local render = require("tool.ui.render")
 local details = require("tool.ui.details")
+local tool_config = require("tool.config")
+
+local function ui()
+  return tool_config.get().ui
+end
 
 local View = {}
 View.__index = View
 
 function View:category()
-  return config.categories[self.state.category]
+  return ui().categories[self.state.category]
 end
 
 function View:active()
@@ -20,17 +24,17 @@ end
 
 local function dimensions()
   local size = {
-    width = math.max(3, math.min(config.width, vim.o.columns - 4)),
+    width = math.max(3, math.min(ui().width, vim.o.columns - 4)),
     height = math.max(
       5,
-      math.min(config.height, vim.o.lines - vim.o.cmdheight - 4)
+      math.min(ui().height, vim.o.lines - vim.o.cmdheight - 4)
     ),
   }
   local position = "50%"
   local tall = vim.o.lines - vim.o.cmdheight >= 22
   if tall and vim.o.columns >= 150 then
     local details_width =
-      math.min(config.details.width, math.floor((vim.o.columns - 10) / 2))
+      math.min(ui().details.width, math.floor((vim.o.columns - 10) / 2))
     size.width = math.min(size.width, vim.o.columns - details_width - 10)
     position = {
       row = math.max(1, math.floor((vim.o.lines - size.height) / 2) - 1),
@@ -126,7 +130,7 @@ function View:schedule_refresh(debounce)
       self.timer = vim.uv.new_timer()
     end
     self.timer:stop()
-    self.timer:start(config.refresh.debounce_ms, 0, function()
+    self.timer:start(ui().refresh.debounce_ms, 0, function()
       vim.schedule(function()
         if not self.closed then
           self:refresh()
@@ -191,7 +195,7 @@ function View:action(action)
     details.close(self)
     self.state.category = (
       (self.state.category - 1 + (action == "next" and 1 or -1))
-      % #config.categories
+      % #ui().categories
     ) + 1
     self:refresh(true)
     return
@@ -264,7 +268,7 @@ function View.new(source, state, on_close)
     relative = "editor",
     position = position,
     size = size,
-    border = require("config.borders").default,
+    border = tool_config.get().border,
     focusable = false,
     zindex = 49,
     buf_options = { filetype = "ToolManagerFrame", buflisted = false },
@@ -289,14 +293,14 @@ function View.new(source, state, on_close)
   self.unsubscribe = require("tool.mason").observe(function()
     self:schedule_refresh()
   end)
-  for _, mapping in ipairs(config.mappings) do
+  for _, mapping in ipairs(ui().mappings) do
     for _, key in ipairs(mapping.keys) do
       self.body:map("n", key, function()
         self:action(mapping.action)
       end, { nowait = true, silent = true, desc = mapping.description })
     end
   end
-  for index = 1, #config.categories do
+  for index = 1, #ui().categories do
     self.body:map("n", tostring(index), function()
       details.close(self)
       self.state.category = index

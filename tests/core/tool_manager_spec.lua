@@ -60,6 +60,11 @@ describe("tool.manager", function()
     test.cleanup_all()
   end)
 
+  -- Registered after the spec's own hook, so setup follows any module reset.
+  before_each(function()
+    require("tests.helpers").configure_tool()
+  end)
+
   it("returns detached snapshots filtered by the requested source", function()
     local snapshot = manager.snapshot({
       category = "lsp",

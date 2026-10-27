@@ -6,6 +6,7 @@ describe("tool.data", function()
   local state = require("tool.state")
   local prior_conform, prior_status, prior_formatter, prior_lint, diagnostic_buffer
   before_each(function()
+    require("tests.helpers").configure_tool()
     prior_conform = package.loaded.conform
     prior_lint = package.loaded.lint
     prior_status = mason.package_status

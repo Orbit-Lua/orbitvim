@@ -12,6 +12,7 @@ describe("tool.category.formatter", function()
   local original_conform
 
   before_each(function()
+    require("tests.helpers").configure_tool()
     original_state_path = vim.g.tool_state_path
     original_state_module = package.loaded["tool.state"]
     original_order_module = package.loaded["tool.order"]
