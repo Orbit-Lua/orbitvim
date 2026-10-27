@@ -93,7 +93,9 @@ function M.chrome(view, snapshot)
     return line
   end
   local header = { tabs, context }
+  -- Normal height adds the column labels and a separator; compact keeps two rows.
   if vim.api.nvim_win_get_height(view.header.winid) > 2 then
+    table.insert(header, M.columns(width))
     table.insert(header, separator())
   end
   write(view.header, header)
@@ -139,12 +141,10 @@ local function node_line(node, width)
   local arrow = node:has_children()
       and (node:is_expanded() and icons().expanded or icons().collapsed)
     or " "
-  if node.kind ~= "columns" then
-    line:append(
-      indent .. arrow .. " ",
-      node.kind == "detail" and "Comment" or "Title"
-    )
-  end
+  line:append(
+    indent .. arrow .. " ",
+    node.kind == "detail" and "Comment" or "Title"
+  )
   if node.kind == "group" then
     line:append(
       str.trunc(
@@ -153,14 +153,6 @@ local function node_line(node, width)
       ),
       "Title"
     )
-  elseif node.kind == "columns" then
-    local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
-    local tool_width =
-      math.max(1, math.min(math.floor(width * 0.48), width - enabled_width - 5))
-    local status_width = math.max(1, width - tool_width - enabled_width - 4)
-    line:append(str.rpad("Tool", tool_width), "Title")
-    line:append("  " .. str.rpad("Enabled", enabled_width), "Title")
-    line:append("  " .. str.trunc("Status", status_width), "Title")
   elseif node.kind == "detail" then
     line:append(
       str.trunc(node.text, math.max(1, width - line:width())),
@@ -301,11 +293,6 @@ function M.tree(view, snapshot)
       })
     )
   end
-  table.insert(
-    nodes,
-    1,
-    Tree.Node({ id = category .. ":columns", kind = "columns" })
-  )
   vim.bo[view.body.bufnr].readonly = false
   vim.bo[view.body.bufnr].modifiable = true
   vim.api.nvim_buf_clear_namespace(view.body.bufnr, view.body.ns_id, 0, -1)
@@ -324,6 +311,54 @@ function M.tree(view, snapshot)
   })
   view.tree:render()
   vim.bo[view.body.bufnr].modifiable = false
+end
+
+---Column labels aligned with tool rows, which start after a two-cell prefix.
+---@param width integer
+function M.columns(width)
+  local line = Line()
+  local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
+  local available = math.max(1, width - 2)
+  local tool_width = math.max(
+    1,
+    math.min(math.floor(width * 0.48), available - enabled_width - 5)
+  )
+  local status_width = math.max(1, available - tool_width - enabled_width - 4)
+  line:append("  " .. str.rpad("Tool", tool_width), "Title")
+  line:append("  " .. str.rpad("Enabled", enabled_width), "Title")
+  line:append("  " .. str.trunc("Status", status_width), "Title")
+  return line
+end
+
+---Status icons in display order, with the meaning shown in the overview legend.
+function M.legend()
+  local glyphs = icons()
+  return {
+    {
+      icon = glyphs.enabled,
+      label = "Enabled and active",
+      highlight = "Normal",
+    },
+    { icon = glyphs.idle, label = "Enabled, idle", highlight = "Normal" },
+    {
+      icon = glyphs.info,
+      label = "Enabled, with information",
+      highlight = "Normal",
+    },
+    { icon = glyphs.installing, label = "Installing", highlight = "Normal" },
+    { icon = glyphs.warning, label = "Needs attention", highlight = "Normal" },
+    {
+      icon = glyphs.error,
+      label = "Failed or missing executable",
+      highlight = "Normal",
+    },
+    {
+      icon = glyphs.unknown,
+      label = "Availability unknown",
+      highlight = "Normal",
+    },
+    { icon = glyphs.disabled, label = "Disabled", highlight = "Normal" },
+  }
 end
 
 function M.help(view)

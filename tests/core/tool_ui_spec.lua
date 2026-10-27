@@ -525,4 +525,110 @@ describe("Tool Manager Nui sessions", function()
       assert.is_truthy(vim.api.nvim_get_current_line():find("ruff", 1, true))
     end
   )
+
+  it(
+    "keeps one details pane current across rows, categories and help",
+    function()
+      local manager = package.loaded["tool.manager"]
+      local snapshot = manager.snapshot
+      manager.snapshot = function(opts)
+        local result = snapshot(opts)
+        if opts.category == "package" then
+          result.tools, result.groups, result.summary = {}, {}, { total = 0 }
+        end
+        return result
+      end
+      local tool_only =
+        { "Installation:", "Source:", "Runtime:", "Mason package:", "Backend:" }
+      local function pane()
+        local buffer = buffer_for("ToolManagerDetails")
+        return buffer, buffer and vim.fn.bufwinid(buffer)
+      end
+      local function text()
+        return table.concat(
+          vim.api.nvim_buf_get_lines((pane()), 0, -1, false),
+          "\n"
+        )
+      end
+      local function move(row)
+        select(row)
+        vim.api.nvim_exec_autocmds("CursorMoved", { buffer = body() })
+      end
+      local function without_tool_facts()
+        for _, field in ipairs(tool_only) do
+          assert.is_nil(text():find(field, 1, true), field)
+        end
+      end
+      for _, size in ipairs({ { 160, 45 }, { 100, 40 } }) do
+        vim.o.columns, vim.o.lines = size[1], size[2]
+        tool.open()
+        press("4")
+        press("s")
+        local buffer, window = pane()
+        assert.is_not_nil(buffer)
+        assert.truthy(text():find("Priority order", 1, true))
+        assert.truthy(text():find("1. ruff_fix", 1, true))
+        without_tool_facts()
+
+        -- Expansion persists across sessions, so expand only when collapsed.
+        if not lines():find("ruff_format", 1, true) then
+          press("o")
+        end
+        move("ruff_format")
+        assert.truthy(text():find("ruff_format", 1, true))
+        assert.truthy(text():find("Installation:", 1, true))
+        move("python (")
+        without_tool_facts()
+
+        press("6")
+        assert.truthy(text():find("No managed tools", 1, true))
+        without_tool_facts()
+        press("?")
+        assert.truthy(text():find("Legend", 1, true))
+        without_tool_facts()
+        assert.same({ buffer, window }, { pane() })
+
+        press("?")
+        press("4")
+        local header = table.concat(
+          vim.api.nvim_buf_get_lines(
+            buffer_for("ToolManagerNavigation"),
+            0,
+            -1,
+            false
+          ),
+          "\n"
+        )
+        assert.truthy(header:find("Enabled", 1, true))
+        assert.is_nil(lines():find("Enabled", 1, true))
+
+        move("python (")
+        press("K")
+        assert.equals(window, vim.api.nvim_get_current_win())
+        press("q", buffer)
+        assert.equals(vim.fn.bufwinid(body()), vim.api.nvim_get_current_win())
+        assert.is_true(vim.api.nvim_win_is_valid(window))
+
+        vim.api.nvim_win_close(window, true)
+        vim.wait(50)
+        move("python (")
+        local _, reopened = pane()
+        assert.is_true(reopened ~= nil and vim.api.nvim_win_is_valid(reopened))
+        tool.close()
+      end
+
+      vim.o.columns, vim.o.lines = 80, 10
+      tool.open()
+      local compact = table.concat(
+        vim.api.nvim_buf_get_lines(
+          buffer_for("ToolManagerNavigation"),
+          0,
+          -1,
+          false
+        ),
+        "\n"
+      )
+      assert.is_nil(compact:find("Enabled", 1, true))
+    end
+  )
 end)

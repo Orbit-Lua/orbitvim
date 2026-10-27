@@ -6,7 +6,7 @@ Open Tool Manager with `:ToolManager` or `<leader>us`. If it is open, this focus
 
 Use `1`–`6` or Tab / Shift-Tab to select LSP, DAP, Linter, Formatter, Parser or Package. Buffer-scope formatter and linter lists show saved ranks. All-state lists group by filetype. Expand a group with `o`, Enter or `za`.
 
-Logical selection survives reordering, resizing and refreshes. Category and expansion choices survive reopening. Help (`?` or `g?`) suspends tool actions and stays visible during refresh. `K` focuses scrollable details. `q` or Escape returns to the list. Details show beside the list, below it or on demand, as the space permits.
+Logical selection survives reordering, resizing and refreshes. Category and expansion choices survive reopening. Help (`?` or `g?`) suspends tool actions and stays visible during refresh. Beside or below the list, details stay open and follow the cursor. They show the selected tool, a filetype group, an empty category or the category overview with an icon legend. `K` focuses details from any row. `q` or Escape returns to the list and keeps details open. If the editor is too narrow, `K` opens details on demand, and `q` closes them.
 
 ## Install and enable
 

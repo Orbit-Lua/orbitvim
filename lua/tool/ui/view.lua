@@ -56,7 +56,7 @@ end
 local function sections(view, height)
   local compact = height < 8
   return Layout.Box({
-    Layout.Box(view.header, { size = compact and 2 or 3 }),
+    Layout.Box(view.header, { size = compact and 2 or 4 }),
     Layout.Box(view.body, { grow = 1 }),
     Layout.Box(view.footer, { size = compact and 1 or 2 }),
   }, { dir = "col" })
@@ -66,7 +66,10 @@ function View:current()
   if self.state.help or not self.tree or not self:active() then
     return nil
   end
-  return self.tree:get_node(vim.api.nvim_win_get_cursor(self.body.winid)[1])
+  -- Return only the node; get_node also returns its line number.
+  local node =
+    self.tree:get_node(vim.api.nvim_win_get_cursor(self.body.winid)[1])
+  return node
 end
 
 function View:refresh(first, identity)
@@ -86,13 +89,14 @@ function View:refresh(first, identity)
     scope = self.state.scope,
     source = self.source,
   })
+  self.snapshot = snapshot
   -- Display-width calculations must use the unwrapped list window even when
   -- details currently has focus and linebreak enabled.
   vim.api.nvim_win_call(self.body.winid, function()
     render.chrome(self, snapshot)
     if self.state.help then
       render.help(self)
-      details.close(self)
+      details.preview(self, nil)
     else
       render.tree(self, snapshot)
       local selected_line
@@ -101,19 +105,14 @@ function View:refresh(first, identity)
         selected_line = line
       end
       local count = vim.api.nvim_buf_line_count(self.body.bufnr)
-      local target_line = first and 2
+      local target_line = first and 1
         or selected_line
         or math.min(cursor_position[1], count)
       vim.api.nvim_win_set_cursor(
         self.body.winid,
         { math.min(target_line, count), 0 }
       )
-      local node = self:current()
-      if node and node.tool then
-        details.preview(self, node.tool)
-      else
-        details.close(self)
-      end
+      details.preview(self, self:current())
     end
     if self.details and previous_window == self.details.winid then
       vim.api.nvim_set_current_win(self.details.winid)
@@ -176,7 +175,6 @@ function View:action(action)
     return
   end
   if action == "help" then
-    details.close(self)
     local selected = self:current()
     if selected then
       self.saved_selection = selected.id
@@ -186,13 +184,11 @@ function View:action(action)
     return
   end
   if action == "scope" then
-    details.close(self)
     self.state.scope = self.state.scope == "buffer" and "states" or "buffer"
     self:refresh(true)
     return
   end
   if action == "next" or action == "previous" then
-    details.close(self)
     self.state.category = (
       (self.state.category - 1 + (action == "next" and 1 or -1))
       % #ui().categories
@@ -215,11 +211,11 @@ function View:action(action)
     end
     return
   end
-  if not node.tool then
+  if action == "details" then
+    details.show(self, node)
     return
   end
-  if action == "details" then
-    details.show(self, node.tool)
+  if not node.tool then
     return
   end
   local selection = {
@@ -302,7 +298,6 @@ function View.new(source, state, on_close)
   end
   for index = 1, #ui().categories do
     self.body:map("n", tostring(index), function()
-      details.close(self)
       self.state.category = index
       self:refresh(true)
     end, { nowait = true, silent = true })
@@ -369,8 +364,7 @@ function View.new(source, state, on_close)
     group = self.group,
     buffer = self.body.bufnr,
     callback = function()
-      local node = self:current()
-      details.preview(self, node and node.tool)
+      details.preview(self, self:current())
     end,
   })
   self:refresh(true)

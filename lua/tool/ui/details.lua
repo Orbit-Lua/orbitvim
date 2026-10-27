@@ -58,7 +58,7 @@ local function health_lines(tool, category)
   return lines
 end
 
-local function content(view, tool)
+local function tool_content(view, tool, node)
   local lines = { { tool.name, "Title" } }
   for _, item in ipairs(health_lines(tool, view:category())) do
     table.insert(lines, item)
@@ -67,7 +67,6 @@ local function content(view, tool)
     "Filetypes: " .. table.concat(tool.meta.ft or {}, ", "),
     "Comment",
   })
-  local node = view:current()
   if view:category() ~= "parser" and view:category() ~= "package" then
     table.insert(lines, { "Enablement: Global", "Comment" })
   end
@@ -123,6 +122,79 @@ local function content(view, tool)
   return lines
 end
 
+local function group_content(view, node)
+  local by_name = {}
+  for _, tool in ipairs(view.snapshot and view.snapshot.tools or {}) do
+    by_name[tool.name] = tool
+  end
+  local lines = {
+    { node.filetype, "Title" },
+    { "Priority order for this filetype:", "Comment" },
+  }
+  for rank, name in ipairs(node.names or {}) do
+    local tool = by_name[name]
+    local enabled = tool and (tool.enabled and "On" or "Off") or ""
+    table.insert(lines, {
+      string.format("%d. %s  %s", rank, name, enabled),
+      tool and not tool.enabled and "Comment" or "Normal",
+    })
+  end
+  table.insert(lines, { "", "Normal" })
+  table.insert(lines, {
+    "Expand the group and use [ / ] on a tool to change its priority.",
+    "Comment",
+  })
+  return lines
+end
+
+local function empty_content(view, node)
+  local lines = { { "No tools", "Title" }, { node.text, "Normal" } }
+  if view.state.scope == "buffer" then
+    table.insert(
+      lines,
+      { "Press s to list every registered tool in this category.", "Comment" }
+    )
+  end
+  return lines
+end
+
+---Category counts and the status icon legend, shown when no row is selected.
+local function overview_content(view)
+  local summary = view.snapshot and view.snapshot.summary or {}
+  local function count(label, value, highlight)
+    return { string.format("%s: %d", label, value or 0), highlight or "Normal" }
+  end
+  local lines = {
+    { ui().labels[view:category()] .. " overview", "Title" },
+    count("Tools", summary.total),
+    count("Enabled", summary.enabled),
+    count("Disabled", summary.disabled, "Comment"),
+    count("Installed", summary.installed),
+    count("Missing", summary.missing, "DiagnosticWarn"),
+    count("Need attention", summary.attention, "DiagnosticWarn"),
+    { "", "Normal" },
+    { "Legend", "Title" },
+  }
+  for _, entry in ipairs(require("tool.ui.render").legend()) do
+    table.insert(lines, {
+      { { entry.icon, entry.highlight }, { "  " .. entry.label, "Normal" } },
+    })
+  end
+  return lines
+end
+
+---Content for the node under the cursor; a missing node shows the overview.
+local function content(view, node)
+  if node.kind == "tool" then
+    return tool_content(view, node.tool, node)
+  elseif node.kind == "group" then
+    return group_content(view, node)
+  elseif node.kind == "empty" then
+    return empty_content(view, node)
+  end
+  return overview_content(view)
+end
+
 local function geometry(view)
   local columns = vim.o.columns
   local rows = vim.o.lines - vim.o.cmdheight - 2
@@ -149,7 +221,7 @@ local function close_popup(view, expected)
       return
     end
     view.details = nil
-    view.details_tool = nil
+    view.details_node = nil
     view.details_mode = nil
     popup:unmount()
   end
@@ -194,9 +266,12 @@ local function redraw(view)
   vim.bo[popup.bufnr].modifiable = true
   vim.api.nvim_buf_clear_namespace(popup.bufnr, popup.ns_id, 0, -1)
   vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, {})
-  for index, item in ipairs(content(view, view.details_tool)) do
+  for index, item in ipairs(content(view, view.details_node)) do
     local line = Line()
-    line:append(item[1], item[2])
+    -- An item is either { text, highlight } or { { { text, highlight }, ... } }.
+    for _, segment in ipairs(type(item[1]) == "table" and item[1] or { item }) do
+      line:append(segment[1], segment[2])
+    end
     line:render(popup.bufnr, popup.ns_id, index)
   end
   vim.bo[popup.bufnr].modifiable = false
@@ -206,17 +281,15 @@ function M.close(view)
   close_popup(view)
 end
 
-function M.preview(view, tool, force)
-  if not tool then
-    close_popup(view)
-    return
-  end
+---@param node? table tool, group or empty node; nil shows the category overview
+function M.preview(view, node, force)
+  node = node or { kind = "overview" }
   local _, _, placement = geometry(view)
   if placement == "popup" and not force and view.details_mode ~= "focused" then
     close_popup(view)
     return
   end
-  view.details_tool = tool
+  view.details_node = node
   if not view.details then
     view.details_mode = view.details_mode or "preview"
     view.details = Popup({
@@ -231,8 +304,14 @@ function M.preview(view, tool, force)
     })
     view.details:mount()
     local popup = view.details
+    -- A mounted pane stays open and only returns focus; a popup closes.
     local function close()
-      close_popup(view, popup)
+      local _, _, current = geometry(view)
+      if current == "popup" then
+        close_popup(view, popup)
+      else
+        view.details_mode = "preview"
+      end
       if view:active() then
         vim.api.nvim_set_current_win(view.body.winid)
       end
@@ -263,9 +342,9 @@ function M.preview(view, tool, force)
   redraw(view)
 end
 
-function M.show(view, tool)
+function M.show(view, node)
   view.details_mode = "focused"
-  M.preview(view, tool, true)
+  M.preview(view, node, true)
   if view.details and vim.api.nvim_win_is_valid(view.details.winid) then
     vim.api.nvim_set_current_win(view.details.winid)
   end
