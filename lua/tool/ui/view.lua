@@ -76,6 +76,8 @@ function View:refresh(first, identity)
   if not self:active() then
     return
   end
+  -- Opening and ColorScheme both refresh; existing definitions stay.
+  render.define_highlights()
   local selected = self:current()
   local selected_id = identity or selected and selected.id
   selected_id = selected_id or self.saved_selection

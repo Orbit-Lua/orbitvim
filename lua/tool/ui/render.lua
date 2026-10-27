@@ -13,6 +13,38 @@ end
 
 local M = {}
 
+---Highlight group of each status icon. Each links by default to a diagnostic
+---or comment group, so a theme or the user can override it.
+M.icon_highlights = {
+  enabled = "ToolManagerIconEnabled",
+  idle = "ToolManagerIconIdle",
+  info = "ToolManagerIconInfo",
+  installing = "ToolManagerIconInstalling",
+  warning = "ToolManagerIconWarning",
+  error = "ToolManagerIconError",
+  unknown = "ToolManagerIconUnknown",
+  disabled = "ToolManagerIconDisabled",
+}
+
+local icon_links = {
+  enabled = "DiagnosticOk",
+  idle = "Comment",
+  info = "DiagnosticInfo",
+  installing = "DiagnosticInfo",
+  warning = "DiagnosticWarn",
+  error = "DiagnosticError",
+  unknown = "DiagnosticWarn",
+  disabled = "Comment",
+}
+
+---Define the icon groups without replacing existing definitions. Call it again
+---after a color scheme clears highlights.
+function M.define_highlights()
+  for state, group in pairs(M.icon_highlights) do
+    vim.api.nvim_set_hl(0, group, { link = icon_links[state], default = true })
+  end
+end
+
 local function write(popup, lines)
   local buffer = popup.bufnr
   vim.bo[buffer].readonly = false
@@ -168,15 +200,15 @@ local function node_line(node, width)
     local health = tool.health_status
     local status = health and health.label or tool.status or "Unknown"
     local severity = health and health.severity or tool.status_hl
-    local icon = tool.enabled and icons().enabled or icons().disabled
+    local state = tool.enabled and "enabled" or "disabled"
     if health and health.installation == "installing" then
-      icon = icons().installing
+      state = "installing"
     elseif
       health
       and health.enabled == false
       and severity ~= "DiagnosticError"
     then
-      icon = icons().disabled
+      state = "disabled"
     elseif
       health
       and (
@@ -184,16 +216,17 @@ local function node_line(node, width)
         or health.installation == "unavailable"
       )
     then
-      icon = icons().unknown
+      state = "unknown"
     elseif severity == "DiagnosticError" then
-      icon = icons().error
+      state = "error"
     elseif severity == "DiagnosticWarn" then
-      icon = icons().warning
+      state = "warning"
     elseif tool.enabled and health and health.runtime == "Idle" then
-      icon = icons().idle
+      state = "idle"
     elseif tool.enabled and severity == "DiagnosticInfo" then
-      icon = icons().info
+      state = "info"
     end
+    local icon, icon_highlight = icons()[state], M.icon_highlights[state]
     local name = node.rank and (node.rank .. ". " .. tool.name) or tool.name
     local enabled_text = (
       node.category == "parser" or node.category == "package"
@@ -207,8 +240,13 @@ local function node_line(node, width)
       math.min(math.floor(width * 0.48), available - enabled_width - 5)
     )
     local status_width = math.max(1, available - tool_width - enabled_width - 4)
+    -- The icon is its own chunk, so its state highlight stays separate.
+    local icon_text = icon .. " "
+    local name_width =
+      math.max(1, tool_width - vim.fn.strdisplaywidth(icon_text))
+    line:append(icon_text, icon_highlight)
     line:append(
-      str.rpad(str.trunc(icon .. " " .. name, tool_width), tool_width),
+      str.rpad(str.trunc(name, name_width), name_width),
       tool.enabled and "Normal" or "Comment"
     )
     line:append(
@@ -333,32 +371,21 @@ end
 ---Status icons in display order, with the meaning shown in the overview legend.
 function M.legend()
   local glyphs = icons()
-  return {
-    {
-      icon = glyphs.enabled,
-      label = "Enabled and active",
-      highlight = "Normal",
-    },
-    { icon = glyphs.idle, label = "Enabled, idle", highlight = "Normal" },
-    {
-      icon = glyphs.info,
-      label = "Enabled, with information",
-      highlight = "Normal",
-    },
-    { icon = glyphs.installing, label = "Installing", highlight = "Normal" },
-    { icon = glyphs.warning, label = "Needs attention", highlight = "Normal" },
-    {
-      icon = glyphs.error,
-      label = "Failed or missing executable",
-      highlight = "Normal",
-    },
-    {
-      icon = glyphs.unknown,
-      label = "Availability unknown",
-      highlight = "Normal",
-    },
-    { icon = glyphs.disabled, label = "Disabled", highlight = "Normal" },
+  local entries = {
+    { state = "enabled", label = "Enabled and active" },
+    { state = "idle", label = "Enabled, idle" },
+    { state = "info", label = "Enabled, with information" },
+    { state = "installing", label = "Installing" },
+    { state = "warning", label = "Needs attention" },
+    { state = "error", label = "Failed or missing executable" },
+    { state = "unknown", label = "Availability unknown" },
+    { state = "disabled", label = "Disabled" },
   }
+  for _, entry in ipairs(entries) do
+    entry.icon = glyphs[entry.state]
+    entry.highlight = M.icon_highlights[entry.state]
+  end
+  return entries
 end
 
 function M.help(view)

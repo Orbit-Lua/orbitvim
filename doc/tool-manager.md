@@ -33,6 +33,8 @@ Operations persist intent before runtime changes. A backend failure stays in det
 | `Diagnostics: …` | Findings in source code |
 | `Failed` | An operation failed to execute |
 
+Each status icon has its own highlight group: `ToolManagerIconEnabled`, `…Idle`, `…Info`, `…Installing`, `…Warning`, `…Error`, `…Unknown` and `…Disabled`. Each group links to a diagnostic or comment group by default. To override a group, define it in your color scheme or configuration.
+
 Installation, management source, runtime health and enablement are distinct facts in details. Installation alone does not activate a tool. Registry support lists do not override the initial formatter/linter activation. For example, a tool can support Markdown but be configured only for web filetypes.
 
 ## Priority and persistence

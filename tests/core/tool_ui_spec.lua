@@ -631,4 +631,98 @@ describe("Tool Manager Nui sessions", function()
       assert.is_nil(compact:find("Enabled", 1, true))
     end
   )
+
+  it("colors each status icon by state and keeps theme overrides", function()
+    local manager = package.loaded["tool.manager"]
+    local function entry(name, enabled, health)
+      return {
+        name = name,
+        meta = { ft = { "python" } },
+        enabled = enabled,
+        status = health.label,
+        status_hl = health.severity,
+        health_status = health,
+      }
+    end
+    manager.snapshot = function(opts)
+      table.insert(snapshots, vim.deepcopy(opts))
+      return {
+        category = opts.category,
+        tools = {
+          entry("on_tool", true, {
+            label = "Configured",
+            severity = "DiagnosticOk",
+            installation = "installed",
+            enabled = true,
+          }),
+          entry("off_tool", false, {
+            label = "Disabled",
+            severity = "Comment",
+            installation = "installed",
+            enabled = false,
+          }),
+          entry("busy_tool", true, {
+            label = "Installing",
+            severity = "DiagnosticInfo",
+            installation = "installing",
+            enabled = true,
+          }),
+          entry("bad_tool", true, {
+            label = "Failed",
+            severity = "DiagnosticError",
+            installation = "installed",
+            enabled = true,
+          }),
+        },
+        groups = {},
+        summary = { total = 4 },
+      }
+    end
+    local override = { fg = 0xff0000 }
+    vim.api.nvim_set_hl(0, "ToolManagerIconError", override)
+    tool.open()
+    local function icon_group(name)
+      local row = line_for(name) - 1
+      for _, mark in
+        ipairs(
+          vim.api.nvim_buf_get_extmarks(
+            body(),
+            -1,
+            { row, 0 },
+            { row, -1 },
+            { details = true }
+          )
+        )
+      do
+        if mark[3] == 2 then
+          return mark[4].hl_group
+        end
+      end
+    end
+    assert.equals("ToolManagerIconEnabled", icon_group("on_tool"))
+    assert.equals("ToolManagerIconDisabled", icon_group("off_tool"))
+    assert.equals("ToolManagerIconInstalling", icon_group("busy_tool"))
+    assert.equals("ToolManagerIconError", icon_group("bad_tool"))
+
+    local function refreshed(event)
+      local count = #snapshots
+      vim.api.nvim_exec_autocmds(event, {})
+      assert.is_true(vim.wait(200, function()
+        return #snapshots > count
+      end))
+    end
+    refreshed("ColorScheme")
+    tool.close()
+    tool.open()
+    assert.same(
+      override,
+      vim.api.nvim_get_hl(0, { name = "ToolManagerIconError" })
+    )
+
+    vim.cmd("highlight clear")
+    refreshed("ColorScheme")
+    for _, group in pairs(require("tool.ui.render").icon_highlights) do
+      assert.is_not_nil(vim.api.nvim_get_hl(0, { name = group }).link, group)
+    end
+  end)
 end)
