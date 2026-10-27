@@ -6,6 +6,7 @@ vim.g.mapleader = " "
 
 require("core.options")
 require("core.settings").setup()
+require("core.tools").setup()
 require("core.autocmds")
 require("core.filetypes")
 

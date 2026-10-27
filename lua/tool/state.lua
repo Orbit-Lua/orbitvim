@@ -101,6 +101,11 @@ function M.load(opts)
   return state
 end
 
+---Forget the memoized state so the next read uses the current options.
+function M.reset()
+  _state = nil
+end
+
 function M.get()
   if not _state then
     _state = M.load()

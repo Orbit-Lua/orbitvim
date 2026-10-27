@@ -16,6 +16,8 @@ local categories = require("tool.category")
 local mason = require("tool.mason")
 local failures = {}
 local pending = {}
+-- Category installs (such as parser builds) that have not called back yet.
+local installs = 0
 
 local function done(callback, success, err)
   if callback then
@@ -264,15 +266,51 @@ function M.install(selection, on_complete)
     done(on_complete, false, "unknown or non-installable tool")
     return false
   end
-  if handler.install then
-    return handler.install(name, on_complete)
-  end
-  if not meta.mason then
+  if not handler.install and not meta.mason then
     local err = "no install package for " .. name
     done(on_complete, false, err)
     return false
   end
-  return mason.install(meta.mason, on_complete)
+  -- Release the counter exactly once: on completion, or when the handler
+  -- fails before it registers its callback.
+  installs = installs + 1
+  local released = false
+  local function release()
+    if not released then
+      released = true
+      installs = installs - 1
+    end
+  end
+  local function finish(success, err)
+    release()
+    done(on_complete, success, err)
+  end
+  local ok, started = pcall(function()
+    if handler.install then
+      return handler.install(name, finish)
+    end
+    return mason.install(meta.mason, finish)
+  end)
+  if not ok then
+    release()
+    done(on_complete, false, tostring(started))
+    return false
+  end
+  if started ~= true then
+    release()
+  end
+  return started
+end
+
+---Report whether a toggle or an installation is still running.
+---@return boolean
+function M.busy()
+  return next(pending) ~= nil or installs > 0 or mason.busy()
+end
+
+---Drop cached runtime failures before options are replaced.
+function M.reset()
+  failures = {}
 end
 
 ---@param selection { category: ToolCategory, filetype: string, name: string, direction: integer }

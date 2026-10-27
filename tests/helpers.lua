@@ -238,6 +238,13 @@ function M.write_file(path, content)
   assert.equals(0, vim.fn.writefile(lines, path))
 end
 
+---Configure Tool Manager with OrbitVim's wiring, optionally replacing
+---top-level options. Call it again after resetting `tool.*` modules.
+---@param overrides? table
+function M.configure_tool(overrides)
+  require("core.tools").setup(overrides)
+end
+
 function M.cleanup_all()
   for _, path in ipairs(cleanup_paths) do
     if vim.fn.isdirectory(path) == 1 or vim.fn.filereadable(path) == 1 then

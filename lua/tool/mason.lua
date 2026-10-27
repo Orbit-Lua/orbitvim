@@ -12,6 +12,11 @@ function M.is_installing(name)
     or false
 end
 
+---@return boolean
+function M.busy()
+  return next(pending) ~= nil
+end
+
 ---Observe registry changes for a single view session without retaining it.
 function M.observe(callback)
   local ok, registry = pcall(require, "mason-registry")
