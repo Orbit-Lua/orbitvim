@@ -41,6 +41,13 @@ describe("JSON settings", function()
         '{"editor":{"relativenumber":"false"}}',
         '{"editor":{"unknown":true}}',
         '{"tools":{"formatter_defaults":{"lua":["yamlfmt"]}}}',
+        '{"tool_manager":{"layout":{"margin":-1}}}',
+        '{"tool_manager":{"layout":{"padding":{"vertical":9}}}}',
+        '{"tool_manager":{"layout":{"padding":{"horizontal":9}}}}',
+        '{"tool_manager":{"layout":{"column_gap":9}}}',
+        '{"tool_manager":{"layout":{"gap":11}}}',
+        '{"tool_manager":{"layout":{"margin":11}}}',
+        '{"tool_manager":{"layout":{"spacing":1}}}',
       }) do
         test.write_file(settings.path(), content)
         local values, err = settings.read()

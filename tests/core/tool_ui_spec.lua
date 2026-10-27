@@ -617,7 +617,8 @@ describe("Tool Manager Nui sessions", function()
         tool.close()
       end
 
-      vim.o.columns, vim.o.lines = 80, 10
+      -- Nine lines cannot hold a normal frame even without margin.
+      vim.o.columns, vim.o.lines = 80, 9
       tool.open()
       local compact = table.concat(
         vim.api.nvim_buf_get_lines(
@@ -694,7 +695,8 @@ describe("Tool Manager Nui sessions", function()
           )
         )
       do
-        if mark[3] == 2 then
+        -- Padding moves the icon, so find its group anywhere in the row.
+        if tostring(mark[4].hl_group):find("^ToolManagerIcon") then
           return mark[4].hl_group
         end
       end
@@ -723,6 +725,119 @@ describe("Tool Manager Nui sessions", function()
     refreshed("ColorScheme")
     for _, group in pairs(require("tool.ui.render").icon_highlights) do
       assert.is_not_nil(vim.api.nvim_get_hl(0, { name = group }).link, group)
+    end
+  end)
+
+  it("applies, resets and bounds layout spacing from saved settings", function()
+    local test = require("tests.helpers")
+    vim.o.columns, vim.o.lines = 160, 45
+    vim.g.orbitvim_settings_path = test.temp_dir("ui-layout")
+      .. "/settings.json"
+    require("core.settings").setup()
+    tool.open()
+    local function refreshed(apply)
+      local count = #snapshots
+      apply()
+      assert.is_true(vim.wait(200, function()
+        return #snapshots > count
+      end))
+    end
+    local function save(layout)
+      refreshed(function()
+        test.write_file(
+          vim.g.orbitvim_settings_path,
+          vim.json.encode({ tool_manager = { layout = layout } })
+        )
+        vim.api.nvim_exec_autocmds(
+          "BufWritePost",
+          { pattern = vim.g.orbitvim_settings_path }
+        )
+      end)
+    end
+    local function resize(columns, rows)
+      refreshed(function()
+        vim.o.columns, vim.o.lines = columns, rows
+        vim.api.nvim_exec_autocmds("VimResized", {})
+      end)
+    end
+    ---Outer border box of a bordered window.
+    local function box(filetype)
+      local buffer = buffer_for(filetype)
+      local window = buffer and vim.fn.bufwinid(buffer)
+      if not window or window == -1 then
+        return nil
+      end
+      local position = vim.api.nvim_win_get_position(window)
+      return {
+        row = position[1],
+        col = position[2],
+        width = vim.api.nvim_win_get_width(window) + 2,
+        height = vim.api.nvim_win_get_height(window) + 2,
+      }
+    end
+    local function measure()
+      local row = line_for("pyright")
+      local text = vim.api.nvim_buf_get_lines(body(), row - 1, row, false)[1]
+      local frame, details = box("ToolManagerFrame"), box("ToolManagerDetails")
+      local on = text:find("On", 1, true)
+      return {
+        row = row,
+        indent = #text:match("^ *"),
+        -- "On" is padded to the Enabled width; the gap follows it.
+        -- Narrow columns can truncate the status, so it may be absent.
+        status = on
+          and text:find("Configured", 1, true)
+          and (text:find("Configured", 1, true) - on),
+        gap = details and details.col - frame.col - frame.width,
+        margin = math.min(
+          frame.row,
+          frame.col,
+          vim.o.columns - (details or frame).col - (details or frame).width
+        ),
+      }
+    end
+
+    local default = measure()
+    assert.equals(1, default.row)
+    assert.equals(2 + 2, default.indent)
+    assert.equals(2, default.gap)
+    assert.is_true(default.margin >= 2)
+
+    save({ padding = { horizontal = 5 } })
+    assert.equals(5 + 2, measure().indent)
+    save({ padding = { vertical = 3 } })
+    assert.equals(3 + 1, measure().row)
+    save({ column_gap = 7 })
+    assert.equals(default.status + 4, measure().status)
+    save({ gap = 6 })
+    assert.equals(6, measure().gap)
+    save({ margin = 9 })
+    assert.is_true(measure().margin >= 9)
+    save(vim.empty_dict())
+    assert.same(default, measure())
+
+    -- Margin gives way first; gap shrinks only after margin reaches 0.
+    save({
+      padding = { vertical = 8, horizontal = 8 },
+      column_gap = 8,
+      gap = 10,
+      margin = 10,
+    })
+    resize(160, 40)
+    assert.equals(10, measure().gap)
+    resize(160, 24)
+    assert.equals(0, measure().gap)
+    for _, size in ipairs({ { 48, 14 }, { 24, 9 } }) do
+      resize(size[1], size[2])
+      for _, filetype in ipairs({ "ToolManagerFrame", "ToolManagerDetails" }) do
+        local window = box(filetype)
+        if window then
+          assert.is_true(window.row >= 0 and window.col >= 0, filetype)
+          assert.is_true(window.col + window.width <= vim.o.columns, filetype)
+          assert.is_true(window.row + window.height <= vim.o.lines, filetype)
+        end
+      end
+      assert.is_true(vim.api.nvim_win_get_height(vim.fn.bufwinid(body())) >= 1)
     end
   end)
 end)

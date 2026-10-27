@@ -195,23 +195,49 @@ local function content(view, node)
   return overview_content(view)
 end
 
+-- Window positions are outer border coordinates; sizes exclude the border.
+-- Use the frame geometry computed for this refresh: the frame window can still
+-- report its previous layout while Nui applies the update.
+local function frame_box(view)
+  local geometry = view.frame_geometry
+  if geometry and type(geometry.position) == "table" then
+    return geometry.position.row,
+      geometry.position.col,
+      geometry.size.width,
+      geometry.size.height
+  end
+  local position = vim.api.nvim_win_get_position(view.frame.winid)
+  return position[1],
+    position[2],
+    vim.api.nvim_win_get_width(view.frame.winid),
+    vim.api.nvim_win_get_height(view.frame.winid)
+end
+
 local function geometry(view)
+  local margin, gap = view.spacing.margin, view.spacing.gap
   local columns = vim.o.columns
   local rows = vim.o.lines - vim.o.cmdheight - 2
-  local width = math.max(20, math.min(ui().details.width, columns - 4))
+  local width = math.max(
+    1,
+    math.min(
+      math.max(20, math.min(ui().details.width, columns - 4)),
+      columns - 2 * margin - 2
+    )
+  )
   local height = math.max(4, math.min(rows - 2, 22))
   if columns >= 150 and rows >= 20 then
     return width, height, "right"
   elseif columns >= 85 and rows >= 20 then
-    local frame_position = vim.api.nvim_win_get_position(view.frame.winid)
-    local frame_height = vim.api.nvim_win_get_height(view.frame.winid)
-    local detail_row = frame_position[1] + frame_height + 2
-    local remaining = vim.o.lines - vim.o.cmdheight - detail_row - 3
+    local frame_row, _, _, frame_height = frame_box(view)
+    local detail_row = frame_row + frame_height + 2 + gap
+    local remaining = vim.o.lines - vim.o.cmdheight - detail_row - 2 - margin
     if remaining >= 4 then
       return width, math.min(height, 14, remaining), "bottom"
     end
   end
-  return math.min(width, columns - 2), math.min(height, rows - 2), "popup"
+  return math.min(width, columns - 2),
+    math.max(1, math.min(height, rows - 2 * margin)),
+    "popup"
 end
 
 local function close_popup(view, expected)
@@ -238,17 +264,18 @@ local function redraw(view)
   end
   local width, height, placement = geometry(view)
   local row, col
+  local margin, gap = view.spacing.margin, view.spacing.gap
   if placement == "right" then
-    row = math.max(1, math.floor((vim.o.lines - height) / 2) - 1)
-    local frame_position = vim.api.nvim_win_get_position(view.frame.winid)
-    col = frame_position[2] + vim.api.nvim_win_get_width(view.frame.winid) + 2
-    width = math.min(width, vim.o.columns - col - 2)
+    row = math.max(margin, math.floor((vim.o.lines - height) / 2) - 1)
+    local _, frame_col, frame_width = frame_box(view)
+    col = frame_col + frame_width + 2 + gap
+    width = math.max(1, math.min(width, vim.o.columns - col - 2 - margin))
   elseif placement == "bottom" then
-    width = math.min(width, vim.o.columns - 4)
-    local frame_position = vim.api.nvim_win_get_position(view.frame.winid)
-    row = frame_position[1] + vim.api.nvim_win_get_height(view.frame.winid) + 2
-    if row + height > vim.o.lines - vim.o.cmdheight - 2 then
-      row = vim.o.lines - vim.o.cmdheight - height - 2
+    width = math.min(width, vim.o.columns - 2 * margin - 2)
+    local frame_row, _, _, frame_height = frame_box(view)
+    row = frame_row + frame_height + 2 + gap
+    if row + height > vim.o.lines - vim.o.cmdheight - 2 - margin then
+      row = vim.o.lines - vim.o.cmdheight - height - 2 - margin
     end
     col = math.floor((vim.o.columns - width) / 2)
   else
@@ -265,14 +292,22 @@ local function redraw(view)
   vim.api.nvim_win_set_option(popup.winid, "linebreak", true)
   vim.bo[popup.bufnr].modifiable = true
   vim.api.nvim_buf_clear_namespace(popup.bufnr, popup.ns_id, 0, -1)
-  vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, {})
+  local top = view.spacing.vertical
+  vim.api.nvim_buf_set_lines(
+    popup.bufnr,
+    0,
+    -1,
+    false,
+    vim.fn["repeat"]({ "" }, top)
+  )
   for index, item in ipairs(content(view, view.details_node)) do
     local line = Line()
+    line:append(string.rep(" ", view.spacing.horizontal))
     -- An item is either { text, highlight } or { { { text, highlight }, ... } }.
     for _, segment in ipairs(type(item[1]) == "table" and item[1] or { item }) do
       line:append(segment[1], segment[2])
     end
-    line:render(popup.bufnr, popup.ns_id, index)
+    line:render(popup.bufnr, popup.ns_id, top + index)
   end
   vim.bo[popup.bufnr].modifiable = false
 end

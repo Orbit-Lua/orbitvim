@@ -137,6 +137,54 @@
             }
           }
         },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Spacing in cells. When the editor is too small, margin, gap, vertical padding, horizontal padding and column gap shrink in that order; updates the open view.",
+          "properties": {
+            "padding": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "vertical": {
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 8,
+                  "description": "Blank rows above and below the list and details. Compact views ignore it."
+                },
+                "horizontal": {
+                  "type": "integer",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 8,
+                  "description": "Blank columns on each side of the header, list, footer and details."
+                }
+              }
+            },
+            "column_gap": {
+              "type": "integer",
+              "default": 3,
+              "minimum": 1,
+              "maximum": 8,
+              "description": "Blank columns between the Tool, Enabled and Status columns."
+            },
+            "gap": {
+              "type": "integer",
+              "default": 2,
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Blank cells between the list border and the details border."
+            },
+            "margin": {
+              "type": "integer",
+              "default": 2,
+              "minimum": 0,
+              "maximum": 10,
+              "description": "Minimum blank cells between Tool Manager windows and the editor edge."
+            }
+          }
+        },
         "refresh": {
           "type": "object",
           "additionalProperties": false,

@@ -8,6 +8,8 @@ Use `1`–`6` or Tab / Shift-Tab to select LSP, DAP, Linter, Formatter, Parser o
 
 Logical selection survives reordering, resizing and refreshes. Category and expansion choices survive reopening. Help (`?` or `g?`) suspends tool actions and stays visible during refresh. Beside or below the list, details stay open and follow the cursor. They show the selected tool, a filetype group, an empty category or the category overview with an icon legend. `K` focuses details from any row. `q` or Escape returns to the list and keeps details open. If the editor is too narrow, `K` opens details on demand, and `q` closes them.
 
+Set `tool_manager.layout` in settings to change the spacing in cells. `padding` sets blank rows and columns inside the windows. `column_gap` separates the Tool, Enabled and Status columns. `gap` separates the list and details borders. `margin` keeps windows away from the editor edge. If the editor is too small, the margin, gap, vertical padding, horizontal padding and column gap shrink in that order. The saved values do not change.
+
 ## Install and enable
 
 `i` installs a Mason package or parser without enabling a disabled runtime tool. Parsers and dependency packages support installation only.

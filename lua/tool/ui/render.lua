@@ -45,20 +45,46 @@ function M.define_highlights()
   end
 end
 
-local function write(popup, lines)
+---Prefix a line with the horizontal padding.
+local function pad(view, line)
+  local padded = Line()
+  padded:append(string.rep(" ", view.spacing.horizontal))
+  padded:append(line)
+  return padded
+end
+
+---Text width inside a window after horizontal padding on both sides.
+local function content_width(view, winid)
+  return math.max(
+    1,
+    vim.api.nvim_win_get_width(winid) - 2 * view.spacing.horizontal
+  )
+end
+
+local function write(view, popup, lines, top)
   local buffer = popup.bufnr
   vim.bo[buffer].readonly = false
   vim.bo[buffer].modifiable = true
   vim.api.nvim_buf_clear_namespace(buffer, popup.ns_id, 0, -1)
   vim.api.nvim_buf_set_lines(buffer, 0, -1, false, {})
+  top = top or 0
+  if top > 0 then
+    vim.api.nvim_buf_set_lines(
+      buffer,
+      0,
+      -1,
+      false,
+      vim.fn["repeat"]({ "" }, top)
+    )
+  end
   for index, line in ipairs(lines) do
-    line:render(buffer, popup.ns_id, index)
+    pad(view, line):render(buffer, popup.ns_id, top + index)
   end
   vim.bo[buffer].modifiable = false
 end
 
 function M.chrome(view, snapshot)
-  local width = vim.api.nvim_win_get_width(view.header.winid)
+  local width = content_width(view, view.header.winid)
   local tabs = Line()
   local current = view.state.category
   local active_highlight = "ToolManagerCategoryActive"
@@ -127,10 +153,10 @@ function M.chrome(view, snapshot)
   local header = { tabs, context }
   -- Normal height adds the column labels and a separator; compact keeps two rows.
   if vim.api.nvim_win_get_height(view.header.winid) > 2 then
-    table.insert(header, M.columns(width))
+    table.insert(header, M.columns(width, view.spacing.column_gap))
     table.insert(header, separator())
   end
-  write(view.header, header)
+  write(view, view.header, header)
   local hints = Line()
   local category = view:category()
   local actions = width < 50
@@ -164,10 +190,10 @@ function M.chrome(view, snapshot)
     table.insert(footer, separator())
   end
   table.insert(footer, hints)
-  write(view.footer, footer)
+  write(view, view.footer, footer)
 end
 
-local function node_line(node, width)
+local function node_line(node, width, column_gap)
   local line = Line()
   local indent = string.rep("  ", node:get_depth() - 1)
   local arrow = node:has_children()
@@ -235,11 +261,16 @@ local function node_line(node, width)
       or (tool.enabled and "On" or "Off")
     local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
     local available = math.max(1, width - line:width())
+    local gap = string.rep(" ", column_gap)
     local tool_width = math.max(
       1,
-      math.min(math.floor(width * 0.48), available - enabled_width - 5)
+      math.min(
+        math.floor(width * 0.48),
+        available - enabled_width - 2 * column_gap - 1
+      )
     )
-    local status_width = math.max(1, available - tool_width - enabled_width - 4)
+    local status_width =
+      math.max(1, available - tool_width - enabled_width - 2 * column_gap)
     -- The icon is its own chunk, so its state highlight stays separate.
     local icon_text = icon .. " "
     local name_width =
@@ -250,10 +281,10 @@ local function node_line(node, width)
       tool.enabled and "Normal" or "Comment"
     )
     line:append(
-      "  " .. str.rpad(str.trunc(enabled_text, enabled_width), enabled_width),
+      gap .. str.rpad(str.trunc(enabled_text, enabled_width), enabled_width),
       tool.enabled and "Normal" or "Comment"
     )
-    line:append("  " .. str.trunc(status, status_width), severity)
+    line:append(gap .. str.trunc(status, status_width), severity)
   end
   return line
 end
@@ -335,7 +366,17 @@ function M.tree(view, snapshot)
   vim.bo[view.body.bufnr].modifiable = true
   vim.api.nvim_buf_clear_namespace(view.body.bufnr, view.body.ns_id, 0, -1)
   vim.api.nvim_buf_set_lines(view.body.bufnr, 0, -1, false, {})
-  local width = vim.api.nvim_win_get_width(view.body.winid)
+  local width = content_width(view, view.body.winid)
+  local vertical = view.spacing.vertical
+  if vertical > 0 then
+    vim.api.nvim_buf_set_lines(
+      view.body.bufnr,
+      0,
+      -1,
+      false,
+      vim.fn["repeat"]({ "" }, vertical)
+    )
+  end
   view.tree = Tree({
     bufnr = view.body.bufnr,
     ns_id = view.body.ns_id,
@@ -344,27 +385,43 @@ function M.tree(view, snapshot)
       return node.id
     end,
     prepare_node = function(node)
-      return node_line(node, width)
+      return pad(view, node_line(node, width, view.spacing.column_gap))
     end,
   })
-  view.tree:render()
+  view.tree:render(vertical + 1)
+  if vertical > 0 then
+    -- Tree rendering restores the buffer's read-only state.
+    vim.bo[view.body.bufnr].modifiable = true
+    vim.api.nvim_buf_set_lines(
+      view.body.bufnr,
+      -1,
+      -1,
+      false,
+      vim.fn["repeat"]({ "" }, vertical)
+    )
+  end
   vim.bo[view.body.bufnr].modifiable = false
 end
 
 ---Column labels aligned with tool rows, which start after a two-cell prefix.
 ---@param width integer
-function M.columns(width)
+function M.columns(width, column_gap)
   local line = Line()
+  local gap = string.rep(" ", column_gap)
   local enabled_width = math.min(10, math.max(7, math.floor(width * 0.14)))
   local available = math.max(1, width - 2)
   local tool_width = math.max(
     1,
-    math.min(math.floor(width * 0.48), available - enabled_width - 5)
+    math.min(
+      math.floor(width * 0.48),
+      available - enabled_width - 2 * column_gap - 1
+    )
   )
-  local status_width = math.max(1, available - tool_width - enabled_width - 4)
+  local status_width =
+    math.max(1, available - tool_width - enabled_width - 2 * column_gap)
   line:append("  " .. str.rpad("Tool", tool_width), "Title")
-  line:append("  " .. str.rpad("Enabled", enabled_width), "Title")
-  line:append("  " .. str.trunc("Status", status_width), "Title")
+  line:append(gap .. str.rpad("Enabled", enabled_width), "Title")
+  line:append(gap .. str.trunc("Status", status_width), "Title")
   return line
 end
 
@@ -389,7 +446,7 @@ function M.legend()
 end
 
 function M.help(view)
-  local width = vim.api.nvim_win_get_width(view.body.winid)
+  local width = content_width(view, view.body.winid)
   local lines = {}
   local function add(text, highlight)
     local line = Line()
@@ -414,7 +471,7 @@ function M.help(view)
     "Comment"
   )
   add(" Formatter and linter priorities are saved per filetype.", "Comment")
-  write(view.body, lines)
+  write(view, view.body, lines, view.spacing.vertical)
   view.tree = nil
 end
 

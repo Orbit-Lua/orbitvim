@@ -22,35 +22,78 @@ function View:active()
     and vim.api.nvim_win_is_valid(self.body.winid)
 end
 
+-- Minimum frame content: two-cell row prefix, tool, enabled and status columns.
+local MIN_CONTENT_WIDTH = 23
+
+---Effective spacing for the current editor. When the configured spacing does
+---not fit, it shrinks in a fixed order, each value to its minimum before the
+---next one shrinks; the settings keep their configured values.
+local function spacing()
+  local layout = ui().layout
+  local value = {
+    margin = layout.margin,
+    gap = layout.gap,
+    vertical = layout.padding.vertical,
+    horizontal = layout.padding.horizontal,
+    column_gap = layout.column_gap,
+  }
+  local columns, rows = vim.o.columns, vim.o.lines - vim.o.cmdheight
+  local function fits()
+    local width = 2
+      + 2 * value.horizontal
+      + MIN_CONTENT_WIDTH
+      + 2 * value.column_gap
+    -- A normal frame needs header 4, body 1 and footer 2 rows. Compact frames
+    -- appear only when even the minimum spacing cannot provide them.
+    local height = 2 + 7 + 2 * value.vertical
+    return columns >= width + 2 * value.margin
+      and rows >= height + 2 * value.margin
+  end
+  for _, item in ipairs({
+    { "margin", 0 },
+    { "gap", 0 },
+    { "vertical", 0 },
+    { "horizontal", 0 },
+    { "column_gap", 1 },
+  }) do
+    while not fits() and value[item[1]] > item[2] do
+      value[item[1]] = value[item[1]] - 1
+    end
+  end
+  return value
+end
+
 local function dimensions()
+  local space = spacing()
+  local margin, gap = space.margin, space.gap
+  local columns, rows = vim.o.columns, vim.o.lines - vim.o.cmdheight
   local size = {
-    width = math.max(3, math.min(ui().width, vim.o.columns - 4)),
-    height = math.max(
-      5,
-      math.min(ui().height, vim.o.lines - vim.o.cmdheight - 4)
-    ),
+    width = math.max(3, math.min(ui().width, columns - 2 * margin - 2)),
+    height = math.max(5, math.min(ui().height, rows - 2 * margin - 2)),
   }
   local position = "50%"
-  local tall = vim.o.lines - vim.o.cmdheight >= 22
-  if tall and vim.o.columns >= 150 then
+  local tall = rows >= 22
+  if tall and columns >= 150 then
+    -- Frame and details sit side by side with `gap` cells between borders.
+    local available = columns - 2 * margin - 4 - gap
     local details_width =
-      math.min(ui().details.width, math.floor((vim.o.columns - 10) / 2))
-    size.width = math.min(size.width, vim.o.columns - details_width - 10)
+      math.min(ui().details.width, math.floor(available / 2))
+    size.width = math.min(size.width, available - details_width)
+    local total = size.width + details_width + 4 + gap
     position = {
-      row = math.max(1, math.floor((vim.o.lines - size.height) / 2) - 1),
-      col = math.max(
-        1,
-        math.floor((vim.o.columns - size.width - details_width - 6) / 2)
-      ),
+      row = math.max(margin, math.floor((vim.o.lines - size.height) / 2) - 1),
+      col = math.max(margin, math.floor((columns - total) / 2)),
     }
-  elseif tall and vim.o.columns >= 85 then
-    size.height = math.min(
-      size.height,
-      math.floor((vim.o.lines - vim.o.cmdheight - 7) * 0.58)
-    )
-    position = { row = 1, col = math.floor((vim.o.columns - size.width) / 2) }
+  elseif tall and columns >= 85 then
+    size.height =
+      math.min(size.height, math.floor((rows - 2 * margin - gap - 5) * 0.58))
+    position = { row = margin, col = math.floor((columns - size.width) / 2) }
   end
-  return size, position
+  if size.height < 8 then
+    -- Compact frames have no room for vertical padding.
+    space.vertical = 0
+  end
+  return size, position, space
 end
 
 local function sections(view, height)
@@ -83,7 +126,9 @@ function View:refresh(first, identity)
   selected_id = selected_id or self.saved_selection
   local cursor_position = vim.api.nvim_win_get_cursor(self.body.winid)
   local previous_window = vim.api.nvim_get_current_win()
-  local size, frame_position = dimensions()
+  local size, frame_position, space = dimensions()
+  self.spacing = space
+  self.frame_geometry = { size = size, position = frame_position }
   self.frame:update_layout({ size = size, position = frame_position })
   self.layout:update({}, sections(self, size.height))
   local snapshot = manager.snapshot({
@@ -107,7 +152,7 @@ function View:refresh(first, identity)
         selected_line = line
       end
       local count = vim.api.nvim_buf_line_count(self.body.bufnr)
-      local target_line = first and 1
+      local target_line = first and (self.spacing.vertical + 1)
         or selected_line
         or math.min(cursor_position[1], count)
       vim.api.nvim_win_set_cursor(
@@ -261,7 +306,9 @@ end
 function View.new(source, state, on_close)
   local self =
     setmetatable({ source = source, state = state, on_close = on_close }, View)
-  local size, position = dimensions()
+  local size, position, space = dimensions()
+  self.spacing = space
+  self.frame_geometry = { size = size, position = position }
   self.frame = Popup({
     relative = "editor",
     position = position,
