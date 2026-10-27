@@ -52,7 +52,7 @@ end
 ---@return Tool.Options
 function M.get()
   if not options then
-    error("Tool Manager is not configured: call require('tool').setup()", 2)
+    error("Tool Manager is not configured: call tool.setup() first", 2)
   end
   return options
 end

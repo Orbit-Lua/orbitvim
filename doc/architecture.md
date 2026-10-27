@@ -20,6 +20,9 @@ Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugin
 
 ```mermaid
 flowchart TD
+    Compose[core.tools] --> Setup[tool.setup options]
+    Setup --> Manager
+    Setup --> View
     Command[User command] --> Public[tool.open / tool.close]
     Public --> View[Nui view session]
     View --> Render[Rendering and details]
@@ -32,13 +35,15 @@ flowchart TD
     Registry --> Derived[config.packages derived lists]
 ```
 
+`core.tools` composes OrbitVim's registry, default orders, state paths, view options and adapter owners. It passes them to `tool.setup()` before Lazy loads, because startup reads tool state during plugin load. Modules under `lua/tool/` read only these options. They do not import `config` or `runtime` modules. Use before setup raises an error. A repeated setup is rejected while a toggle or an installation runs. Otherwise, it drops cached state and failures and closes the open view.
+
 `config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists.
 
 `tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before a state change or an installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
 
 `tool.state` reads current or legacy JSON. A write locks the file and reads the current disk state again before it merges one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases through `runtime_name` at the runtime boundary. They keep unrelated backend entries. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
 
-`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`. Mappings and help come from `config.tool_manager`.
+`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons, the border, mappings and help come from the injected options. OrbitVim supplies them from `config.icons`, `config.borders` and `config.tool_manager`.
 
 An asynchronous operation can outlive the view. On completion, it updates state and runtime. Then it refreshes only the session that started it, if that session is still open. See [Tool Manager](tool-manager.md) for user-visible behavior.
 
