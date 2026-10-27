@@ -4,6 +4,7 @@ local M = {}
 
 local windows = vim.fn.has("win32") == 1
 local mac = vim.fn.has("mac") == 1
+local arm64 = vim.uv.os_uname().machine == "arm64"
 
 ---@return boolean
 M.is_win = function()
@@ -13,6 +14,11 @@ end
 ---@return boolean
 M.is_mac = function()
   return mac
+end
+
+---@return boolean
+M.is_arm64 = function()
+  return arm64
 end
 
 ---Separator between entries of the PATH environment variable.

@@ -8,7 +8,7 @@ function M.build_preview(plugin)
   local windows = os_utils.is_win()
   local platform = windows and "win" or "linux"
   if os_utils.is_mac() then
-    platform = vim.uv.os_uname().machine == "arm64" and "macos-arm64" or "macos"
+    platform = os_utils.is_arm64() and "macos-arm64" or "macos"
   end
   local executable = plugin.dir
     .. "/app/bin/markdown-preview-"
