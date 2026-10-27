@@ -4,6 +4,14 @@
 
 Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugins/`, and backend activation under `lua/runtime/`. Shared helpers expose concrete local interfaces without forwarding facades.
 
+## Startup
+
+- Keep editor setup, Lazy bootstrap and final UI setup in that order.
+- Let plugin specs declare loading and plugin keys. Let their lifecycle callbacks call runtime owners.
+- Do not register commands, events or mappings, or load highlight caches, during spec import.
+- Treat configuration templates under `lua/config/*/template/` as reusable files.
+- Keep project-root precedence in `utils.project` stable when you change discovery helpers.
+
 ## Settings
 
 `config.settings` validates personal JSON against the bundled schema and registry before plugins load. `core.settings` applies live changes with rollback. It observes saves to the exact configured path. `commands.settings` gives the settings editor and the effective-value view. [Settings](settings.md) defines precedence and recovery.
@@ -28,7 +36,7 @@ flowchart TD
 
 `tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before a state change or an installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
 
-`tool.state` reads current or legacy JSON. A write locks the file and reads the current disk state again before it merges one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases at the runtime boundary. They keep unrelated backend entries. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
+`tool.state` reads current or legacy JSON. A write locks the file and reads the current disk state again before it merges one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases through `runtime_name` at the runtime boundary. They keep unrelated backend entries. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
 
 `tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons come from `config.icons`. Mappings and help come from `config.tool_manager`.
 
@@ -47,11 +55,36 @@ An asynchronous operation can outlive the view. On completion, it updates state 
 | `runtime.notes` | Markdown highlight override that preserves fences at `conceallevel=2` |
 | `core.shell` | Windows shell and compiler defaults while preserving explicit choices |
 
-Native build owners execute argument lists without the interactive shell. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.
+Native build owners execute argument lists without the interactive shell. On Windows, `:ClearShada` keeps `main.shada` while it removes temporary ShaDa files. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.
 
 The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.
-
 
 Harpoon mappings belong to the Lazy spec. Its runtime receives display options directly and owns list construction and highlighting.
 
 Blink documentation uses its supplied renderer. Live resize needs the pinned revision's private window objects. The completion runtime contains that dependency. Noice progress adaptation stays in `utils.progress`. Integration checks exercise the installed plugin interfaces.
+
+## Runtime contracts
+
+- Keep formatting from writing source files or discarding later edits.
+- Complete progress once on success, failure and buffer disposal.
+- Invalidate delayed LSP work after detach or buffer deletion.
+- Preserve server-owned initialization hooks and semantic-token policy.
+- Keep linter debouncing, slow-linter policy and Windows CRLF normalization.
+- Build each buffer-dependent linter definition once per execution.
+- Keep automatic linting and custom parser activation disabled for detected large files.
+
+## Shared tasks
+
+Several plugins can do the same task. This table gives each task one owner.
+
+| Task | Owner | Not used for this task |
+| --- | --- | --- |
+| Terminals | `utils.term`, with NvChad `term` options from `chadrc.lua` | Snacks terminal |
+| File tree | nvim-tree | Snacks explorer, which is disabled |
+| Floating file browser | oil.nvim | |
+| Messages, command line and LSP progress | Noice | |
+| Notification display | Snacks notifier | |
+| Indent guides | indent-blankline (IBL) | Snacks indent, which is disabled |
+| Large-file detection | Snacks bigfile | |
+| Debug adapter core | `Orbit-Lua/nvim-dap` fork | `mfussenegger/nvim-dap` |
+| File marks | `Orbit-Lua/harpoon` fork | `ThePrimeagen/harpoon` |

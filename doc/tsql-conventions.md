@@ -1,6 +1,6 @@
 # T-SQL conventions and templates
 
-SQL Server conventions used by [OrbitVim snippets](tsql-snippets.md). Examples are templates or syntax fragments, not a migration to execute as one script. Each `sql` fence also exercises Markdown SQL injection and highlighting.
+SQL Server conventions used by [OrbitVim snippets](tsql-snippets.md). Examples are templates or syntax fragments, not a migration to execute as one script. Each `sql` fence also exercises Markdown SQL injection and highlighting. Thus the fences are executable parser fixtures. Keep them unchanged during wording-only edits.
 
 ## Common rules
 

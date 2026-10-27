@@ -14,7 +14,7 @@ Logical selection survives reordering, resizing and refreshes. Category and expa
 
 Space toggles an LSP, DAP, formatter or linter. Installed and externally managed tools update saved intent and runtime immediately. With `missing_package_policy = "auto"`, a missing Mason package installs first. The tool is enabled only after success. Concurrent requests share one installation. A newer toggle supersedes pending intent. Older completion cannot restore superseded enablement. A failure keeps the enablement.
 
-To require explicit installation before a missing package is enabled, set `tool_manager.missing_package_policy = "manual"` in settings. An unknown package or an unavailable registry reports a failure. External dependencies, such as debugpy from the environment, need setup outside Mason.
+To require explicit installation before a missing package is enabled, set `tool_manager.missing_package_policy = "manual"` in settings. An unknown package or an unavailable registry reports a failure. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in the registry.
 
 Operations persist intent before runtime changes. A backend failure stays in details until a successful operation clears it. Saved intent stays available at startup. Installations continue after the view closes. Their callbacks cannot redraw a closed session or a replacement session.
 

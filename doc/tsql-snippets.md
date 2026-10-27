@@ -212,3 +212,10 @@ parameters, so `dynident` validates the identifier before it applies
   strategy. The template does not make an unsafe data model race-free.
 - Index templates are starting points. Choose keys, includes, and filters from
   real predicates, ordering needs, and execution plans.
+
+## Maintenance
+
+- Preserve snippet triggers, linked placeholders and explicit assembly order.
+- End complete SQL statements with a semicolon.
+- Put `$0` at the final cursor position.
+- Update this catalog when expansions change.
