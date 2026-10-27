@@ -2,12 +2,29 @@ describe("buffer-dependent linter execution", function()
   it("builds one definition for preflight and native execution", function()
     local test = require("tests.helpers")
     vim.opt.runtimepath:append(test.plugin_path("nvim-lint"))
-    local root = test.temp_dir("linter execution")
+    local root = test.temp_dir("linter-execution")
     local script, marker = root .. "/probe.lua", root .. "/executed"
     test.write_file(
       script,
       "vim.fn.writefile({'executed'}, " .. vim.json.encode(marker) .. ")"
     )
+    -- nvim-lint runs Windows linters through `cmd.exe /C`, which splits a
+    -- quoted executable path such as `C:\Program Files\...`. The shim keeps
+    -- the linter command free of spaces on every platform.
+    local windows = vim.fn.has("win32") == 1
+    local shim = root .. "/probe" .. (windows and ".cmd" or "")
+    local command = string.format(
+      '"%s" --headless -u NONE -i NONE -l "%s"',
+      vim.v.progpath,
+      script
+    )
+    test.write_file(
+      shim,
+      windows and { "@" .. command } or { "#!/bin/sh", "exec " .. command }
+    )
+    if not windows then
+      assert(vim.uv.fs_chmod(shim, 448))
+    end
     local builds = 0
     local buffer = vim.api.nvim_create_buf(true, false)
     vim.api.nvim_set_current_buf(buffer)
@@ -19,8 +36,8 @@ describe("buffer-dependent linter execution", function()
         probe = function()
           builds = builds + 1
           return {
-            cmd = vim.v.progpath,
-            args = { "--headless", "-u", "NONE", "-i", "NONE", "-l", script },
+            cmd = shim,
+            args = {},
             stdin = false,
             parser = function()
               return {}
