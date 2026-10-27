@@ -6,7 +6,7 @@ local icons = require("config.icons")
 ---@return table
 function M.options()
   local opts = vim.deepcopy(require("config.formatter"))
-  local order = require("tool.order")
+  local order = require("hangar.order")
 
   for filetype, formatters in pairs(opts.formatters_by_ft) do
     local registry_names = order.from_runtime("formatter", formatters)

@@ -9,7 +9,7 @@ return {
       require("runtime.dap").setup(
         require("dap"),
         require("config.dap"),
-        require("tool.state")
+        require("hangar.state")
       )
     end,
     keys = {

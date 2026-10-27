@@ -6,7 +6,7 @@ function M.setup()
   require("commands.system").setup()
   require("commands.treesitter").setup()
   vim.api.nvim_create_user_command("ToolManager", function()
-    require("tool").open()
+    require("hangar").open()
   end, { desc = "Open Tool Manager" })
   vim.keymap.set("n", "<leader>us", "<cmd>ToolManager<CR>", {
     desc = "tool manager",

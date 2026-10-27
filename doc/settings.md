@@ -52,4 +52,4 @@ Change public defaults in the schema. Change available tools in `config.tools`.
 - `core.settings` owns application, rollback and save observation.
 - `commands.settings` owns commands and information views.
 - `runtime.lsp` owns inlay hints.
-- `tool.state` merges initial priorities before saved state.
+- `hangar.state` merges the initial priorities that `core.tools` passes before saved state.

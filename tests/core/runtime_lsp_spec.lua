@@ -7,7 +7,7 @@ describe("LSP server registration", function()
     original_hint_enable, original_hint_state =
       vim.lsp.inlay_hint.enable, vim.lsp.inlay_hint.is_enabled
     package.loaded["core.theme"] = { load_cache = function() end }
-    package.loaded["tool.state"] = {
+    package.loaded["hangar.state"] = {
       is_enabled = function()
         return true
       end,

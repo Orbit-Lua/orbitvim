@@ -4,7 +4,7 @@ OrbitVim validates changes through just recipes. CI runs the same recipes on Lin
 
 ## Prerequisites
 
-Install just, StyLua and Luacheck, in addition to the README runtime prerequisites. Core specs require pinned Plenary and Nui sources. Integration specs also require SQLFluff and a JSON language server.
+Install just, StyLua and Luacheck, in addition to the README runtime prerequisites. Core specs require the pinned Plenary, Nui and hangar.nvim sources. Integration specs also require SQLFluff and a JSON language server.
 
 `just deps` installs the locked plugin revisions. It fails if `lazy-lock.json` changes. `just parsers` installs the C#, Lua, Markdown, SQL and vimdoc parsers. Integration specs execute them. Windows runtime filetype plugins also need the Lua and vimdoc parsers.
 

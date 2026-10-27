@@ -3,16 +3,16 @@ describe("runtime.formatter.options", function()
 
   before_each(function()
     originals = {
-      state = package.loaded["tool.state"],
-      order = package.loaded["tool.order"],
+      state = package.loaded["hangar.state"],
+      order = package.loaded["hangar.order"],
       plugin = package.loaded["plugins.formatter"],
       runtime = package.loaded["runtime.formatter"],
     }
   end)
 
   after_each(function()
-    package.loaded["tool.state"] = originals.state
-    package.loaded["tool.order"] = originals.order
+    package.loaded["hangar.state"] = originals.state
+    package.loaded["hangar.order"] = originals.order
     package.loaded["plugins.formatter"] = originals.plugin
     package.loaded["runtime.formatter"] = originals.runtime
   end)
@@ -26,7 +26,7 @@ describe("runtime.formatter.options", function()
     "filters disabled tools and returns fresh configured runtime options",
     function()
       local enabled = { sqlfluff = true, yaml = true }
-      package.loaded["tool.state"] = {
+      package.loaded["hangar.state"] = {
         is_enabled = function(_, name)
           return enabled[name] == true
         end,
@@ -34,7 +34,7 @@ describe("runtime.formatter.options", function()
           return nil
         end,
       }
-      package.loaded["tool.order"] = nil
+      package.loaded["hangar.order"] = nil
       package.loaded["runtime.formatter"] = nil
 
       local options = require("runtime.formatter").options

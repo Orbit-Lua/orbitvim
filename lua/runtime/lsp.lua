@@ -90,7 +90,7 @@ M.register_servers = function(opts)
   require("core.theme").load_cache("lsp")
 
   local packages = require("config.packages")
-  local state_mod = require("tool.state")
+  local state_mod = require("hangar.state")
   local default_lsp_config = {
     on_init = opts.on_init,
     capabilities = M.client_capabilities(opts.capabilities),

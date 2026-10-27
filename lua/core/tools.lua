@@ -1,9 +1,9 @@
--- Composition root for Tool Manager: OrbitVim's registry, settings, paths and
--- runtime owners. Startup reads tool state while plugins load, so this runs
--- before Lazy.
+-- Composition root for hangar.nvim: OrbitVim's registry, settings, paths,
+-- runtime owners and linter logs. The hangar spec calls it at startup, before
+-- the event-loaded readers of tool state.
 local M = {}
 
----@return Tool.Options
+---@return Hangar.Options
 function M.options()
   return {
     registry = require("config.tools"),
@@ -43,13 +43,18 @@ function M.options()
           return require("config.linter").linters_by_ft
         end,
       },
+      linter = {
+        logs = function(name)
+          return require("utils.logger").get_entries("linter", name)
+        end,
+      },
     },
   }
 end
 
 ---@param overrides? table top-level options that replace the OrbitVim ones
 function M.setup(overrides)
-  require("tool").setup(vim.tbl_extend("force", M.options(), overrides or {}))
+  require("hangar").setup(vim.tbl_extend("force", M.options(), overrides or {}))
 end
 
 return M

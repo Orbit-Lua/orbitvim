@@ -18,34 +18,24 @@ Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugin
 
 ## Tool Manager
 
+[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the Tool Manager view, operations and state. See its guide and architecture for that behavior.
+
 ```mermaid
 flowchart TD
-    Compose[core.tools] --> Setup[tool.setup options]
-    Setup --> Manager
-    Setup --> View
-    Command[User command] --> Public[tool.open / tool.close]
-    Public --> View[Nui view session]
-    View --> Render[Rendering and details]
-    View --> Manager[tool.manager operations]
-    Manager --> Registry[config.tools registry]
-    Manager --> State[tool.state persistence]
-    Manager --> Category[Category adapters]
-    Manager --> Mason[Mason installation seam]
-    Category --> Runtime[Runtime backends]
+    Spec[hangar Lazy spec] --> Compose[core.tools]
+    Compose --> Setup[hangar.setup]
+    Command[:ToolManager] --> Open[hangar.open]
+    Compose --> Registry[config.tools registry]
+    Compose --> View[config.tool_manager view options]
+    Compose --> Owners[runtime.dap, config.formatter, config.linter, utils.logger]
     Registry --> Derived[config.packages derived lists]
 ```
 
-`core.tools` composes OrbitVim's registry, default orders, state paths, view options and adapter owners. It passes them to `tool.setup()` before Lazy loads, because startup reads tool state during plugin load. Modules under `lua/tool/` read only these options. They do not import `config` or `runtime` modules. Use before setup raises an error. A repeated setup is rejected while a toggle or an installation runs. Otherwise, it drops cached state and failures and closes the open view.
+The hangar spec loads at startup with `lazy = false`. Its `config` calls `core.tools.setup()`. The readers of tool state in `runtime.lsp`, `runtime.formatter`, `runtime.linter` and the DAP spec load later on events, so they find hangar configured.
 
-`config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists.
+`core.tools` passes the registry, default orders from settings, the `tools.json` path and the legacy `service.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `config.tool_manager` goes by reference, so `core.settings` updates the open view in place and fires `User HangarChanged`.
 
-`tool.manager` accepts category, logical tool name and optional filetype. It checks capabilities before a state change or an installation. Snapshots contain status, health and groups without Nui nodes or cursor coordinates.
-
-`tool.state` reads current or legacy JSON. A write locks the file and reads the current disk state again before it merges one change. `tool.order` reconciles saved order with current candidates. Category adapters translate aliases through `runtime_name` at the runtime boundary. They keep unrelated backend entries. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
-
-`tool.ui.view` owns layout, source context, selection, mappings, subscriptions, timers and details for one session. Render and details modules produce its content. Icons, the border, mappings and help come from the injected options. OrbitVim supplies them from `config.icons`, `config.borders` and `config.tool_manager`.
-
-An asynchronous operation can outlive the view. On completion, it updates state and runtime. Then it refreshes only the session that started it, if that session is still open. See [Tool Manager](tool-manager.md) for user-visible behavior.
+`config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
 
 ## Runtime boundaries
 

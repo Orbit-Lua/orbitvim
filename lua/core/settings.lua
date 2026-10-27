@@ -151,7 +151,7 @@ local function reload(initial)
   pcall(
     vim.api.nvim_exec_autocmds,
     "User",
-    { pattern = "ToolManagerChanged", modeline = false }
+    { pattern = "HangarChanged", modeline = false }
   )
   return true, { applied = applied, restart_required = restart }
 end

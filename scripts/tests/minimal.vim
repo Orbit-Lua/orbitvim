@@ -34,6 +34,7 @@ vim.opt.packpath = {}
 package.path = repository .. "/?.lua;" .. package.path
 EOF
 execute 'set rtp+=' . fnameescape(s:plugin_data_path . '/lazy/plenary.nvim')
+execute 'set rtp+=' . fnameescape(s:plugin_data_path . '/lazy/hangar.nvim')
 execute 'set rtp+=' . fnameescape(s:plugin_data_path . '/site')
 runtime! plugin/plenary.vim
 lua require('tests.helpers').setup()

@@ -12,7 +12,7 @@ for _, options in ipairs({
 if package.loaded.lazy then
   vim.api.nvim_exec_autocmds('InsertEnter', {})
   vim.cmd('ToolManager')
-  require('tool').close()
+  require('hangar').close()
 end
 ]])
     session.exec("return true")

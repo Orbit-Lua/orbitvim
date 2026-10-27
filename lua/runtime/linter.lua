@@ -2,7 +2,7 @@ local M = {}
 local active_timers = {}
 local setup_generation = 0
 
-local health = require("tool.health")
+local health = require("hangar.health")
 
 local function merge_linters(lint, linters)
   for linter_name, linter in pairs(linters) do
@@ -75,7 +75,7 @@ local function resolve_linters(lint, filetype)
 end
 
 local function apply_tool_order(linters_by_ft)
-  local order = require("tool.order")
+  local order = require("hangar.order")
   for filetype, linters in pairs(linters_by_ft) do
     linters_by_ft[filetype] = order.to_runtime(
       "linter",

@@ -57,8 +57,8 @@ M.base46 = {
     ToolMuted = { fg = "grey" },
 
     -- Tool Manager categories mirror base46's Mason palette without Mason links.
-    ToolManagerCategoryActive = { fg = "black", bg = "green" },
-    ToolManagerCategoryInactive = { fg = "light_grey", bg = "one_bg" },
+    HangarCategoryActive = { fg = "black", bg = "green" },
+    HangarCategoryInactive = { fg = "light_grey", bg = "one_bg" },
 
     -- default icon hl
     MiniIconsGrey = { link = "DevIconDefault" },

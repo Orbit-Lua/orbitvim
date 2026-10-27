@@ -66,7 +66,7 @@ describe("JSON settings", function()
       local runtime = require("core.settings")
       runtime.setup()
       assert.equals(4, vim.bo[buffer].shiftwidth)
-      local state = require("tool.state")
+      local state = require("hangar.state")
       assert.is_true(state.set_enabled("formatter", "yaml", false))
       local persisted =
         table.concat(vim.fn.readfile(vim.g.tool_state_path), "\n")
@@ -202,7 +202,7 @@ describe("JSON settings", function()
     }},"lsp":{"servers":{"pyright":{"settings":{"python":{"analysis":{"typeCheckingMode":"strict"}}}}}}}]]
       )
       require("core.settings").setup()
-      local state = require("tool.state")
+      local state = require("hangar.state")
       assert.same(
         { "ruff_format", "ruff_fix", "ruff_organize_imports" },
         state.get_order("formatter", "python")
@@ -210,10 +210,10 @@ describe("JSON settings", function()
       assert.is_true(
         state.set_order("formatter", "python", { "ruff_fix", "ruff_format" })
       )
-      package.loaded["tool.state"] = nil
+      package.loaded["hangar.state"] = nil
       assert.same(
         { "ruff_fix", "ruff_format" },
-        require("tool.state").get_order("formatter", "python")
+        require("hangar.state").get_order("formatter", "python")
       )
       assert.equals(
         "strict",
