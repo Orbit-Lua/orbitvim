@@ -26,8 +26,10 @@ function M.build_preview(plugin)
   if installed() then
     return
   end
+  -- A relative path keeps the installer found when Windows excludes the
+  -- current directory from command search (NoDefaultCurrentDirectoryInExePath).
   local command = windows
-      and { "cmd.exe", "/d", "/c", "install.cmd", "v" .. info.version }
+      and { "cmd.exe", "/d", "/c", ".\\install.cmd", "v" .. info.version }
     or { "bash", "./install.sh", "v" .. info.version }
   local result = vim
     .system(command, { cwd = plugin.dir .. "/app", text = true })

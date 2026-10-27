@@ -143,6 +143,7 @@ assert(result.code == 0, result.stderr)
 assert(vim.trim(result.stdout) == '1.2.3', 'installer returned before its executable was ready')
 ]]
       )
+      -- Windows may exclude the current directory from command search.
       local installed = vim
         .system({
           vim.v.progpath,
@@ -154,7 +155,10 @@ assert(vim.trim(result.stdout) == '1.2.3', 'installer returned before its execut
           root,
           vim.fn.getcwd(),
           platform,
-        }, { text = true })
+        }, {
+          text = true,
+          env = { NoDefaultCurrentDirectoryInExePath = "1" },
+        })
         :wait(15000)
       assert.equals(0, installed.code, installed.stderr)
     end
