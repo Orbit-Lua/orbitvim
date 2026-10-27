@@ -192,7 +192,8 @@ local arguments, response = ...
 local ok, value = pcall(function(...)
 ]] .. code .. "\n" .. [[
 end, unpack(arguments))
-vim.fn.writefile({vim.json.encode({ok=ok, value=value})}, response)
+vim.fn.writefile({vim.json.encode({ok=ok, value=value})}, response .. '.tmp')
+assert(vim.uv.fs_rename(response .. '.tmp', response))
 ]]
     vim.rpcnotify(job, "nvim_exec_lua", wrapped, { arguments or {}, response })
     assert(
