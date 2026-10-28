@@ -100,7 +100,7 @@ Preserve commands, mappings and persisted state unless the task changes their co
 - Explain non-obvious behavior in comments.
 - Read [architecture](doc/architecture.md) before you change startup, module boundaries, runtime behavior or a shared-task owner.
 - Read [settings](doc/settings.md) before you change defaults, merge rules, reload scope or state precedence.
-- Read [Tool Manager](doc/tool-manager.md) before you change tool workflows, tool state or the tool registry.
+- Read [Hangar](doc/hangar.md) before you change tool workflows, tool state or the tool registry.
 - Read [testing](doc/testing.md) before you add a test, a fixture or a CI step, and before you finish.
 - Read [SQL highlighting](doc/tsql-highlighting.md) before you change queries, parsers or syntax fallback.
 - Read [SQL snippets](doc/tsql-snippets.md) before you change expansions.

@@ -1,5 +1,6 @@
 -- Composition root for hangar.nvim: OrbitVim's registry, settings, paths,
--- runtime owners and linter logs. The hangar spec calls it at startup, before
+-- runtime owners and linter logs. hangar owns every view default; OrbitVim
+-- passes only the view values that settings hold. The hangar spec calls it at startup, before
 -- the event-loaded readers of tool state.
 local M = {}
 
@@ -15,10 +16,11 @@ function M.options()
       }
     end,
     state_path = function()
-      return vim.g.tool_state_path or (vim.fn.stdpath("data") .. "/tools.json")
+      return vim.g.hangar_state_path
+        or (vim.fn.stdpath("data") .. "/hangar.json")
     end,
-    ui = require("features.hangar.config.view"),
-    icons = require("shared.icons").tool_manager,
+    -- settings.get() returns a copy, so hangar's in-place fill stays local.
+    ui = require("features.settings.config").get().hangar,
     border = require("shared.borders").default,
     adapters = {
       dap = {

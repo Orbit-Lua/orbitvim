@@ -12,7 +12,7 @@ let $XDG_CACHE_HOME = s:test_root . '/cache'
 let $XDG_STATE_HOME = s:test_root . '/state'
 call mkdir(stdpath('log'), 'p')
 let g:orbitvim_test_plugin_data_path = s:plugin_data_path
-let g:tool_state_path = s:test_root . '/tools.json'
+let g:hangar_state_path = s:test_root . '/hangar.json'
 let g:orbitvim_log_path = s:test_root . '/nvim-config.log'
 let g:orbitvim_settings_path = s:test_root . '/settings.json'
 

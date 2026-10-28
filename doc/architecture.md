@@ -31,24 +31,24 @@ Core owns editor options, autocommands, filetypes and mappings. It also owns she
 
 `features.settings.config` validates personal JSON against the bundled schema and registry before plugins load. `features.settings.runtime` applies live changes with rollback. It observes saves to the exact configured path. `features.settings.commands` gives the settings editor and the effective-value view. [Settings](settings.md) defines precedence and recovery.
 
-## Tool Manager
+## Hangar
 
-[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the Tool Manager view, operations and state. See its guide and architecture for that behavior.
+[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the tool view, operations and state. See its guide and architecture for that behavior.
 
 ```mermaid
 flowchart TD
     Spec[hangar Lazy spec] --> Compose[features.hangar.runtime]
     Compose --> Setup[hangar.setup]
-    Command[:ToolManager] --> Open[hangar.open]
+    Command[:Hangar] --> Open[hangar.open]
     Compose --> Registry[features.hangar.config registry]
-    Compose --> View[features.hangar.config.view view options]
+    Compose --> View[hangar settings section]
     Compose --> Owners[features.dap.runtime, features.formatter.config, features.linter.config, utils.logger]
     Registry --> Derived[features.hangar.config.packages derived lists]
 ```
 
 The hangar spec loads at startup with `lazy = false`. Its `config` calls `features.hangar.runtime.setup()`. LSP, formatter, linter and DAP read tool state on later events.
 
-`features.hangar.runtime` passes the registry, default orders from settings and the `tools.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `features.hangar.config.view` goes by reference, so `features.settings.runtime` updates the open view in place and fires `User HangarChanged`.
+`features.hangar.runtime` passes the registry, default orders from settings and the `hangar.json` path. The `hangar` settings section becomes the view options. It also passes the border, DAP owner, formatter and linter activation, and linter logs. Every view default and icon comes from hangar.nvim. When the section changes, `features.settings.runtime` calls `hangar.update_ui()`, which rebuilds the options and refreshes the open view.
 
 `features.hangar.config` owns logical IDs, supported filetypes, backend aliases, installers and default order. `features.hangar.config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `features.formatter.config` and `features.linter.config`. They do not activate all supported filetypes.
 

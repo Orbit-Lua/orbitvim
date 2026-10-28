@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "OrbitVim settings",
-  "description": "Optional user overrides. Omitted fields use defaults. Saved tool state remains in the data directory's tools.json.",
+  "description": "Optional user overrides. Omitted fields use defaults. Saved tool state remains in the data directory's hangar.json.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -90,23 +90,21 @@
         }
       }
     },
-    "tool_manager": {
+    "hangar": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "width": {
           "type": "integer",
-          "default": 120,
           "minimum": 24,
           "maximum": 500,
-          "description": "Preferred Tool Manager width; updates the open view."
+          "description": "Preferred Hangar width; updates the open view."
         },
         "height": {
           "type": "integer",
-          "default": 40,
           "minimum": 5,
           "maximum": 200,
-          "description": "Preferred Tool Manager height; updates the open view."
+          "description": "Preferred Hangar height; updates the open view."
         },
         "missing_package_policy": {
           "type": "string",
@@ -114,7 +112,6 @@
             "auto",
             "manual"
           ],
-          "default": "auto",
           "description": "auto installs a missing package when enabling a tool; manual leaves enablement unchanged."
         },
         "details": {
@@ -123,14 +120,12 @@
           "properties": {
             "width": {
               "type": "integer",
-              "default": 54,
               "minimum": 20,
               "maximum": 300,
               "description": "Preferred details width; updates the open view."
             },
             "max_messages": {
               "type": "integer",
-              "default": 8,
               "minimum": 0,
               "maximum": 100,
               "description": "Maximum diagnostic messages shown in tool details."
@@ -148,14 +143,12 @@
               "properties": {
                 "vertical": {
                   "type": "integer",
-                  "default": 0,
                   "minimum": 0,
                   "maximum": 8,
                   "description": "Blank rows above and below the list and details. Compact views ignore it."
                 },
                 "horizontal": {
                   "type": "integer",
-                  "default": 2,
                   "minimum": 0,
                   "maximum": 8,
                   "description": "Blank columns on each side of the header, list, footer and details."
@@ -164,24 +157,21 @@
             },
             "column_gap": {
               "type": "integer",
-              "default": 3,
               "minimum": 1,
               "maximum": 8,
               "description": "Blank columns between the Tool, Enabled and Status columns."
             },
             "gap": {
               "type": "integer",
-              "default": 2,
               "minimum": 0,
               "maximum": 10,
               "description": "Blank cells between the list border and the details border."
             },
             "margin": {
               "type": "integer",
-              "default": 2,
               "minimum": 0,
               "maximum": 10,
-              "description": "Minimum blank cells between Tool Manager windows and the editor edge."
+              "description": "Minimum blank cells between Hangar windows and the editor edge."
             }
           }
         },
@@ -191,14 +181,14 @@
           "properties": {
             "debounce_ms": {
               "type": "integer",
-              "default": 500,
               "minimum": 0,
               "maximum": 10000,
               "description": "Diagnostic refresh debounce in milliseconds."
             }
           }
         }
-      }
+      },
+      "description": "Hangar view options. hangar.nvim supplies each omitted value; saving updates the open view."
     },
     "lsp": {
       "type": "object",
@@ -272,7 +262,7 @@
             "uniqueItems": true
           },
           "default": {},
-          "description": "Default formatter order by filetype. Saved tools.json order takes precedence."
+          "description": "Default formatter order by filetype. Saved hangar.json order takes precedence."
         },
         "linter_defaults": {
           "type": "object",
@@ -286,7 +276,7 @@
             "uniqueItems": true
           },
           "default": {},
-          "description": "Default linter order by filetype. Saved tools.json order takes precedence."
+          "description": "Default linter order by filetype. Saved hangar.json order takes precedence."
         }
       },
       "x-reload": "restart",

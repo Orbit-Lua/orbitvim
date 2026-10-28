@@ -54,9 +54,8 @@ M.base46 = {
     active_context = { fg = "blue" },
     CmpGhostText = { link = "Comment", default = true },
     DapBreakpointColor = { fg = "red" },
-    ToolMuted = { fg = "grey" },
 
-    -- Tool Manager categories mirror base46's Mason palette without Mason links.
+    -- Hangar categories mirror base46's Mason palette without Mason links.
     HangarCategoryActive = { fg = "black", bg = "green" },
     HangarCategoryInactive = { fg = "light_grey", bg = "one_bg" },
 

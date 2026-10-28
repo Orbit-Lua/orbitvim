@@ -1,17 +1,4 @@
 return {
-  tool_manager = {
-    enabled = "",
-    idle = "",
-    installing = "",
-    unknown = "",
-    info = "",
-    disabled = "",
-    warning = "",
-    error = "",
-    expanded = "",
-    collapsed = "",
-  },
-
   formatter = {
     error = "✖",
     success = "✔",

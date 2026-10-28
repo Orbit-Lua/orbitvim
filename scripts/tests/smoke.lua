@@ -11,7 +11,7 @@ for _, options in ipairs({
     session.exec([[
 if package.loaded.lazy then
   vim.api.nvim_exec_autocmds('InsertEnter', {})
-  vim.cmd('ToolManager')
+  vim.cmd('Hangar')
   require('hangar').close()
 end
 ]])

@@ -10,13 +10,13 @@ describe("features.formatter.runtime", function()
 
   before_each(function()
     original_conform = package.loaded.conform
-    original_state_path = vim.g.tool_state_path
+    original_state_path = vim.g.hangar_state_path
     original_state_module = package.loaded["hangar.state"]
     original_runtime_module = package.loaded["features.formatter.runtime"]
     original_buffer_formatting = vim.b.orbit_formatting
-    vim.g.tool_state_path = require("tests.helpers").temp_dir(
+    vim.g.hangar_state_path = require("tests.helpers").temp_dir(
       "formatter-options"
-    ) .. "/tools.json"
+    ) .. "/hangar.json"
     original_notify = vim.notify
     notifications = {}
     vim.notify = function(message, level, opts)
@@ -32,7 +32,7 @@ describe("features.formatter.runtime", function()
 
   after_each(function()
     package.loaded.conform = original_conform
-    vim.g.tool_state_path = original_state_path
+    vim.g.hangar_state_path = original_state_path
     package.loaded["hangar.state"] = original_state_module
     vim.notify = original_notify
     vim.b.orbit_formatting = original_buffer_formatting

@@ -4,7 +4,7 @@ describe("JSON settings", function()
 
   before_each(function()
     vim.g.orbitvim_settings_path = test.temp_dir("settings") .. "/settings.json"
-    vim.g.tool_state_path = test.temp_dir("settings-state") .. "/tools.json"
+    vim.g.hangar_state_path = test.temp_dir("settings-state") .. "/hangar.json"
     package.loaded["features.settings.config"] = nil
     settings = require("features.settings.config")
   end)
@@ -41,13 +41,14 @@ describe("JSON settings", function()
         '{"editor":{"relativenumber":"false"}}',
         '{"editor":{"unknown":true}}',
         '{"tools":{"formatter_defaults":{"lua":["yamlfmt"]}}}',
-        '{"tool_manager":{"layout":{"margin":-1}}}',
-        '{"tool_manager":{"layout":{"padding":{"vertical":9}}}}',
-        '{"tool_manager":{"layout":{"padding":{"horizontal":9}}}}',
-        '{"tool_manager":{"layout":{"column_gap":9}}}',
-        '{"tool_manager":{"layout":{"gap":11}}}',
-        '{"tool_manager":{"layout":{"margin":11}}}',
-        '{"tool_manager":{"layout":{"spacing":1}}}',
+        '{"hangar":{"layout":{"margin":-1}}}',
+        '{"hangar":{"layout":{"padding":{"vertical":9}}}}',
+        '{"hangar":{"layout":{"padding":{"horizontal":9}}}}',
+        '{"hangar":{"layout":{"column_gap":9}}}',
+        '{"hangar":{"layout":{"gap":11}}}',
+        '{"hangar":{"layout":{"margin":11}}}',
+        '{"hangar":{"layout":{"spacing":1}}}',
+        '{"tool_manager":{"width":90}}',
       }) do
         test.write_file(settings.path(), content)
         local values, err = settings.read()
@@ -69,14 +70,14 @@ describe("JSON settings", function()
       local state = require("hangar.state")
       assert.is_true(state.set_enabled("formatter", "yaml", false))
       local persisted =
-        table.concat(vim.fn.readfile(vim.g.tool_state_path), "\n")
+        table.concat(vim.fn.readfile(vim.g.hangar_state_path), "\n")
       test.write_file(settings.path(), '{"editor":{"relativenumber":false}}')
       vim.api.nvim_exec_autocmds("BufWritePost", { pattern = settings.path() })
       assert.equals(2, vim.bo[buffer].shiftwidth)
       assert.is_false(vim.wo.relativenumber)
       assert.equals(
         persisted,
-        table.concat(vim.fn.readfile(vim.g.tool_state_path), "\n")
+        table.concat(vim.fn.readfile(vim.g.hangar_state_path), "\n")
       )
     end
   )
@@ -141,7 +142,7 @@ describe("JSON settings", function()
       local before = settings.get()
       test.write_file(
         settings.path(),
-        '{"editor":{"number":false},"tool_manager":{"width":0}}'
+        '{"editor":{"number":false},"hangar":{"width":0}}'
       )
       assert.is_false(runtime.reload())
       assert.same(before, settings.get())
@@ -153,7 +154,7 @@ describe("JSON settings", function()
       test.write_file(
         settings.path(),
         [[{
-      "editor":{"shiftwidth":6},"tool_manager":{"width":90},
+      "editor":{"shiftwidth":6},"hangar":{"width":90},
       "lsp":{"inlay_hints":{"enabled":false}}
     }]]
       )

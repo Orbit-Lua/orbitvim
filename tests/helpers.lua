@@ -238,7 +238,7 @@ function M.write_file(path, content)
   assert.equals(0, vim.fn.writefile(lines, path))
 end
 
----Configure Tool Manager with OrbitVim's wiring, optionally replacing
+---Configure Hangar with OrbitVim's wiring, optionally replacing
 ---top-level options. Call it again after resetting `tool.*` modules.
 ---@param overrides? table
 function M.configure_tool(overrides)

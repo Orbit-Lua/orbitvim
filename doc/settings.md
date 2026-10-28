@@ -26,14 +26,14 @@ The command adds a `$schema` reference. `jsonls` also associates both eligible s
 
 Objects merge by field. Arrays replace previous arrays, also when they are empty. Boolean `false` is preserved. Removing a field restores its default. Unknown keys, wrong types, invalid ranges and typed null values reject the complete input before it applies. Server-specific `settings` accept arbitrary JSON.
 
-`tools.formatter_defaults` and `tools.linter_defaults` set the initial filetype order. They use logical IDs such as `yaml`, not backend aliases such as `yamlfmt`. They override registry defaults at startup. Valid saved order in `tools.json` overrides both. Reload never changes saved enablement or order. Supported filetypes do not imply initial activation.
+`tools.formatter_defaults` and `tools.linter_defaults` set the initial filetype order. They use logical IDs such as `yaml`, not backend aliases such as `yamlfmt`. They override registry defaults at startup. Valid saved order in `hangar.json` overrides both. Reload never changes saved enablement or order. Supported filetypes do not imply initial activation.
 
 ## Live updates
 
 | Section | Application |
 | --- | --- |
 | `editor` | Changed fields update global defaults and normal loaded buffers/splits. Unchanged fields keep local overrides. Special buffers and floating windows keep their local options. Filetype plugins can customize new files. |
-| `tool_manager` | Updates loaded options and refreshes the open view. Help and logical selection stay. |
+| `hangar` | Replaces the view options through `hangar.update_ui()` and refreshes the open view. An omitted value uses the hangar.nvim default. Help and logical selection stay. |
 | `lsp.inlay_hints` | Applies to supported attached clients and future attachments |
 | `lsp.codelens`, `lsp.servers` | Needs a restart. Server settings merge into the Lua configuration. |
 | `tools`, `notes` | Needs a restart. Persisted tool state keeps precedence. |

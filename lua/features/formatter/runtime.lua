@@ -2,7 +2,7 @@ local M = {}
 
 local icons = require("shared.icons")
 
----Build formatter options from fresh config and current Tool Manager state.
+---Build formatter options from fresh config and current Hangar state.
 ---@return table
 function M.options()
   local opts = vim.deepcopy(require("features.formatter.config"))

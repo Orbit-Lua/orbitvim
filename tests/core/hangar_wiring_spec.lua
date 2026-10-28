@@ -4,14 +4,15 @@ describe("hangar wiring through features.hangar.runtime", function()
   local test = require("tests.helpers")
 
   before_each(function()
-    vim.g.tool_state_path = test.temp_dir("hangar-wiring") .. "/tools.json"
+    vim.g.hangar_state_path = test.temp_dir("hangar-wiring") .. "/hangar.json"
     vim.notify = function() end
   end)
 
-  it("reads only current state and honors an explicit state path", function()
-    vim.g.tool_state_path = nil
-    local current = vim.fn.stdpath("data") .. "/tools.json"
-    local legacy = vim.fn.stdpath("data") .. "/service.json"
+  it("reads only hangar.json and honors an explicit state path", function()
+    vim.g.hangar_state_path = nil
+    local current = vim.fn.stdpath("data") .. "/hangar.json"
+    -- The pre-rename file is not read and stays untouched.
+    local legacy = vim.fn.stdpath("data") .. "/tools.json"
     local old_state = '{"lsp":{"lua_ls":false}}'
     test.write_file(legacy, old_state)
     test.configure_tool()
@@ -24,9 +25,9 @@ describe("hangar wiring through features.hangar.runtime", function()
     local persisted = vim.json.decode(table.concat(saved, "\n"))
     assert.is_false(persisted.lsp.lua_ls)
 
-    local override = test.temp_dir("explicit-state") .. "/tools.json"
+    local override = test.temp_dir("explicit-state") .. "/hangar.json"
     test.write_file(override, '{"lsp":{"lua_ls":true}}')
-    vim.g.tool_state_path = override
+    vim.g.hangar_state_path = override
     test.configure_tool()
     assert.is_true(state.is_enabled("lsp", "lua_ls"))
     assert.is_true(state.set_enabled("lsp", "pyright", false))
@@ -43,9 +44,9 @@ describe("hangar wiring through features.hangar.runtime", function()
       .. "/settings.json"
     test.write_file(
       vim.g.orbitvim_settings_path,
-      '{"tool_manager":{"missing_package_policy":"manual"}}'
+      '{"hangar":{"missing_package_policy":"manual"}}'
     )
-    -- Settings update features.hangar.config.view in place, the table hangar holds.
+    -- Settings reach the configured view through hangar.update_ui.
     require("features.settings.runtime").setup()
     local mason = require("hangar.mason")
     mason.package_status = function()

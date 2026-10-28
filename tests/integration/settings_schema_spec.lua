@@ -34,7 +34,7 @@ describe("settings schema language server", function()
       local lines = {
         "{",
         '  "editor": {},',
-        '  "tool_manager": { "missing_package_policy": "" }',
+        '  "hangar": { "missing_package_policy": "" }',
         "}",
       }
       test.write_file(filename, lines)
@@ -71,7 +71,7 @@ describe("settings schema language server", function()
       end
       assert.is_true(labels.auto, vim.inspect(response.result))
       assert.is_true(labels.manual)
-      lines[3] = '  "tool_manager": { "width": 0 }'
+      lines[3] = '  "hangar": { "width": 0 }'
       vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
       local diagnostics =
         assert(client:request_sync("textDocument/diagnostic", {

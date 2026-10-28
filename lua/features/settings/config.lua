@@ -7,6 +7,8 @@ M.schema_path = assert(
 M.schema_path = vim.fs.normalize(vim.fn.fnamemodify(M.schema_path, ":p"))
 local schema =
   vim.json.decode(table.concat(vim.fn.readfile(M.schema_path), "\n"))
+-- Read-only for callers that describe settings, such as the effective view.
+M.schema = schema
 local active, overrides
 
 function M.path()

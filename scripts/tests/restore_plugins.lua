@@ -7,7 +7,7 @@ vim.env.PATH =
   require("scripts.tests.roslyn_fixture").path(fixture .. "/bin", previous_path)
 vim.fn.mkdir(fixture .. "/vault", "p")
 vim.g.orbitvim_settings_path = fixture .. "/settings.json"
-vim.g.tool_state_path = fixture .. "/tools.json"
+vim.g.hangar_state_path = fixture .. "/hangar.json"
 assert(
   vim.fn.writefile(
     { vim.json.encode({ notes = { vault = fixture .. "/vault" } }) },
@@ -21,7 +21,9 @@ for _, category in ipairs({ "lsp", "dap", "formatter", "linter" }) do
     state[category][name] = false
   end
 end
-assert(vim.fn.writefile({ vim.json.encode(state) }, vim.g.tool_state_path) == 0)
+assert(
+  vim.fn.writefile({ vim.json.encode(state) }, vim.g.hangar_state_path) == 0
+)
 local ok, err = xpcall(function()
   dofile("init.lua")
   require("lazy").restore({ wait = true, show = false })

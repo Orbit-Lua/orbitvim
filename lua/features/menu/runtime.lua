@@ -103,7 +103,7 @@ local function menu_items()
       items = {
         item("󰕮  Dashboard", "<leader>uD"),
         item("󰂚  Notification History", "<leader>un"),
-        item("󰒋  Tool Manager", "<leader>us"),
+        item("󰒋  Hangar", "<leader>us"),
         item("󰒓  Settings", "<leader>uc"),
         item("󰏘  Theme Picker", "<leader>ut", "ExBlue"),
         item("󰑓  Reload Theme", "<leader>ur"),

@@ -77,7 +77,6 @@ describe("hangar settings integration", function()
       if
         name == "hangar"
         or name:match("^hangar%.")
-        or name == "features.hangar.config.view"
         or name == "utils.logger"
         or name:match("^nui[%.]?")
       then
@@ -173,7 +172,6 @@ describe("hangar settings integration", function()
       if
         name == "hangar"
         or name:match("^hangar%.")
-        or name == "features.hangar.config.view"
         or name == "utils.logger"
         or name:match("^nui[%.]?")
       then
@@ -195,7 +193,7 @@ describe("hangar settings integration", function()
       vim.o.columns, vim.o.lines = 160, 40
       test.write_file(
         vim.g.orbitvim_settings_path,
-        '{"tool_manager":{"details":{"width":300}}}'
+        '{"hangar":{"details":{"width":300}}}'
       )
       require("features.settings.runtime").setup()
       tool.open()
@@ -230,10 +228,7 @@ describe("hangar settings integration", function()
       select("ruff")
       press("?")
       local count = #snapshots
-      test.write_file(
-        vim.g.orbitvim_settings_path,
-        '{"tool_manager":{"width":90}}'
-      )
+      test.write_file(vim.g.orbitvim_settings_path, '{"hangar":{"width":90}}')
       vim.api.nvim_exec_autocmds(
         "BufWritePost",
         { pattern = vim.g.orbitvim_settings_path }
@@ -267,7 +262,7 @@ describe("hangar settings integration", function()
       refreshed(function()
         test.write_file(
           vim.g.orbitvim_settings_path,
-          vim.json.encode({ tool_manager = { layout = layout } })
+          vim.json.encode({ hangar = { layout = layout } })
         )
         vim.api.nvim_exec_autocmds(
           "BufWritePost",
@@ -360,5 +355,21 @@ describe("hangar settings integration", function()
       end
       assert.is_true(vim.api.nvim_win_get_height(vim.fn.bufwinid(body())) >= 1)
     end
+  end)
+  it("shows hangar's defaults beside saved settings", function()
+    local test = require("tests.helpers")
+    vim.g.orbitvim_settings_path = test.temp_dir("ui-effective")
+      .. "/settings.json"
+    test.write_file(vim.g.orbitvim_settings_path, '{"hangar":{"width":90}}')
+    local runtime = require("features.settings.runtime")
+    runtime.setup()
+    local info = runtime.info()
+    local ui = require("hangar.config").get().ui
+    assert.equals(90, info.values.hangar.width)
+    assert.equals("settings.json", info.sources["hangar.width"])
+    assert.equals(ui.height, info.values.hangar.height)
+    assert.equals("hangar default", info.sources["hangar.height"])
+    assert.equals(ui.layout.margin, info.values.hangar.layout.margin)
+    assert.equals("hangar default", info.sources["hangar.layout.margin"])
   end)
 end)

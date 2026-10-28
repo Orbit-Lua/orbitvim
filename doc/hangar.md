@@ -1,20 +1,20 @@
-# Tool Manager
+# Hangar
 
-OrbitVim uses [hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) as its Tool Manager. This guide covers OrbitVim's keys, settings, registry and state. The [hangar guide](https://github.com/Orbit-Lua/hangar.nvim/blob/main/doc/guide.md) covers the view, statuses, locks and session behavior.
+OrbitVim uses [hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) to manage its tools. This guide covers OrbitVim's keys, settings, registry and state. The [hangar guide](https://github.com/Orbit-Lua/hangar.nvim/blob/main/doc/guide.md) covers the view, statuses, locks and session behavior.
 
-Open Tool Manager with `:ToolManager` or `<leader>us`. If it is open, this focuses the existing view. A new session captures the filetype and filename of the source buffer. `s` switches between that buffer and all registered tools.
+Open Hangar with `:Hangar` or `<leader>us`. If it is open, this focuses the existing view. A new session captures the filetype and filename of the source buffer. `s` switches between that buffer and all registered tools.
 
 ## Navigation
 
 Use `1`–`6` or Tab / Shift-Tab to select LSP, DAP, Linter, Formatter, Parser or Package. `K` focuses details. `?` or `g?` toggles help. `q` or Escape closes the view or returns from details.
 
-Set `tool_manager.layout` in settings to change the spacing in cells: `padding`, `column_gap`, `gap` and `margin`. Set `tool_manager.width`, `height` and `details.width` to change the window sizes. Saving the settings file updates an open view.
+Set `hangar.layout` in settings to change the spacing in cells: `padding`, `column_gap`, `gap` and `margin`. Set `hangar.width`, `height` and `details.width` to change the window sizes. hangar.nvim supplies each value that settings omit. `:OrbitSettings` shows those values with the source `hangar default`. Saving the settings file updates an open view. A removed value returns to its default.
 
 ## Install and enable
 
 `i` installs a Mason package or parser without enabling a disabled runtime tool. Space toggles an LSP, DAP, formatter or linter.
 
-With `tool_manager.missing_package_policy = "auto"`, a missing Mason package installs first. To require explicit installation, set it to `"manual"` in settings. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in `features.hangar.config`.
+With `hangar.missing_package_policy = "auto"`, a missing Mason package installs first. To require explicit installation, set it to `"manual"` in settings. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in `features.hangar.config`.
 
 ## Status
 
@@ -39,7 +39,7 @@ Use `[` / `]` on a formatter or linter to change its priority for a filetype. `t
 
 The registry in `features.hangar.config` uses logical IDs. At runtime, adapters translate them to backend aliases, for example `yaml` to Conform's `yamlfmt`.
 
-State is stored in `stdpath('data')/tools.json`, or in `vim.g.tool_state_path` when it is set. Only this file is read. Missing or malformed state uses defaults. See the hangar guide for locks, recovery and merging.
+State is stored in `stdpath('data')/hangar.json`, or in `vim.g.hangar_state_path` when it is set. Only this file is read. An older `tools.json` is ignored. Missing or malformed state uses defaults. See the hangar guide for locks, recovery and merging.
 
 ## Session lifetime
 

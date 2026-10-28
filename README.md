@@ -24,11 +24,11 @@ git clone https://github.com/Orbit-Lua/orbitvim.git "%LOCALAPPDATA%\nvim"
 nvim
 ```
 
-Lazy installs the locked plugins on first start. Install language tools through Tool Manager. Install parsers with `:TSInstallAll`.
+Lazy installs the locked plugins on first start. Install language tools through Hangar. Install parsers with `:TSInstallAll`.
 
 ## Usage
 
-Open Tool Manager with `:ToolManager` or `<leader>us`. The leader key is Space.
+Open Hangar with `:Hangar` or `<leader>us`. The leader key is Space.
 
 | Key | Action |
 | --- | --- |
@@ -42,7 +42,7 @@ Open Tool Manager with `:ToolManager` or `<leader>us`. The leader key is Space.
 | `?`, `g?` | Toggle help |
 | `q`, Escape | Close |
 
-Parsers and dependency packages support installation only. Enablement and order persist in `stdpath('data')/tools.json`. See [Tool Manager](doc/tool-manager.md) for installation policy, status and recovery.
+Parsers and dependency packages support installation only. Enablement and order persist in `stdpath('data')/hangar.json`. See [Hangar](doc/hangar.md) for installation policy, status and recovery.
 
 Other common actions:
 
@@ -60,7 +60,7 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 ### Language workflows
 
-For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Tool Manager. Restart Neovim after installation.
+For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Hangar. Restart Neovim after installation.
 
 Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
 
@@ -79,11 +79,11 @@ For example, set these overrides in the generated file:
 ```json
 {
   "editor": { "relativenumber": false, "shiftwidth": 4 },
-  "tool_manager": { "width": 100, "missing_package_policy": "manual" }
+  "hangar": { "width": 100, "missing_package_policy": "manual" }
 }
 ```
 
-Saving applies editor options, Tool Manager options and inlay hints. Server configuration, code lenses, initial tool priorities and notes settings need a restart. Invalid input keeps accepted values. See [settings](doc/settings.md) for precedence, explicit paths and rollback.
+Saving applies editor options, Hangar options and inlay hints. Server configuration, code lenses, initial tool priorities and notes settings need a restart. Invalid input keeps accepted values. See [settings](doc/settings.md) for precedence, explicit paths and rollback.
 
 Set `notes.vault` to an Obsidian vault path to enable Markdown note integration.
 

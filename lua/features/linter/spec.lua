@@ -5,7 +5,7 @@ return {
     event = { "BufReadPost", "BufWritePost", "BufNewFile" },
     opts = function()
       -- features.linter.runtime filters this table; features.linter.config stays the activation
-      -- source for Tool Manager.
+      -- source for Hangar.
       return vim.deepcopy(require("features.linter.config"))
     end,
     config = function(_, opts)

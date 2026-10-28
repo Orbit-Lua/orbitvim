@@ -67,7 +67,7 @@ function M.open(repository, opts)
       state[category][name] = false
     end
   end
-  write(data .. "/tools.json", vim.json.encode(state))
+  write(data .. "/hangar.json", vim.json.encode(state))
   write(root .. "/settings.json", "{}")
   local fixture_path = vim.env.PATH
   if opts.roslyn then

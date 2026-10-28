@@ -76,22 +76,17 @@ local function apply(values, before, initial)
       apply_editor(changes, undo)
       table.insert(applied, "editor")
     end
-    if
-      initial or not vim.deep_equal(values.tool_manager, before.tool_manager)
-    then
-      local config = package.loaded["features.hangar.config.view"]
-      if config then
-        local previous = vim.deepcopy(config)
+    if initial or not vim.deep_equal(values.hangar, before.hangar) then
+      -- Settings apply before Lazy loads hangar; its setup reads them then.
+      local hangar_config = package.loaded["hangar.config"]
+      if hangar_config and hangar_config.configured() then
+        local previous = before.hangar
         table.insert(undo, function()
-          for name, value in pairs(previous) do
-            config[name] = value
-          end
+          require("hangar").update_ui(previous)
         end)
-        for name, value in pairs(values.tool_manager) do
-          config[name] = vim.deepcopy(value)
-        end
+        require("hangar").update_ui(values.hangar)
       end
-      table.insert(applied, "tool_manager")
+      table.insert(applied, "hangar")
     end
     if
       initial
@@ -199,6 +194,28 @@ function M.info()
     end
   end
   visit(result.values, result.overrides, "")
+  -- hangar supplies the view values that settings omit; show those too.
+  local hangar_config = package.loaded["hangar.config"]
+  if hangar_config and hangar_config.configured() then
+    local function supply(node, values, effective, path)
+      for name, child in pairs(node.properties or {}) do
+        local key = path .. "." .. name
+        if child.type == "object" then
+          values[name] = values[name] or vim.empty_dict()
+          supply(child, values[name], (effective or {})[name], key)
+        elseif values[name] == nil and (effective or {})[name] ~= nil then
+          values[name] = vim.deepcopy(effective[name])
+          result.sources[key] = "hangar default"
+        end
+      end
+    end
+    supply(
+      settings.schema.properties.hangar,
+      result.values.hangar,
+      hangar_config.get().ui,
+      "hangar"
+    )
+  end
   return result
 end
 

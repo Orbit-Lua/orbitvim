@@ -143,7 +143,7 @@ local function build_runner(lint, skip_while_editing)
         return linter ~= nil
       end, linter_names)
 
-      -- Run linters and notify listeners so the Tool Manager can refresh
+      -- Run linters and notify listeners so Hangar can refresh
       -- run-error state. NvimLintRunPost only fires when a run actually happens
       -- to avoid spurious re-renders on buffers with no linters.
       if #linter_names > 0 then
