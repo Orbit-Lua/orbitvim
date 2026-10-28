@@ -8,6 +8,35 @@ describe("hangar wiring through core.tools", function()
     vim.notify = function() end
   end)
 
+  it("reads only current state and honors an explicit state path", function()
+    vim.g.tool_state_path = nil
+    local current = vim.fn.stdpath("data") .. "/tools.json"
+    local legacy = vim.fn.stdpath("data") .. "/service.json"
+    local old_state = '{"lsp":{"lua_ls":false}}'
+    test.write_file(legacy, old_state)
+    test.configure_tool()
+    local state = require("hangar.state")
+    assert.is_true(state.is_enabled("lsp", "lua_ls"))
+    assert.is_nil(vim.uv.fs_stat(current))
+
+    assert.is_true(state.set_enabled("lsp", "lua_ls", false))
+    local saved = vim.fn.readfile(current, "b")
+    local persisted = vim.json.decode(table.concat(saved, "\n"))
+    assert.is_false(persisted.lsp.lua_ls)
+
+    local override = test.temp_dir("explicit-state") .. "/tools.json"
+    test.write_file(override, '{"lsp":{"lua_ls":true}}')
+    vim.g.tool_state_path = override
+    test.configure_tool()
+    assert.is_true(state.is_enabled("lsp", "lua_ls"))
+    assert.is_true(state.set_enabled("lsp", "pyright", false))
+    local overridden =
+      vim.json.decode(table.concat(vim.fn.readfile(override), "\n"))
+    assert.is_false(overridden.lsp.pyright)
+    assert.same(saved, vim.fn.readfile(current, "b"))
+    assert.same({ old_state }, vim.fn.readfile(legacy))
+  end)
+
   it("applies a saved missing-package policy to the configured view", function()
     test.configure_tool()
     vim.g.orbitvim_settings_path = test.temp_dir("hangar-policy")

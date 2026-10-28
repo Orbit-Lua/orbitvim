@@ -9,8 +9,8 @@ describe("buffer-dependent linter execution", function()
       script,
       "vim.fn.writefile({'executed'}, " .. vim.json.encode(marker) .. ")"
     )
-    -- nvim-lint runs Windows linters through `cmd.exe /C`, which splits a
-    -- quoted executable path such as `C:\Program Files\...`. The shim keeps
+    -- nvim-lint's Windows wrapper can split a spaced executable path when
+    -- an argument also needs quoting (upstream issue #745). The shim keeps
     -- the linter command free of spaces on every platform.
     local windows = vim.fn.has("win32") == 1
     local shim = root .. "/probe" .. (windows and ".cmd" or "")

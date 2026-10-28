@@ -3,7 +3,7 @@ return {
   { "MunifTanjim/nui.nvim", lazy = true },
   {
     "Orbit-Lua/hangar.nvim",
-    version = "^0.1",
+    commit = "899f95ed3d6f4ee49f9c7ed99a962ae79b58d0bc",
     -- Startup readers of tool state load later on events, so configuring
     -- hangar at startup keeps saved intent available to them.
     lazy = false,

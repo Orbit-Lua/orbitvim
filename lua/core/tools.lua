@@ -17,12 +17,6 @@ function M.options()
     state_path = function()
       return vim.g.tool_state_path or (vim.fn.stdpath("data") .. "/tools.json")
     end,
-    legacy_state_path = function()
-      if vim.g.tool_state_path then
-        return nil
-      end
-      return vim.fn.stdpath("data") .. "/service.json"
-    end,
     ui = require("config.tool_manager"),
     icons = require("config.icons").tool_manager,
     border = require("config.borders").default,

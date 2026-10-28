@@ -33,7 +33,7 @@ flowchart TD
 
 The hangar spec loads at startup with `lazy = false`. Its `config` calls `core.tools.setup()`. The readers of tool state in `runtime.lsp`, `runtime.formatter`, `runtime.linter` and the DAP spec load later on events, so they find hangar configured.
 
-`core.tools` passes the registry, default orders from settings, the `tools.json` path and the legacy `service.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `config.tool_manager` goes by reference, so `core.settings` updates the open view in place and fires `User HangarChanged`.
+`core.tools` passes the registry, default orders from settings and the `tools.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `config.tool_manager` goes by reference, so `core.settings` updates the open view in place and fires `User HangarChanged`.
 
 `config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
 

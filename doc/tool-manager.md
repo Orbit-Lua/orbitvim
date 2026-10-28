@@ -28,7 +28,7 @@ Use `[` / `]` on a formatter or linter to change its priority for a filetype. `t
 
 The registry in `config.tools` uses logical IDs. At runtime, adapters translate them to backend aliases, for example `yaml` to Conform's `yamlfmt`.
 
-State is stored in `stdpath('data')/tools.json`, or in `vim.g.tool_state_path` when it is set. If the file is missing, hangar reads the legacy `service.json`. See the hangar guide for locks, recovery and merging.
+State is stored in `stdpath('data')/tools.json`, or in `vim.g.tool_state_path` when it is set. Only this file is read. Missing or malformed state uses defaults. See the hangar guide for locks, recovery and merging.
 
 ## Session lifetime
 
