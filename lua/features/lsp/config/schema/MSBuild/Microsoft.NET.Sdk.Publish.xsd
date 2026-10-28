@@ -4,7 +4,7 @@
   elementFormDefault="unqualified">
 
   <!-- ── Import common MSBuild schema ────────────────────────────────────── -->
-  <xs:include schemaLocation="MSBuild/Microsoft.Build.CommonTypes.xsd" />
+  <xs:include schemaLocation="Microsoft.Build.CommonTypes.xsd" />
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        Publish Properties  (substitutionGroup="Property")
