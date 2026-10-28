@@ -9,13 +9,13 @@ describe("settings command", function()
     "copies legacy bytes to writable storage and observes the destination",
     function()
       vim.g.orbitvim_settings_path = nil
-      local settings = require("config.settings")
+      local settings = require("features.settings.config")
       local legacy, destination = settings.legacy_path(), settings.edit_path()
       test.write_file(legacy, '{"editor":{"shiftwidth":4}}')
       assert.equals(legacy, settings.path())
-      require("core.settings").setup()
+      require("features.settings.runtime").setup()
       assert.is_nil(vim.uv.fs_stat(destination))
-      require("commands.settings").setup()
+      require("features.settings.commands").setup()
       vim.cmd.OrbitSettings()
       assert.equals(destination, settings.path())
       test.assert_path(destination, vim.api.nvim_buf_get_name(0))
@@ -25,10 +25,16 @@ describe("settings command", function()
       )
       test.write_file(destination, '{"editor":{"shiftwidth":6}}')
       vim.api.nvim_exec_autocmds("BufWritePost", { pattern = destination })
-      assert.equals(6, require("core.settings").info().values.editor.shiftwidth)
+      assert.equals(
+        6,
+        require("features.settings.runtime").info().values.editor.shiftwidth
+      )
       test.write_file(legacy, '{"editor":{"shiftwidth":8}}')
       vim.api.nvim_exec_autocmds("BufWritePost", { pattern = legacy })
-      assert.equals(6, require("core.settings").info().values.editor.shiftwidth)
+      assert.equals(
+        6,
+        require("features.settings.runtime").info().values.editor.shiftwidth
+      )
       test.write_file(destination, "{invalid")
       assert.is_nil(settings.read())
       vim.cmd.OrbitSettings()
@@ -52,7 +58,7 @@ describe("settings command", function()
       vim.g.mapleader = " "
       vim.g.orbitvim_settings_path = test.temp_dir("settings command")
         .. "/settings.json"
-      require("commands.settings").setup()
+      require("features.settings.commands").setup()
       require("core.keymaps")
       local mapping = vim.fn.maparg("<leader>uc", "n", false, true)
       vim.cmd(mapping.rhs:match("<cmd>(.-)<[cC][rR]>"))
@@ -64,13 +70,13 @@ describe("settings command", function()
         table.concat(vim.fn.readfile(vim.g.orbitvim_settings_path), "\n")
       )
       assert.equals(
-        vim.uri_from_fname(require("config.settings").schema_path),
+        vim.uri_from_fname(require("features.settings.config").schema_path),
         decoded["$schema"]
       )
       test.write_file(vim.g.orbitvim_settings_path, "{broken")
       vim.cmd("edit!")
-      require("core.settings").setup()
-      assert.is_truthy(require("core.settings").info().error)
+      require("features.settings.runtime").setup()
+      assert.is_truthy(require("features.settings.runtime").info().error)
       vim.cmd.OrbitSettings()
       assert.equals("{broken", vim.api.nvim_get_current_line())
     end

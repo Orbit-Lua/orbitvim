@@ -1,6 +1,6 @@
 describe("T-SQL conventions highlighting corpus", function()
-  local treesitter = require("runtime.treesitter")
-  local config = require("config.treesitter").sql
+  local treesitter = require("features.treesitter.runtime")
+  local config = require("features.treesitter.config").sql
   local lines
   local buf
   local original_config

@@ -1,0 +1,120 @@
+local M = {}
+
+local function open()
+  local settings = require("features.settings.config")
+  local path = settings.edit_path()
+  local stat, stat_error, code = vim.uv.fs_stat(path)
+  if not stat and code ~= "ENOENT" then
+    vim.notify(
+      tostring(stat_error),
+      vim.log.levels.WARN,
+      { title = "OrbitSettings" }
+    )
+    return
+  end
+  if not stat then
+    local reference = vim.fs.dirname(path)
+          == vim.fs.dirname(settings.schema_path)
+        and "./settings.schema.json"
+      or vim.uri_from_fname(settings.schema_path)
+    local contents = '{\n  "$schema": ' .. vim.json.encode(reference) .. "\n}\n"
+    local source = settings.path()
+    if source ~= path then
+      local file, err = io.open(source, "rb")
+      if not file then
+        vim.notify(
+          tostring(err),
+          vim.log.levels.WARN,
+          { title = "OrbitSettings" }
+        )
+        return
+      end
+      contents = file:read("*a")
+      file:close()
+      if not contents then
+        vim.notify(
+          "Could not read legacy settings",
+          vim.log.levels.WARN,
+          { title = "OrbitSettings" }
+        )
+        return
+      end
+    end
+    local ok, err, publish_code =
+      require("utils.fs").atomic_write(path, contents, { exclusive = true })
+    if not ok and publish_code ~= "EEXIST" then
+      vim.notify(
+        tostring(err),
+        vim.log.levels.WARN,
+        { title = "OrbitSettings" }
+      )
+      return
+    end
+  end
+  vim.cmd.edit({ args = { path } })
+end
+
+local function info()
+  local data = require("features.settings.runtime").info()
+  local lines = { "Settings: " .. data.path, "" }
+  if data.error then
+    table.insert(lines, "Last error: " .. data.error)
+  end
+  if #data.restart_required > 0 then
+    table.insert(
+      lines,
+      "Restart required: " .. table.concat(data.restart_required, ", ")
+    )
+  end
+  local function visit(values, path)
+    for _, name in ipairs(vim.fn.sort(vim.tbl_keys(values))) do
+      local key = path == "" and name or path .. "." .. name
+      local value = values[name]
+      if type(value) == "table" and not vim.islist(value) and next(value) then
+        visit(value, key)
+      else
+        table.insert(
+          lines,
+          key
+            .. " = "
+            .. vim.json.encode(value)
+            .. " ["
+            .. data.sources[key]
+            .. "]"
+        )
+      end
+    end
+  end
+  visit(data.values, "")
+  vim.cmd.new()
+  local buffer = vim.api.nvim_get_current_buf()
+  vim.bo[buffer].buftype, vim.bo[buffer].bufhidden, vim.bo[buffer].swapfile =
+    "nofile", "wipe", false
+  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+  vim.bo[buffer].modifiable = false
+end
+
+function M.setup()
+  vim.api.nvim_create_user_command("OrbitSettings", function(opts)
+    local action = opts.args == "" and "open" or opts.args
+    if action == "open" then
+      open()
+    elseif action == "reload" then
+      require("features.settings.runtime").reload()
+    elseif action == "info" then
+      info()
+    else
+      vim.notify("Expected open, reload or info", vim.log.levels.WARN)
+    end
+  end, {
+    nargs = "?",
+    desc = "Open, reload or inspect OrbitVim settings",
+    complete = function(lead)
+      return vim.tbl_filter(function(action)
+        return action:find(lead, 1, true) == 1
+      end, { "open", "reload", "info" })
+    end,
+  })
+end
+
+return M

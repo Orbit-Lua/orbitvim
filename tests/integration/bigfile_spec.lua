@@ -13,12 +13,12 @@ assert(vim.bo.filetype == 'bigfile', 'Snacks did not detect the minified file')
 local starts, runs = 0, 0
 local start = vim.treesitter.start
 vim.treesitter.start = function() starts = starts + 1 end
-require('runtime.treesitter').start()
+require('features.treesitter.runtime').start()
 vim.treesitter.start = start
 assert(starts == 0, 'custom parser activation bypassed the bigfile policy')
 local lint = require('lint')
 lint.try_lint = function() runs = runs + 1 end
-require('runtime.linter').setup({
+require('features.linter.runtime').setup({
   events={'BufWritePost'}, linters={}, linters_by_ft={['*']={'probe'}},
 })
 vim.api.nvim_exec_autocmds('BufWritePost', {buffer=0})

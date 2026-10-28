@@ -3,7 +3,7 @@ package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
 require("scripts.tests.build_fixture").run(
   "markdown-preview.nvim",
   function(directory)
-    for _, plugin in ipairs(require("plugins.editor")) do
+    for _, plugin in ipairs(require("features.markdown.spec")) do
       if plugin[1] == "iamcco/markdown-preview.nvim" then
         plugin.build({ dir = directory })
       end

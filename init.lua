@@ -5,7 +5,7 @@ vim.g.base46_cache = vim.fn.stdpath("data") .. "/nvchad/base46/"
 vim.g.mapleader = " "
 
 require("core.options")
-require("core.settings").setup()
+require("features.settings.runtime").setup()
 require("core.autocmds")
 require("core.filetypes")
 
@@ -56,14 +56,14 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   { import = "plugins" },
-}, require("config.lazy"))
+}, require("core.lazy"))
 
 --------------------------------------------------------------------------------
 -- 3. Post-Lazy: user commands, theme caches, shell, and keymaps
 --------------------------------------------------------------------------------
-require("commands").setup()
+require("core.commands").setup()
 
-local theme = require("core.theme")
+local theme = require("features.theme.runtime")
 theme.load_cache("defaults")
 theme.load_cache("statusline")
 

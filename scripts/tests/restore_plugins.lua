@@ -17,7 +17,7 @@ assert(
 local state = {}
 for _, category in ipairs({ "lsp", "dap", "formatter", "linter" }) do
   state[category] = {}
-  for name in pairs(require("config.tools")[category]) do
+  for name in pairs(require("features.hangar.config")[category]) do
     state[category][name] = false
   end
 end

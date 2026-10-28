@@ -42,6 +42,7 @@ A test that expects a failure notification observes it explicitly. Other tests m
 
 ## Coverage
 
+- Import feature specs without plugin access to guard declarations against activation and editor registrations.
 - Execute parser queries and snippet expansions instead of inspecting their declarations.
 - Keep schema references, cross-module derivation and persisted JSON coverage.
 - Protect transaction ownership, identifier validation and value parameterization in SQL templates.

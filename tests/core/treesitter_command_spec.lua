@@ -9,12 +9,12 @@ describe("configured parser installation", function()
           received = names
         end,
       }
-      require("commands.treesitter").setup()
+      require("features.treesitter.commands").setup()
       local ok, err = pcall(vim.cmd.TSInstallAll)
       package.loaded["nvim-treesitter"] = previous
       vim.api.nvim_del_user_command("TSInstallAll")
       assert.is_true(ok, err)
-      local expected = vim.tbl_keys(require("config.tools").parser)
+      local expected = vim.tbl_keys(require("features.hangar.config").parser)
       table.sort(expected)
       assert.same(expected, received)
     end

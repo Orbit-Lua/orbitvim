@@ -57,7 +57,7 @@ for _, name in ipairs({'lua_ls','pyright','ruff','roslyn','typescript-tools','pr
   vim.lsp.get_clients = function()
     return {{name=name, supports_method=function() return true end}}
   end
-  require('runtime.lsp.keymaps').on_attach(nil, buffer)
+  require('features.lsp.runtime.keymaps').on_attach(nil, buffer)
   result[name] = {}
   for _, mode in ipairs({'n','v','i'}) do
     for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(buffer, mode)) do

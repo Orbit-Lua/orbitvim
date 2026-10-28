@@ -2,7 +2,9 @@ vim.opt.runtimepath:prepend(vim.fn.getcwd())
 package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
 require("scripts.tests.build_fixture").run("LuaSnip", function(directory)
   local build
-  for _, dependency in ipairs(require("plugins.completion")[1].dependencies) do
+  for _, dependency in
+    ipairs(require("features.completion.spec")[1].dependencies)
+  do
     if type(dependency) == "table" and dependency[1] == "L3MON4D3/LuaSnip" then
       build = dependency.build
     end

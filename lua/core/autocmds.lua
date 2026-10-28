@@ -34,7 +34,7 @@ autocmd({ "UIEnter", "BufReadPost", "BufNewFile" }, {
 autocmd("FileType", {
   group = augroup("OrbitVimTreesitter", { clear = true }),
   callback = function(args)
-    require("runtime.treesitter").start(args.buf)
+    require("features.treesitter.runtime").start(args.buf)
   end,
 })
 

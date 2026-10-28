@@ -1,6 +1,6 @@
 describe("Roslyn solution preference", function()
   local test = require("tests.helpers")
-  local choose = require("config.lsp.roslyn").choose_target
+  local choose = require("features.lsp.config.roslyn").choose_target
 
   after_each(function()
     test.cleanup_all()

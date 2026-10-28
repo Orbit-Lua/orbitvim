@@ -5,8 +5,8 @@ describe("JSON settings", function()
   before_each(function()
     vim.g.orbitvim_settings_path = test.temp_dir("settings") .. "/settings.json"
     vim.g.tool_state_path = test.temp_dir("settings-state") .. "/tools.json"
-    package.loaded["config.settings"] = nil
-    settings = require("config.settings")
+    package.loaded["features.settings.config"] = nil
+    settings = require("features.settings.config")
   end)
 
   -- Registered after the spec's own hook, so setup follows any module reset.
@@ -63,7 +63,7 @@ describe("JSON settings", function()
       local buffer = vim.api.nvim_create_buf(true, false)
       vim.api.nvim_set_current_buf(buffer)
       test.write_file(settings.path(), '{"editor":{"shiftwidth":4}}')
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       assert.equals(4, vim.bo[buffer].shiftwidth)
       local state = require("hangar.state")
@@ -82,7 +82,7 @@ describe("JSON settings", function()
   )
   it("rejects typed null without changing accepted settings", function()
     test.write_file(settings.path(), '{"editor":{"shiftwidth":4}}')
-    local runtime = require("core.settings")
+    local runtime = require("features.settings.runtime")
     runtime.setup()
     local before, source = settings.get(), settings.info().overrides
     local notified, notify = {}, vim.notify
@@ -136,7 +136,7 @@ describe("JSON settings", function()
   it(
     "keeps last valid values after invalid input or a runtime apply failure",
     function()
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       local before = settings.get()
       test.write_file(
@@ -145,7 +145,7 @@ describe("JSON settings", function()
       )
       assert.is_false(runtime.reload())
       assert.same(before, settings.get())
-      package.loaded["runtime.lsp"] = {
+      package.loaded["features.lsp.runtime"] = {
         apply_inlay_hints = function()
           error("inlay backend refused")
         end,
@@ -166,7 +166,7 @@ describe("JSON settings", function()
   it(
     "changes only edited options while preserving unrelated buffer and window overrides",
     function()
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       vim.bo.shiftwidth, vim.bo.tabstop = 4, 8
       vim.wo.cursorline = false
@@ -182,11 +182,11 @@ describe("JSON settings", function()
   it(
     "reports rollback failures together with the original apply error",
     function()
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       local setter = vim.api.nvim_set_option_value
       local restoring = false
-      package.loaded["runtime.lsp"] = {
+      package.loaded["features.lsp.runtime"] = {
         apply_inlay_hints = function()
           restoring = true
           error("backend refused")
@@ -216,7 +216,7 @@ describe("JSON settings", function()
   it(
     "reports restart-only edits and actual override sources while observing only its own file",
     function()
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       runtime.setup()
       test.write_file(
@@ -254,7 +254,7 @@ describe("JSON settings", function()
       "python":["ruff_format","ruff_fix","ruff_organize_imports"]
     }},"lsp":{"servers":{"pyright":{"settings":{"python":{"analysis":{"typeCheckingMode":"strict"}}}}}}}]]
       )
-      require("core.settings").setup()
+      require("features.settings.runtime").setup()
       local state = require("hangar.state")
       assert.same(
         { "ruff_format", "ruff_fix", "ruff_organize_imports" },
@@ -270,7 +270,7 @@ describe("JSON settings", function()
       )
       assert.equals(
         "strict",
-        require("config.lsp").servers.pyright.settings.python.analysis.typeCheckingMode
+        require("features.lsp.config").servers.pyright.settings.python.analysis.typeCheckingMode
       )
     end
   )

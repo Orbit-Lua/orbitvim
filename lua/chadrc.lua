@@ -1,7 +1,7 @@
 ---@module "ui"
 
-local packages = require("config.packages")
-local borders = require("config.borders")
+local packages = require("features.hangar.config.packages")
+local borders = require("shared.borders")
 
 ---@type ChadrcConfig
 local M = {}

@@ -1,6 +1,6 @@
 describe("T-SQL highlighting", function()
-  local config = require("config.treesitter").sql
-  local treesitter = require("runtime.treesitter")
+  local config = require("features.treesitter.config").sql
+  local treesitter = require("features.treesitter.runtime")
   local buffers = {}
   local original_config
   local original_markdown_fences

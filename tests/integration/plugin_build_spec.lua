@@ -43,7 +43,9 @@ int luaopen_orbitvim_build(lua_State *state) {
         }, "\n")
       )
       local build
-      for _, dependency in ipairs(require("plugins.completion")[1].dependencies) do
+      for _, dependency in
+        ipairs(require("features.completion.spec")[1].dependencies)
+      do
         if
           type(dependency) == "table" and dependency[1] == "L3MON4D3/LuaSnip"
         then
@@ -133,7 +135,7 @@ if vim.fn.has('win32') == 1 then
   vim.o.shellquote, vim.o.shellxquote = '', ''
 end
 local build
-for _, plugin in ipairs(require('plugins.editor')) do
+for _, plugin in ipairs(require('features.markdown.spec')) do
   if plugin[1] == 'iamcco/markdown-preview.nvim' then build = plugin.build end
 end
 if type(build) == 'function' then build({dir=root}) else vim.cmd(build:sub(2)) end

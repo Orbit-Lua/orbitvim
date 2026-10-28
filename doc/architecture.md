@@ -2,19 +2,34 @@
 
 `init.lua` applies editor options and settings. It bootstraps the locked Lazy revision and imports plugin specs. Then it registers commands and finishes theme, shell, highlights and general mappings. Plugin imports describe loading. Their lifecycle callbacks give activation to feature owners.
 
-Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugins/`, and backend activation under `lua/runtime/`. Shared helpers expose concrete local interfaces without forwarding facades.
+Each feature lives under `lua/features/<name>/`. Fixed entry names separate editable declarations from activation.
+
+## Layout
+
+| Entry | Responsibility |
+| --- | --- |
+| `spec.lua` | Lazy loading declarations |
+| `config.lua`, `config/` | Editable options, declarations and assets |
+| `runtime.lua`, `runtime/` | Activation and resource lifetime |
+| `commands.lua` | Feature commands and their mappings |
+
+Keep feature directories free of `init.lua` files. Import another feature's declarations or public runtime functions directly.
+
+`lua/plugins/init.lua` imports each feature spec explicitly. Lazy tracks these modules for change detection. Spec imports do not load runtime owners or register editor resources.
+
+Core owns editor options, autocommands, filetypes and mappings. It also owns shell setup, Lazy options and the command registration list. Shared owns borders and icons. Utils holds helpers that have no feature owner. Keep `lua/chadrc.lua` at the top level for nv-ui.
 
 ## Startup
 
 - Keep editor setup, Lazy bootstrap and final UI setup in that order.
 - Let plugin specs declare loading and plugin keys. Let their lifecycle callbacks call runtime owners.
 - Do not register commands, events or mappings, or load highlight caches, during spec import.
-- Treat configuration templates under `lua/config/*/template/` as reusable files.
+- Treat configuration templates under `lua/features/*/config/template/` as reusable files.
 - Keep project-root precedence in `utils.project` stable when you change discovery helpers.
 
 ## Settings
 
-`config.settings` validates personal JSON against the bundled schema and registry before plugins load. `core.settings` applies live changes with rollback. It observes saves to the exact configured path. `commands.settings` gives the settings editor and the effective-value view. [Settings](settings.md) defines precedence and recovery.
+`features.settings.config` validates personal JSON against the bundled schema and registry before plugins load. `features.settings.runtime` applies live changes with rollback. It observes saves to the exact configured path. `features.settings.commands` gives the settings editor and the effective-value view. [Settings](settings.md) defines precedence and recovery.
 
 ## Tool Manager
 
@@ -22,32 +37,34 @@ Editable options live under `lua/config/`. Lazy metadata lives under `lua/plugin
 
 ```mermaid
 flowchart TD
-    Spec[hangar Lazy spec] --> Compose[core.tools]
+    Spec[hangar Lazy spec] --> Compose[features.hangar.runtime]
     Compose --> Setup[hangar.setup]
     Command[:ToolManager] --> Open[hangar.open]
-    Compose --> Registry[config.tools registry]
-    Compose --> View[config.tool_manager view options]
-    Compose --> Owners[runtime.dap, config.formatter, config.linter, utils.logger]
-    Registry --> Derived[config.packages derived lists]
+    Compose --> Registry[features.hangar.config registry]
+    Compose --> View[features.hangar.config.view view options]
+    Compose --> Owners[features.dap.runtime, features.formatter.config, features.linter.config, utils.logger]
+    Registry --> Derived[features.hangar.config.packages derived lists]
 ```
 
-The hangar spec loads at startup with `lazy = false`. Its `config` calls `core.tools.setup()`. The readers of tool state in `runtime.lsp`, `runtime.formatter`, `runtime.linter` and the DAP spec load later on events, so they find hangar configured.
+The hangar spec loads at startup with `lazy = false`. Its `config` calls `features.hangar.runtime.setup()`. LSP, formatter, linter and DAP read tool state on later events.
 
-`core.tools` passes the registry, default orders from settings and the `tools.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `config.tool_manager` goes by reference, so `core.settings` updates the open view in place and fires `User HangarChanged`.
+`features.hangar.runtime` passes the registry, default orders from settings and the `tools.json` path. It also passes the view options, icons, border, DAP owner, formatter and linter activation, and linter logs. `features.hangar.config.view` goes by reference, so `features.settings.runtime` updates the open view in place and fires `User HangarChanged`.
 
-`config.tools` owns logical IDs, supported filetypes, backend aliases, installers and default order. `config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `config.formatter` and `config.linter`. They do not activate all supported filetypes.
+`features.hangar.config` owns logical IDs, supported filetypes, backend aliases, installers and default order. `features.hangar.config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `features.formatter.config` and `features.linter.config`. They do not activate all supported filetypes.
 
 ## Runtime boundaries
 
 | Owner | Responsibility |
 | --- | --- |
-| `runtime.lsp` / `runtime.lsp.client` | Server setup, Blink capabilities, diagnostics, client lifecycle and capability events |
-| `runtime.completion.blink` / `utils.cmp` | Blink setup and resize subscriptions / completion and snippet action order |
-| `runtime.treesitter` | Parser startup, SQL injection predicates and syntax fallback |
-| `runtime.dap` | Shared debugger activation |
-| `runtime.harpoon` / `runtime.ui` | Harpoon list state / Snacks and Trouble setup |
-| `runtime.completion` / `runtime.markdown` | Native LuaSnip build / preview installer and executable validation |
-| `runtime.notes` | Markdown highlight override that preserves fences at `conceallevel=2` |
+| `features.lsp.runtime` / `features.lsp.runtime.client` | Server setup, Blink capabilities, diagnostics, client lifecycle and capability events |
+| `features.completion.runtime.blink` / `utils.cmp` | Blink setup and resize subscriptions / completion and snippet action order |
+| `features.treesitter.runtime` | Parser startup, SQL injection predicates and syntax fallback |
+| `features.dap.runtime` | Shared debugger activation |
+| `features.navigation.runtime` | Harpoon list state |
+| `features.snacks.runtime` | Snacks setup and redraw recovery |
+| `features.diagnostics.runtime` | Trouble references view |
+| `features.completion.runtime` / `features.markdown.runtime` | Native LuaSnip build / preview installer and executable validation |
+| `features.notes.runtime` | Markdown highlight override that preserves fences at `conceallevel=2` |
 | `core.shell` | Windows shell and compiler defaults while preserving explicit choices |
 
 Native build owners execute argument lists without the interactive shell. On Windows, `:ClearShada` keeps `main.shada` while it removes temporary ShaDa files. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.

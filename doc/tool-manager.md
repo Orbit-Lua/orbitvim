@@ -14,19 +14,30 @@ Set `tool_manager.layout` in settings to change the spacing in cells: `padding`,
 
 `i` installs a Mason package or parser without enabling a disabled runtime tool. Space toggles an LSP, DAP, formatter or linter.
 
-With `tool_manager.missing_package_policy = "auto"`, a missing Mason package installs first. To require explicit installation, set it to `"manual"` in settings. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in `config.tools`.
+With `tool_manager.missing_package_policy = "auto"`, a missing Mason package installs first. To require explicit installation, set it to `"manual"` in settings. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in `features.hangar.config`.
 
 ## Status
 
-Each status icon has its own highlight group: `HangarIconEnabled`, `…Idle`, `…Info`, `…Installing`, `…Warning`, `…Error`, `…Unknown` and `…Disabled`. Category tabs use `HangarCategoryActive` and `HangarCategoryInactive`, which `chadrc.lua` colors. To override a group, define it in your color scheme or configuration.
+Each status icon has its own highlight group:
 
-Registry support lists do not override the initial formatter and linter activation in `config.formatter` and `config.linter`. For example, a tool can support Markdown but be configured only for web filetypes.
+- `HangarIconEnabled`
+- `HangarIconIdle`
+- `HangarIconInfo`
+- `HangarIconInstalling`
+- `HangarIconWarning`
+- `HangarIconError`
+- `HangarIconUnknown`
+- `HangarIconDisabled`
+
+Category tabs use `HangarCategoryActive` and `HangarCategoryInactive`, which `chadrc.lua` colors. To override a group, define it in your color scheme or configuration.
+
+Registry support lists do not override the initial formatter and linter activation in `features.formatter.config` and `features.linter.config`. For example, a tool can support Markdown but be configured only for web filetypes.
 
 ## Priority and persistence
 
 Use `[` / `]` on a formatter or linter to change its priority for a filetype. `tools.formatter_defaults` and `tools.linter_defaults` in settings set the initial order. Valid saved order overrides them.
 
-The registry in `config.tools` uses logical IDs. At runtime, adapters translate them to backend aliases, for example `yaml` to Conform's `yamlfmt`.
+The registry in `features.hangar.config` uses logical IDs. At runtime, adapters translate them to backend aliases, for example `yaml` to Conform's `yamlfmt`.
 
 State is stored in `stdpath('data')/tools.json`, or in `vim.g.tool_state_path` when it is set. Only this file is read. Missing or malformed state uses defaults. See the hangar guide for locks, recovery and merging.
 

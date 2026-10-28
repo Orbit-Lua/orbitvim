@@ -38,7 +38,7 @@ fs.writeFileSync(target, 'formatted unsaved contents\n');
       local buffer = vim.api.nvim_get_current_buf()
       vim.bo[buffer].filetype = "prisma"
       vim.api.nvim_buf_set_lines(buffer, 0, -1, false, { "unsaved contents" })
-      require("conform").setup(require("runtime.formatter").options())
+      require("conform").setup(require("features.formatter.runtime").options())
       vim.g.mapleader = " "
       local clients = vim.lsp.get_clients
       vim.lsp.get_clients = function()
@@ -51,7 +51,7 @@ fs.writeFileSync(target, 'formatted unsaved contents\n');
           },
         }
       end
-      require("runtime.lsp.keymaps").on_attach(nil, buffer)
+      require("features.lsp.runtime.keymaps").on_attach(nil, buffer)
       vim.lsp.get_clients = clients
       local mapping = vim.fn.maparg("<leader>fP", "n", false, true)
       assert.is_function(mapping.callback)

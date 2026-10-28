@@ -29,7 +29,7 @@ describe("system commands", function()
       test.write_file(root .. "/main.shada.tmp.b", "temporary state")
       test.write_file(unrelated, "unrelated state")
 
-      require("commands").setup()
+      require("core.commands").setup()
       vim.cmd.ClearShada()
 
       assert.same({ "main.shada" }, require("utils.fs").scandir(root, "file"))

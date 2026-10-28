@@ -1,2 +1,23 @@
 ---@type LazySpec[]
-return {}
+return {
+  { import = "features.completion.spec" },
+  { import = "features.dap.spec" },
+  { import = "features.dotnet.spec" },
+  { import = "features.treesitter.spec" },
+  { import = "features.editor.spec" },
+  { import = "features.markdown.spec" },
+  { import = "features.formatter.spec" },
+  { import = "features.git.spec" },
+  { import = "features.linter.spec" },
+  { import = "features.lsp.spec" },
+  { import = "features.navigation.spec" },
+  { import = "features.notes.spec" },
+  { import = "features.theme.spec" },
+  { import = "features.menu.spec" },
+  { import = "features.snacks.spec" },
+  { import = "features.messages.spec" },
+  { import = "features.diagnostics.spec" },
+  { import = "features.keys.spec" },
+  { import = "features.layout.spec" },
+  { import = "features.hangar.spec" },
+}

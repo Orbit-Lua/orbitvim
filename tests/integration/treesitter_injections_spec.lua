@@ -1,5 +1,5 @@
 describe("C# Treesitter injections", function()
-  local config = require("config.treesitter").sql_injections
+  local config = require("features.treesitter.config").sql_injections
   local original_config
   local buffers = {}
 
@@ -7,7 +7,7 @@ describe("C# Treesitter injections", function()
     original_config = { comment = config.comment, auto = config.auto }
     config.comment = true
     config.auto = true
-    require("runtime.treesitter").setup()
+    require("features.treesitter.runtime").setup()
   end)
 
   after_each(function()

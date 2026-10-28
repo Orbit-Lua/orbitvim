@@ -1,7 +1,7 @@
 describe("TypeScript diagnostic publishing", function()
   it("disables semantic tokens through the TypeScript Tools spec", function()
     local options
-    for _, spec in ipairs(require("plugins.lsp")) do
+    for _, spec in ipairs(require("features.lsp.spec")) do
       if spec[1] == "pmizio/typescript-tools.nvim" then
         options = spec.opts()
       end
@@ -40,7 +40,7 @@ describe("TypeScript diagnostic publishing", function()
       local unrelated = vim.deepcopy(first)
       unrelated.source = "eslint"
       local handler =
-        require("config.lsp.typescript_tools").handlers["textDocument/publishDiagnostics"]
+        require("features.lsp.config.typescript_tools").handlers["textDocument/publishDiagnostics"]
       local ok, err = pcall(
         handler,
         nil,

@@ -242,7 +242,7 @@ end
 ---top-level options. Call it again after resetting `tool.*` modules.
 ---@param overrides? table
 function M.configure_tool(overrides)
-  require("core.tools").setup(overrides)
+  require("features.hangar.runtime").setup(overrides)
 end
 
 function M.cleanup_all()

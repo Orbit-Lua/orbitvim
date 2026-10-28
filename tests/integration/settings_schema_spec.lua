@@ -45,8 +45,8 @@ describe("settings schema language server", function()
         name = "orbitvim-schema-test",
         cmd = { executable, "--stdio" },
         root_dir = root,
-        settings = (require("config.lsp").servers.jsonls or {}).settings,
-        capabilities = require("runtime.lsp").client_capabilities(),
+        settings = (require("features.lsp.config").servers.jsonls or {}).settings,
+        capabilities = require("features.lsp.runtime").client_capabilities(),
         init_options = {
           provideFormatter = false,
           handledSchemaProtocols = { "file" },

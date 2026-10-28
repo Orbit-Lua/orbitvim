@@ -1,6 +1,6 @@
 -- OrbitVim's composition of hangar.nvim: settings, activation and logs reach
--- the installed plugin through core.tools.
-describe("hangar wiring through core.tools", function()
+-- the installed plugin through features.hangar.runtime.
+describe("hangar wiring through features.hangar.runtime", function()
   local test = require("tests.helpers")
 
   before_each(function()
@@ -45,8 +45,8 @@ describe("hangar wiring through core.tools", function()
       vim.g.orbitvim_settings_path,
       '{"tool_manager":{"missing_package_policy":"manual"}}'
     )
-    -- Settings update config.tool_manager in place, the table hangar holds.
-    require("core.settings").setup()
+    -- Settings update features.hangar.config.view in place, the table hangar holds.
+    require("features.settings.runtime").setup()
     local mason = require("hangar.mason")
     mason.package_status = function()
       return false
@@ -74,7 +74,7 @@ describe("hangar wiring through core.tools", function()
   end)
 
   it(
-    "re-enables a formatter only where config.formatter activates it",
+    "re-enables a formatter only where features.formatter.config activates it",
     function()
       test.configure_tool()
       local conform = {
@@ -85,7 +85,7 @@ describe("hangar wiring through core.tools", function()
       }
       package.loaded.conform = conform
       local formatter = require("hangar.category").formatter
-      local meta = require("config.tools").formatter.deno_fmt
+      local meta = require("features.hangar.config").formatter.deno_fmt
       for _, enabled in ipairs({ false, true }) do
         formatter.apply_runtime({
           name = "deno_fmt",

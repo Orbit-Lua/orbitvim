@@ -30,7 +30,7 @@ describe("buffer-dependent linter execution", function()
     local buffer = vim.api.nvim_create_buf(true, false)
     vim.api.nvim_set_current_buf(buffer)
     vim.bo[buffer].filetype = "orbit_linter_fixture"
-    require("runtime.linter").setup({
+    require("features.linter.runtime").setup({
       events = { "BufWritePost" },
       linters_by_ft = { orbit_linter_fixture = { "probe" } },
       linters = {

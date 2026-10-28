@@ -14,7 +14,7 @@ describe("notes Markdown highlights", function()
   it(
     "keeps headings highlighted and code fences visible with conceal enabled",
     function()
-      require("runtime.notes").setup({})
+      require("features.notes.runtime").setup({})
       local source = "# Title\n\n```sql\nSELECT 1;\n```\n"
       local parser =
         assert(vim.treesitter.get_string_parser(source, "markdown"))

@@ -67,10 +67,10 @@ end)]],
         "scripts/tests/roslyn_fixture.lua",
       })
       test.write_file(
-        root .. "/lua/config/tools.lua",
+        root .. "/lua/features/hangar/config.lua",
         "return {lsp={},dap={},formatter={},linter={}}"
       )
-      test.write_file(root .. "/lua/config/lazy.lua", "return {}")
+      test.write_file(root .. "/lua/core/lazy.lua", "return {}")
       test.write_file(
         root .. "/init.lua",
         [[

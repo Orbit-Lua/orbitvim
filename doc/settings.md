@@ -20,7 +20,7 @@ The legacy file remains available for rollback. Future edits are not copied back
 
 `settings.schema.json` owns keys, types, bounds, defaults and restart annotations. The loader supports the schema keywords that this schema uses. It validates tool, filetype and server references against the registry. It does not interpret arbitrary external schemas.
 
-The command adds a `$schema` reference. jsonls also associates both eligible settings paths with the bundled schema, with normalized Windows drive letters. Thus an empty object also gets completion.
+The command adds a `$schema` reference. `jsonls` also associates both eligible settings paths with the bundled schema, with normalized Windows drive letters. Thus an empty object also gets completion.
 
 ## Merge and precedence
 
@@ -46,10 +46,10 @@ Invalid startup settings show a warning and fall back to defaults. Thus the edit
 
 ## Ownership
 
-Change public defaults in the schema. Change available tools in `config.tools`.
+Change public defaults in the schema. Change available tools in `features.hangar.config`.
 
-- `config.settings` decodes and validates detached values.
-- `core.settings` owns application, rollback and save observation.
-- `commands.settings` owns commands and information views.
-- `runtime.lsp` owns inlay hints.
-- `hangar.state` merges the initial priorities that `core.tools` passes before saved state.
+- `features.settings.config` decodes and validates detached values.
+- `features.settings.runtime` owns application, rollback and save observation.
+- `features.settings.commands` owns commands and information views.
+- `features.lsp.runtime` owns inlay hints.
+- `hangar.state` merges the initial priorities that `features.hangar.runtime` passes before saved state.

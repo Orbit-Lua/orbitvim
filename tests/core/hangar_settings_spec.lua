@@ -77,7 +77,7 @@ describe("hangar settings integration", function()
       if
         name == "hangar"
         or name:match("^hangar%.")
-        or name == "config.tool_manager"
+        or name == "features.hangar.config.view"
         or name == "utils.logger"
         or name:match("^nui[%.]?")
       then
@@ -173,7 +173,7 @@ describe("hangar settings integration", function()
       if
         name == "hangar"
         or name:match("^hangar%.")
-        or name == "config.tool_manager"
+        or name == "features.hangar.config.view"
         or name == "utils.logger"
         or name:match("^nui[%.]?")
       then
@@ -197,7 +197,7 @@ describe("hangar settings integration", function()
         vim.g.orbitvim_settings_path,
         '{"tool_manager":{"details":{"width":300}}}'
       )
-      require("core.settings").setup()
+      require("features.settings.runtime").setup()
       tool.open()
       press("K")
       for _, window in ipairs(vim.api.nvim_list_wins()) do
@@ -224,7 +224,7 @@ describe("hangar settings integration", function()
       vim.o.columns, vim.o.lines = 180, 50
       vim.g.orbitvim_settings_path = test.temp_dir("ui-settings")
         .. "/settings.json"
-      local runtime = require("core.settings")
+      local runtime = require("features.settings.runtime")
       runtime.setup()
       tool.open()
       select("ruff")
@@ -254,7 +254,7 @@ describe("hangar settings integration", function()
     vim.o.columns, vim.o.lines = 160, 45
     vim.g.orbitvim_settings_path = test.temp_dir("ui-layout")
       .. "/settings.json"
-    require("core.settings").setup()
+    require("features.settings.runtime").setup()
     tool.open()
     local function refreshed(apply)
       local count = #snapshots

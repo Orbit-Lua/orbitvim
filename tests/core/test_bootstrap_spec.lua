@@ -36,7 +36,7 @@ describe("test bootstrap", function()
     )
     local paths = {
       tool_state = vim.fs.normalize(vim.g.tool_state_path),
-      settings = require("config.settings").path(),
+      settings = require("features.settings.config").path(),
       lsp_log = vim.fs.normalize(vim.lsp.log.get_filename()),
       log = vim.fs.normalize(require("utils.logger").get_log_path()),
     }

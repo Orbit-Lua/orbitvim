@@ -4,7 +4,7 @@ SQL buffers keep the `sql` filetype and the generic SQL parser. OrbitVim extends
 
 ## Configuration
 
-`runtime.treesitter.start(buf)` starts Tree-sitter on filetype events. Then it enables SQL syntax or the contained Markdown fallback. Defaults live in `lua/config/treesitter.lua`:
+`features.treesitter.runtime.start(buf)` starts Tree-sitter on filetype events. Then it enables SQL syntax or the contained Markdown fallback. Defaults live in `lua/features/treesitter/config.lua`:
 
 ```lua
 sql = {
@@ -23,13 +23,13 @@ vim.b.sql_type_override = "sqloracle"
 To disable all legacy fallback and keep Tree-sitter:
 
 ```lua
-require("config.treesitter").sql.syntax_fallback = false
+require("features.treesitter.config").sql.syntax_fallback = false
 ```
 
 To disable it only in Markdown:
 
 ```lua
-require("config.treesitter").sql.markdown_fenced_fallback = false
+require("features.treesitter.config").sql.markdown_fenced_fallback = false
 ```
 
 OrbitVim adds a dialect mapping to `g:markdown_fenced_languages`. Other languages and explicit SQL mappings, such as `sql=sqloracle`, stay. LuaSnip and SQLFluff continue to use `sql`.

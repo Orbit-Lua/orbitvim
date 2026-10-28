@@ -12,7 +12,7 @@ describe("Python stub regeneration", function()
     vim.notify = function(value)
       message = value
     end
-    require("commands.python").setup()
+    require("features.python.commands").setup()
   end)
 
   after_each(function()

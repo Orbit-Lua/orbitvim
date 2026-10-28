@@ -14,7 +14,7 @@ describe("core.keymaps", function()
     original_fs_root = project.get_root
     original_get_clients = vim.lsp.get_clients
     original_core_keymaps = package.loaded["core.keymaps"]
-    original_runtime_keymaps = package.loaded["runtime.lsp.keymaps"]
+    original_runtime_keymaps = package.loaded["features.lsp.runtime.keymaps"]
   end)
 
   after_each(function()
@@ -23,7 +23,7 @@ describe("core.keymaps", function()
     project.get_root = original_fs_root
     vim.lsp.get_clients = original_get_clients
     package.loaded["core.keymaps"] = original_core_keymaps
-    package.loaded["runtime.lsp.keymaps"] = original_runtime_keymaps
+    package.loaded["features.lsp.runtime.keymaps"] = original_runtime_keymaps
     test.cleanup_all()
   end)
 
@@ -115,8 +115,8 @@ describe("core.keymaps", function()
         assert.is_table(opts)
         return { client }
       end
-      package.loaded["runtime.lsp.keymaps"] = nil
-      local keymaps = require("runtime.lsp.keymaps")
+      package.loaded["features.lsp.runtime.keymaps"] = nil
+      local keymaps = require("features.lsp.runtime.keymaps")
 
       assert.is_true(keymaps.has(source, "hover"))
       assert.is_false(keymaps.has(current, "hover"))
@@ -125,7 +125,7 @@ describe("core.keymaps", function()
 
   it("lets attached server keys replace or remove defaults per mode", function()
     local buffer = vim.api.nvim_create_buf(true, false)
-    local original_config = package.loaded["config.lsp"]
+    local original_config = package.loaded["features.lsp.config"]
     local original_snacks = package.loaded.snacks
     package.loaded.snacks = {
       words = {
@@ -136,7 +136,7 @@ describe("core.keymaps", function()
     }
     vim.g.mapleader = " "
     local server_definition = function() end
-    package.loaded["config.lsp"] = {
+    package.loaded["features.lsp.config"] = {
       servers = {
         probe = {
           keys = {
@@ -157,10 +157,10 @@ describe("core.keymaps", function()
         },
       }
     end
-    package.loaded["runtime.lsp.keymaps"] = nil
+    package.loaded["features.lsp.runtime.keymaps"] = nil
 
     local ok, err = pcall(function()
-      require("runtime.lsp.keymaps").on_attach(nil, buffer)
+      require("features.lsp.runtime.keymaps").on_attach(nil, buffer)
       local function mapping(mode, lhs)
         return vim.api.nvim_buf_call(buffer, function()
           return vim.fn.maparg(lhs, mode, false, true)
@@ -171,7 +171,7 @@ describe("core.keymaps", function()
       assert.equals("code action", mapping("n", " ca").desc)
       assert.same({}, mapping("v", " ca"))
     end)
-    package.loaded["config.lsp"] = original_config
+    package.loaded["features.lsp.config"] = original_config
     package.loaded.snacks = original_snacks
     vim.api.nvim_buf_delete(buffer, { force = true })
     assert(ok, err)
@@ -179,8 +179,8 @@ describe("core.keymaps", function()
 
   it("toggles code lenses for the current buffer that enabled them", function()
     local buffer = vim.api.nvim_create_buf(true, false)
-    local original_config = package.loaded["config.lsp"]
-    package.loaded["config.lsp"] = { servers = {} }
+    local original_config = package.loaded["features.lsp.config"]
+    package.loaded["features.lsp.config"] = { servers = {} }
     vim.g.mapleader = " "
     vim.lsp.get_clients = function()
       return {
@@ -192,17 +192,17 @@ describe("core.keymaps", function()
         },
       }
     end
-    package.loaded["runtime.lsp.keymaps"] = nil
+    package.loaded["features.lsp.runtime.keymaps"] = nil
 
     local ok, err = pcall(function()
       vim.api.nvim_set_current_buf(buffer)
-      require("runtime.lsp.keymaps").on_attach(nil, buffer)
+      require("features.lsp.runtime.keymaps").on_attach(nil, buffer)
       vim.lsp.get_clients = original_get_clients
       vim.lsp.codelens.enable(true, { bufnr = buffer })
       vim.fn.maparg(" cc", "n", false, true).callback()
       assert.is_false(vim.lsp.codelens.is_enabled({ bufnr = buffer }))
     end)
-    package.loaded["config.lsp"] = original_config
+    package.loaded["features.lsp.config"] = original_config
     vim.api.nvim_buf_delete(buffer, { force = true })
     assert(ok, err)
   end)

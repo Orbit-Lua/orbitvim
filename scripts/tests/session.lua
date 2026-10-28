@@ -60,7 +60,7 @@ function M.open(repository, opts)
 
   -- Loading tools is inert; these files select no external language processes.
   vim.opt.runtimepath:prepend(repository)
-  local tools, state = require("config.tools"), {}
+  local tools, state = require("features.hangar.config"), {}
   for _, category in ipairs({ "lsp", "dap", "formatter", "linter" }) do
     state[category] = {}
     for name in pairs(tools[category]) do
@@ -114,7 +114,7 @@ vim.notify = function(message, level, options)
     vim.g.orbitvim_session_errors = errors
   end
 end
-local options = require('config.lazy')
+local options = require('core.lazy')
 options.install = { missing = false, colorscheme = { 'nvchad' } }
 options.checker = { enabled = false }
 options.change_detection = { enabled = false, notify = false }

@@ -1,6 +1,6 @@
 describe("SQLFluff executable", function()
   local test = require("tests.helpers")
-  local sqlfluff = require("utils.sqlfluff")
+  local sqlfluff = require("features.sql.runtime")
 
   after_each(function()
     test.cleanup_all()

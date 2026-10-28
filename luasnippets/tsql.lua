@@ -1,18 +1,20 @@
 local parse = require("luasnip").parser.parse_snippet
 
 local families = {
-  require("config.snippets.tsql.database_objects_and_schema_changes"),
-  require("config.snippets.tsql.indexes_and_sequences"),
-  require("config.snippets.tsql.programmable_objects"),
-  require("config.snippets.tsql.queries_joins_ctes_and_windows"),
-  require("config.snippets.tsql.data_modification"),
+  require("features.snippets.config.tsql.database_objects_and_schema_changes"),
+  require("features.snippets.config.tsql.indexes_and_sequences"),
+  require("features.snippets.config.tsql.programmable_objects"),
+  require("features.snippets.config.tsql.queries_joins_ctes_and_windows"),
+  require("features.snippets.config.tsql.data_modification"),
   require(
-    "config.snippets.tsql.control_flow_temporary_storage_and_transactions"
+    "features.snippets.config.tsql.control_flow_temporary_storage_and_transactions"
   ),
-  require("config.snippets.tsql.dynamic_sql"),
-  require("config.snippets.tsql.security_and_object_lifecycle"),
-  require("config.snippets.tsql.constraint_and_column_fragments"),
-  require("config.snippets.tsql.common_expressions_and_statement_fragments"),
+  require("features.snippets.config.tsql.dynamic_sql"),
+  require("features.snippets.config.tsql.security_and_object_lifecycle"),
+  require("features.snippets.config.tsql.constraint_and_column_fragments"),
+  require(
+    "features.snippets.config.tsql.common_expressions_and_statement_fragments"
+  ),
 }
 local snippets = {}
 for _, family in ipairs(families) do
