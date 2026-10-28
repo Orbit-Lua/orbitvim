@@ -89,7 +89,7 @@ Set `notes.vault` to an Obsidian vault path to enable Markdown note integration.
 
 ## Supported platforms
 
-Linux and Windows run the same validation recipes in CI. The justfile uses `sh` on Linux and native `cmd.exe` on Windows.
+CI runs the validation recipes on Linux. Run them locally on Windows before each push. The justfile uses `sh` on Linux and native `cmd.exe` on Windows.
 
 On Windows, keep native Git before MSYS2 tools on PATH. Add MSYS2 UCRT64 GCC, Make and Bash for native builds. Keep explicit `shell` and `CC` choices when customizing the environment. OrbitVim selects available defaults otherwise.
 

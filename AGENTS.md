@@ -74,8 +74,8 @@ Preserve commands, mappings and persisted state unless the task changes their co
 - After you change these rules, audit the repo against them.
 - Validate changes locally. Then verify the required CI on the pushed commit.
 - Report each uncovered contract and each unavailable check.
-- Run the same complete suites, native build checks and startup checks on both platforms.
-- Keep platform branches limited to environment preparation.
+- Run the complete suites, native build checks and startup checks in CI on Linux.
+- Run the same recipes locally on Windows before each push. CI does not cover Windows.
 - Route behavior validation steps through just recipes.
 - Cache dependency artifacts only.
 

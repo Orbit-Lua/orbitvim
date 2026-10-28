@@ -1,6 +1,6 @@
 # Testing
 
-OrbitVim validates changes through just recipes. CI runs the same recipes on Linux and Windows.
+OrbitVim validates changes through just recipes. CI runs them on Linux. Run them locally on Windows before each push.
 
 ## Prerequisites
 
