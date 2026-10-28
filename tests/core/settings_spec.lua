@@ -80,6 +80,59 @@ describe("JSON settings", function()
       )
     end
   )
+  it("rejects typed null without changing accepted settings", function()
+    test.write_file(settings.path(), '{"editor":{"shiftwidth":4}}')
+    local runtime = require("core.settings")
+    runtime.setup()
+    local before, source = settings.get(), settings.info().overrides
+    local notified, notify = {}, vim.notify
+    vim.notify = function(message, level)
+      notified = { message, level }
+    end
+    local ok, err = pcall(function()
+      for _, case in ipairs({
+        { '{"editor":null}', "settings.editor" },
+        { '{"editor":{"number":null}}', "settings.editor.number" },
+        { '{"editor":{"shiftwidth":null}}', "settings.editor.shiftwidth" },
+        { '{"notes":{"vault":null}}', "settings.notes.vault" },
+        {
+          '{"lsp":{"inlay_hints":{"exclude":null}}}',
+          "settings.lsp.inlay_hints.exclude",
+        },
+        {
+          '{"lsp":{"inlay_hints":{"exclude":[null]}}}',
+          "settings.lsp.inlay_hints.exclude[1]",
+        },
+        {
+          '{"lsp":{"servers":{"lua_ls":{"settings":null}}}}',
+          "settings.lsp.servers.lua_ls.settings",
+        },
+      }) do
+        test.write_file(settings.path(), case[1])
+        local values, read_error = settings.read()
+        assert.is_nil(values)
+        assert.is_truthy(read_error:find(case[2] .. ": expected ", 1, true))
+        local reloaded, reload_error = runtime.reload()
+        assert.is_false(reloaded)
+        assert.equals(read_error, reload_error)
+        assert.same({ read_error, vim.log.levels.WARN }, notified)
+        assert.same(before, settings.get())
+        assert.same(source, settings.info().overrides)
+        assert.equals(4, vim.o.shiftwidth)
+      end
+
+      -- Server-specific values are arbitrary JSON below the typed object.
+      test.write_file(
+        settings.path(),
+        '{"lsp":{"servers":{"lua_ls":{"settings":{"nullable":null}}}}}'
+      )
+      local values = assert(settings.read())
+      assert.equals(vim.NIL, values.lsp.servers.lua_ls.settings.nullable)
+    end)
+    vim.notify = notify
+    assert(ok, err)
+  end)
+
   it(
     "keeps last valid values after invalid input or a runtime apply failure",
     function()

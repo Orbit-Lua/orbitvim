@@ -1,4 +1,23 @@
 describe("TypeScript diagnostic publishing", function()
+  it("disables semantic tokens through the TypeScript Tools spec", function()
+    local options
+    for _, spec in ipairs(require("plugins.lsp")) do
+      if spec[1] == "pmizio/typescript-tools.nvim" then
+        options = spec.opts()
+      end
+    end
+    assert.is_table(options)
+    local client = {
+      server_capabilities = {
+        semanticTokensProvider = { full = true },
+        hoverProvider = true,
+      },
+    }
+    options.on_attach(client, 0)
+    assert.is_nil(client.server_capabilities.semanticTokensProvider)
+    assert.is_true(client.server_capabilities.hoverProvider)
+  end)
+
   it(
     "keeps matching messages at different locations while removing identical duplicates",
     function()

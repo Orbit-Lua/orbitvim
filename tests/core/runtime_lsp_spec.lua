@@ -54,6 +54,42 @@ describe("LSP server registration", function()
   end)
 
   it(
+    "disables semantic tokens without replacing Roslyn initialization",
+    function()
+      -- Use Neovim's config merge on a detached copy, without starting servers.
+      vim.lsp.config = vim.deepcopy(original_config)
+      vim.lsp.enable = function() end
+      package.loaded["config.packages"] = {
+        lsp_servers = { "lua_ls", "roslyn" },
+      }
+      local initialized = false
+      local function roslyn_init()
+        initialized = true
+      end
+      vim.lsp.config("roslyn", { on_init = roslyn_init })
+
+      require("runtime.lsp").register_servers(require("config.lsp"))
+      local client = {
+        server_capabilities = {
+          semanticTokensProvider = { full = true },
+          hoverProvider = true,
+        },
+      }
+      vim.lsp.config.lua_ls.on_init(client, {})
+      assert.is_nil(client.server_capabilities.semanticTokensProvider)
+      assert.is_true(client.server_capabilities.hoverProvider)
+
+      assert.equals(roslyn_init, vim.lsp.config.roslyn.on_init)
+      vim.lsp.config.roslyn.on_init(client, {})
+      assert.is_true(initialized)
+      client.server_capabilities.semanticTokensProvider = { full = true }
+      vim.lsp.config.roslyn.on_attach(client, 0)
+      assert.is_nil(client.server_capabilities.semanticTokensProvider)
+      assert.is_true(client.server_capabilities.hoverProvider)
+    end
+  )
+
+  it(
     "installs diagnostic filtering once and invalidates detached refreshes",
     function()
       local runtime = require("runtime.lsp")
