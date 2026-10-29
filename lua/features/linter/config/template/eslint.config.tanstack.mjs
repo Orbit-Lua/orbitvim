@@ -17,6 +17,31 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+let startRecommended = start.configs["flat/recommended"];
+if (process.platform === "win32") {
+  // Start 0.1.0 misses standalone async client components on Windows.
+  // Match ESLint filenames to TypeScript's forward-slash graph keys.
+  const asyncClientRule = start.rules["no-async-client-component"];
+  const portableStart = {
+    ...start,
+    rules: {
+      ...start.rules,
+      "no-async-client-component": {
+        ...asyncClientRule,
+        create(context) {
+          return asyncClientRule.create(Object.create(context, {
+            filename: { value: context.filename.replaceAll("\\", "/") },
+          }));
+        },
+      },
+    },
+  };
+  startRecommended = startRecommended.map((config) => ({
+    ...config,
+    plugins: { ...config.plugins, "@tanstack/start": portableStart },
+  }));
+}
+
 export default defineConfig(
   globalIgnores([
     "dist/**",
@@ -50,7 +75,7 @@ export default defineConfig(
     extends: [
       tseslint.configs.recommendedTypeChecked,
       importX.flatConfigs.typescript,
-      start.configs["flat/recommended"],
+      startRecommended,
     ],
     languageOptions: {
       parserOptions: {

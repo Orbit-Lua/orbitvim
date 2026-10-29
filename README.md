@@ -52,6 +52,8 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 Tailwind LSP and ESLint diagnostics and fixes require project evidence. Package declarations or tool-specific configuration qualify; unrelated Git repositories do not. See [project conditions](doc/architecture.md#project-conditions) for workspace boundaries.
 
+Copy an ESLint template from `lua/features/linter/config/template/` into the project as `eslint.config.mjs`. Follow its dependency instructions. Copy the updated TanStack template again to apply its Windows async-client diagnostic fix.
+
 For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Hangar. Restart Neovim after installation.
 
 Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
