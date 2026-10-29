@@ -10,7 +10,7 @@ describe("features.messages.spec", function()
     package.loaded["features.messages.spec"] = original_noice
   end)
 
-  it("routes formatter lifecycle notifications to the mini view", function()
+  it("selects the formatter route and filters notifications", function()
     local opts = require("features.messages.spec")[1].opts()
     local formatter_route
 
