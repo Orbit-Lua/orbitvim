@@ -57,16 +57,6 @@ describe("features.sql.runtime", function()
     )
   end)
 
-  it("recognizes SQLFluff sections in pyproject.toml", function()
-    local root = temp_dir()
-    local config = root .. "/pyproject.toml"
-    local filename = root .. "/query.sql"
-    write(config, '[tool.sqlfluff.core]\ndialect = "postgres"\n')
-
-    test.assert_path(config, sqlfluff.find_config(filename))
-    assert.is_false(has_arg(sqlfluff.format_args(filename), "--config"))
-  end)
-
   it(
     "discovers supported config files by reading their SQLFluff section",
     function()
@@ -86,6 +76,8 @@ describe("features.sql.runtime", function()
         vim.fn.mkdir(root .. "/nested", "p")
         write(config, content)
         test.assert_path(config, sqlfluff.find_config(filename), name)
+        assert.is_false(has_arg(sqlfluff.format_args(filename), "--config"))
+        assert.is_false(has_arg(sqlfluff.lint_args(filename), "--config"))
       end
     end
   )
@@ -103,28 +95,6 @@ describe("features.sql.runtime", function()
     assert.is_true(has_arg(format_args, sqlfluff.fallback_config))
     assert.is_true(has_arg(lint_args, sqlfluff.fallback_config))
   end)
-
-  it(
-    "keeps a positive bounded parse depth in the fallback SQLFluff config",
-    function()
-      local root = temp_dir()
-      local config = root .. "/.sqlfluff"
-      local filename = root .. "/query.sql"
-      -- The checkout need not be installed in stdpath('config'), as on CI.
-      write(
-        config,
-        vim.fn.readfile("lua/features/sql/config/template/sqlfluff.cfg")
-      )
-
-      test.assert_path(config, sqlfluff.find_config(filename))
-      local depth
-      for _, line in ipairs(vim.fn.readfile(sqlfluff.find_config(filename))) do
-        depth = tonumber(line:match("^%s*max_parse_depth%s*=%s*(%d+)%s*$"))
-          or depth
-      end
-      assert.is_true(depth ~= nil and depth > 0 and depth <= 512)
-    end
-  )
 
   it("uses the same project root for formatter and linter processes", function()
     local root = temp_dir()

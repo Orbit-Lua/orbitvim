@@ -26,10 +26,10 @@ describe("validation commands", function()
     function()
       local root = fixture({
         "justfile",
-        "scripts/tests/run_suite.lua",
-        "scripts/tests/run_spec.lua",
-        "scripts/tests/validate.lua",
-        "scripts/tests/minimal.vim",
+        "tests/support/run_suite.lua",
+        "tests/support/run_spec.lua",
+        "tests/support/validate.lua",
+        "tests/support/minimal.vim",
         "tests/helpers.lua",
       })
       local path = root .. "/tests/core/probe_spec.lua"
@@ -62,9 +62,9 @@ end)]],
     function()
       local root = fixture({
         "justfile",
-        "scripts/tests/smoke.lua",
-        "scripts/tests/session.lua",
-        "scripts/tests/roslyn_fixture.lua",
+        "tests/support/smoke.lua",
+        "tests/support/session.lua",
+        "tests/support/roslyn_fixture.lua",
       })
       test.write_file(
         root .. "/lua/features/hangar/config.lua",

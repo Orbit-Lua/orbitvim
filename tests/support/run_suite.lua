@@ -1,5 +1,5 @@
 package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
-local validate = require("scripts.tests.validate")
+local validate = require("tests.support.validate")
 local root = vim.fn.tempname()
 vim.fn.mkdir(root, "p")
 local ok, err = pcall(function()
@@ -32,9 +32,9 @@ local ok, err = pcall(function()
         "-i",
         "NONE",
         "-u",
-        "scripts/tests/minimal.vim",
+        "tests/support/minimal.vim",
         "-l",
-        "scripts/tests/run_spec.lua",
+        "tests/support/run_spec.lua",
         path,
         completion,
       }, {

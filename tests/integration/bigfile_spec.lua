@@ -2,7 +2,7 @@ describe("Snacks large-file policy", function()
   it(
     "keeps automatic lint and parsing disabled for detected large files",
     function()
-      local session = require("scripts.tests.session").open(vim.fn.getcwd(), {})
+      local session = require("tests.support.session").open(vim.fn.getcwd(), {})
       local ok, err = pcall(function()
         session.exec(
           [[
@@ -29,6 +29,8 @@ assert(runs == 0, 'automatic lint bypassed the bigfile policy')
 ]],
           { session.root .. "/project/minified.lua" }
         )
+        local health = session.exec("return orbitvim_session_health()")
+        assert.same({}, health.errors)
       end)
       session.close()
       assert(ok, err)

@@ -1,6 +1,6 @@
 vim.opt.runtimepath:prepend(vim.fn.getcwd())
 package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
-require("scripts.tests.build_fixture").run(
+require("tests.support.build_fixture").run(
   "markdown-preview.nvim",
   function(directory)
     for _, plugin in ipairs(require("features.markdown.spec")) do

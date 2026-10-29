@@ -24,6 +24,8 @@ Use `just --list` for recipe descriptions. Use `just test-spec <path>` to run on
 
 ## Execution
 
+Keep behavioral specs in `tests/core/` or `tests/integration/`. Keep runners, bootstrap files and dependency fixtures in `tests/support/`. Use `tests.helpers` for shared isolation and fixture operations.
+
 Each spec runs in its own headless Neovim process. The runner fails a spec in these cases:
 
 - The spec executes no test.
@@ -31,6 +33,8 @@ Each spec runs in its own headless Neovim process. The runner fails a spec in th
 - Neovim shows an error message, a Lua error or `echoerr` output.
 
 A test that expects a failure notification observes it explicitly. Other tests must not produce that notification.
+
+Check collected errors before closing a child editor session. The parent process cannot observe those errors directly.
 
 ## Fixtures
 

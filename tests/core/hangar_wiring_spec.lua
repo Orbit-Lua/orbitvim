@@ -5,7 +5,6 @@ describe("hangar wiring through features.hangar.runtime", function()
 
   before_each(function()
     vim.g.hangar_state_path = test.temp_dir("hangar-wiring") .. "/hangar.json"
-    vim.notify = function() end
   end)
 
   it("reads only hangar.json and honors an explicit state path", function()
@@ -77,14 +76,14 @@ describe("hangar wiring through features.hangar.runtime", function()
   it(
     "re-enables a formatter only where features.formatter.config activates it",
     function()
-      test.configure_tool()
       local conform = {
         formatters_by_ft = {
-          markdown = { "markdownlint-cli2" },
-          html = { "deno_fmt" },
+          markdown = { "markdownlint-cli2", "deno_fmt" },
+          html = {},
         },
       }
       package.loaded.conform = conform
+      test.configure_tool()
       local formatter = require("hangar.category").formatter
       local meta = require("features.hangar.config").formatter.deno_fmt
       for _, enabled in ipairs({ false, true }) do

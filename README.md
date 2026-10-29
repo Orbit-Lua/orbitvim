@@ -30,21 +30,9 @@ Lazy installs the locked plugins on first start. Install language tools through 
 
 Open Hangar with `:Hangar` or `<leader>us`. The leader key is Space.
 
-| Key | Action |
-| --- | --- |
-| `1`–`6`, Tab / Shift-Tab | Select a tool category |
-| `s` | Switch between the source buffer and all tools |
-| Space | Toggle a runtime tool, with automatic installation when needed |
-| `i` | Install without changing enablement |
-| `[` / `]` | Reorder formatters or linters for a filetype |
-| `o`, Enter, `za` | Expand or collapse a filetype group |
-| `K` | Focus details |
-| `?`, `g?` | Toggle help |
-| `q`, Escape | Close |
+Press `?` in Hangar for its keys. See [Hangar integration](doc/hangar.md) for OrbitVim settings, tool activation and state paths.
 
-Parsers and dependency packages support installation only. Enablement and order persist in `stdpath('data')/hangar.json`. See [Hangar](doc/hangar.md) for installation policy, status and recovery.
-
-Other common actions:
+Common actions:
 
 | Key | Action |
 | --- | --- |

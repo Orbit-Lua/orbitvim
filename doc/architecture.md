@@ -33,7 +33,7 @@ Core owns editor options, autocommands, filetypes and mappings. It also owns she
 
 ## Hangar
 
-[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the tool view, operations and state. See its guide and architecture for that behavior.
+[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the tool view, operations and state. Its [guide](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/guide.md) defines that behavior. Its [architecture](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/architecture.md) defines plugin internals.
 
 ```mermaid
 flowchart TD
@@ -68,8 +68,6 @@ The hangar spec loads at startup with `lazy = false`. Its `config` calls `featur
 | `core.shell` | Windows shell and compiler defaults while preserving explicit choices |
 
 Native build owners execute argument lists without the interactive shell. On Windows, `:ClearShada` keeps `main.shada` while it removes temporary ShaDa files. On Windows, LuaSnip links the running Neovim directory. When upstream queries change, review the notes highlight override against them.
-
-The state/action/render split follows [lazy.nvim](https://github.com/folke/lazy.nvim/tree/main/lua/lazy) and [mason.nvim](https://github.com/mason-org/mason.nvim/tree/main/lua/mason). [Nui](https://github.com/MunifTanjim/nui.nvim) owns UI components.
 
 Harpoon mappings belong to the Lazy spec. Its runtime receives display options directly and owns list construction and highlighting.
 

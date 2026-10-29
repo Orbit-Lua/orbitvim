@@ -42,13 +42,16 @@ describe("features.formatter.runtime.options", function()
       assert.same({ "yamlfmt" }, first.formatters_by_ft.yaml)
       assert.is_true(vim.tbl_contains(first.formatters_by_ft.sql, "sqlfluff"))
 
-      table.insert(first.formatters_by_ft.lua, "mutation")
+      local timeout = first.default_format_opts.timeout_ms
+      first.default_format_opts.timeout_ms = timeout + 1
       enabled.yaml = false
       local second = options()
 
-      assert.is_false(vim.tbl_contains(second.formatters_by_ft.lua, "mutation"))
+      assert.equals(timeout, second.default_format_opts.timeout_ms)
       assert.same({}, second.formatters_by_ft.yaml)
       assert.is_true(vim.tbl_contains(second.formatters_by_ft.sql, "sqlfluff"))
+      enabled.yaml = true
+      assert.same({ "yamlfmt" }, options().formatters_by_ft.yaml)
     end
   )
 end)

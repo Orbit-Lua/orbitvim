@@ -2,7 +2,7 @@ local controller = vim.fn.getcwd()
 local repository = arg[2] or controller
 package.path = controller .. "/?.lua;" .. package.path
 local session =
-  require("scripts.tests.session").open(repository, { file = "fixture.lua" })
+  require("tests.support.session").open(repository, { file = "fixture.lua" })
 -- Script numbers vary with source order. Compare the same script identity.
 local normalize = [[
 local scripts = {}

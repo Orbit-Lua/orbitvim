@@ -2,7 +2,7 @@ describe("Harpoon shortcut activation", function()
   it(
     "loads on the first add shortcut and opens the same list through its menu shortcut",
     function()
-      local session = require("scripts.tests.session").open(
+      local session = require("tests.support.session").open(
         vim.fn.getcwd(),
         { file = "fixture.lua" }
       )

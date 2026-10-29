@@ -1,9 +1,11 @@
 describe("LSP server registration", function()
   local original_config, original_enable, original_clients, original_hint_enable, original_hint_state
+  local original_diagnostics
 
   before_each(function()
     original_config, original_enable = vim.lsp.config, vim.lsp.enable
     original_clients = vim.lsp.get_clients
+    original_diagnostics = vim.lsp.handlers["textDocument/publishDiagnostics"]
     original_hint_enable, original_hint_state =
       vim.lsp.inlay_hint.enable, vim.lsp.inlay_hint.is_enabled
     package.loaded["features.theme.runtime"] = { load_cache = function() end }
@@ -50,6 +52,7 @@ describe("LSP server registration", function()
   after_each(function()
     vim.lsp.config, vim.lsp.enable = original_config, original_enable
     vim.lsp.get_clients = original_clients
+    vim.lsp.handlers["textDocument/publishDiagnostics"] = original_diagnostics
     vim.lsp.inlay_hint.enable, vim.lsp.inlay_hint.is_enabled =
       original_hint_enable, original_hint_state
   end)
@@ -142,35 +145,31 @@ describe("LSP server registration", function()
     end
   )
 
-  it(
-    "registers the configured YAML schema associations before enabling",
-    function()
-      local registered, configured_before_enable
-      vim.lsp.config = function(name, options)
-        assert.equals("yamlls", name)
-        registered = options
-      end
-      vim.lsp.enable = function()
-        configured_before_enable = registered ~= nil
-      end
-      require("features.lsp.runtime").register_servers({
-        servers = require("features.lsp.config.servers.markup").servers,
-        setup = {},
-        disable_default_settings = {},
-      })
-      assert.is_not_nil(registered.settings)
-      assert.is_true(configured_before_enable)
-      assert.is_true(registered.settings.yaml.completion)
-      local uri = "https://gitlab.com/gitlab-org/gitlab/-/raw/master/"
-        .. "app/assets/javascripts/editor/schema/ci.json"
-      assert.same({
-        ".gitlab-ci.yml",
-        ".gitlab-ci.yaml",
-        ".gitlab/ci/*.yml",
-        ".gitlab/ci/*.yaml",
-      }, registered.settings.yaml.schemas[uri])
+  it("forwards supplied server settings before enabling", function()
+    local registered
+    local calls = {}
+    local settings = {
+      yaml = {
+        completion = false,
+        schemas = { ["file:///fixture-schema.json"] = { "fixture.yml" } },
+      },
+    }
+    vim.lsp.config = function(name, options)
+      assert.equals("yamlls", name)
+      registered = options
+      calls[#calls + 1] = "configure"
     end
-  )
+    vim.lsp.enable = function()
+      calls[#calls + 1] = "enable"
+    end
+    require("features.lsp.runtime").register_servers({
+      servers = { yamlls = { settings = settings } },
+      setup = {},
+      disable_default_settings = {},
+    })
+    assert.same({ "configure", "enable" }, calls)
+    assert.same(settings, registered.settings)
+  end)
   it(
     "applies hint exclusions and restores previous hints if a backend update fails",
     function()

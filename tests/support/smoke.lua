@@ -6,7 +6,7 @@ for _, options in ipairs({
   { directory = true },
   { file = "fixture.cs", roslyn = true },
 }) do
-  local session = require("scripts.tests.session").open(repository, options)
+  local session = require("tests.support.session").open(repository, options)
   local ok, err = pcall(function()
     session.exec([[
 if package.loaded.lazy then

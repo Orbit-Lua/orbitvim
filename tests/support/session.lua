@@ -76,7 +76,7 @@ function M.open(repository, opts)
       "Roslyn sources are required; run just deps"
     )
     fixture_path =
-      require("scripts.tests.roslyn_fixture").path(root .. "/bin", fixture_path)
+      require("tests.support.roslyn_fixture").path(root .. "/bin", fixture_path)
   end
   if opts.file then
     write(root .. "/project/" .. opts.file, "")

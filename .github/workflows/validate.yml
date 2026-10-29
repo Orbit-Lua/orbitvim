@@ -108,7 +108,7 @@ jobs:
           path: |
             ${{ env.NVIM_DATA_PATH }}/lazy
             ${{ env.NVIM_DATA_PATH }}/site
-          key: nvim-${{ runner.os }}-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'scripts/tests/restore_plugins.lua', 'scripts/tests/install_parsers.lua', 'justfile', '.github/workflows/validate.yml') }}
+          key: nvim-${{ runner.os }}-${{ env.NEOVIM_VERSION }}-${{ hashFiles('lazy-lock.json', 'tests/support/restore_plugins.lua', 'tests/support/install_parsers.lua', 'justfile', '.github/workflows/validate.yml') }}
 
       - name: Restore and verify locked plugins
         run: just deps

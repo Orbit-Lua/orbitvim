@@ -1,46 +1,33 @@
-# Hangar
+# Hangar integration
 
-OrbitVim uses [hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) to manage its tools. This guide covers OrbitVim's keys, settings, registry and state. The [hangar guide](https://github.com/Orbit-Lua/hangar.nvim/blob/main/doc/guide.md) covers the view, statuses, locks and session behavior.
+OrbitVim uses [hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) to manage its tools. This guide defines OrbitVim's entry points, settings, registry and state paths.
 
-Open Hangar with `:Hangar` or `<leader>us`. If it is open, this focuses the existing view. A new session captures the filetype and filename of the source buffer. `s` switches between that buffer and all registered tools.
+The [upstream guide](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/guide.md) defines operations, keys, statuses, persistence and recovery. These links match the revision in `lazy-lock.json`.
 
-## Navigation
+## Entry points and settings
 
-Use `1`–`6` or Tab / Shift-Tab to select LSP, DAP, Linter, Formatter, Parser or Package. `K` focuses details. `?` or `g?` toggles help. `q` or Escape closes the view or returns from details.
+Open Hangar with `:Hangar` or `<leader>us`. Open personal settings with `:OrbitSettings` or `<leader>uc`.
 
-Set `hangar.layout` in settings to change the spacing in cells: `padding`, `column_gap`, `gap` and `margin`. Set `hangar.width`, `height` and `details.width` to change the window sizes. hangar.nvim supplies each value that settings omit. `:OrbitSettings` shows those values with the source `hangar default`. Saving the settings file updates an open view. A removed value returns to its default.
+Set view overrides in the `hangar` section of personal settings. The bundled `settings.schema.json` defines accepted fields and bounds. Hangar supplies omitted view defaults. `:OrbitSettings info` identifies them as `hangar default`.
 
-## Install and enable
+Saving settings refreshes an open view. Removing an override restores its plugin default. See [settings](settings.md) for reload scope, precedence and rollback.
 
-`i` installs a Mason package or parser without enabling a disabled runtime tool. Space toggles an LSP, DAP, formatter or linter.
+Set `hangar.missing_package_policy` to `"manual"` to require explicit installation.
 
-With `hangar.missing_package_policy = "auto"`, a missing Mason package installs first. To require explicit installation, set it to `"manual"` in settings. External dependencies, such as debugpy from the environment, need setup outside Mason. Mark such a tool with `mason = nil` in `features.hangar.config`.
+`chadrc.lua` colors the active and inactive category tabs. Refer to the upstream guide for highlight groups.
 
-## Status
+## Registry and activation
 
-Each status icon has its own highlight group:
+`features.hangar.config` owns logical tool IDs, supported filetypes, backend aliases, installers and default order. Adapters translate logical IDs to backend names, such as `yaml` to Conform's `yamlfmt`.
 
-- `HangarIconEnabled`
-- `HangarIconIdle`
-- `HangarIconInfo`
-- `HangarIconInstalling`
-- `HangarIconWarning`
-- `HangarIconError`
-- `HangarIconUnknown`
-- `HangarIconDisabled`
+Registry support lists do not change initial activation in `features.formatter.config` and `features.linter.config`. Re-enabling a tool uses those activation lists. For example, a tool can support Markdown but initially serve only web filetypes.
 
-Category tabs use `HangarCategoryActive` and `HangarCategoryInactive`, which `chadrc.lua` colors. To override a group, define it in your color scheme or configuration.
+Set `tools.formatter_defaults` and `tools.linter_defaults` in personal settings to override initial priority. Valid saved order takes precedence.
 
-Registry support lists do not override the initial formatter and linter activation in `features.formatter.config` and `features.linter.config`. For example, a tool can support Markdown but be configured only for web filetypes.
+Mark externally managed tools with `mason = nil` in the registry. Prepare their dependencies, such as debugpy, outside Mason.
 
-## Priority and persistence
+## State and ownership
 
-Use `[` / `]` on a formatter or linter to change its priority for a filetype. `tools.formatter_defaults` and `tools.linter_defaults` in settings set the initial order. Valid saved order overrides them.
+OrbitVim selects `stdpath('data')/hangar.json` as the state path. Set `vim.g.hangar_state_path` before setup to override it. The older `tools.json` file is ignored and preserved.
 
-The registry in `features.hangar.config` uses logical IDs. At runtime, adapters translate them to backend aliases, for example `yaml` to Conform's `yamlfmt`.
-
-State is stored in `stdpath('data')/hangar.json`, or in `vim.g.hangar_state_path` when it is set. Only this file is read. An older `tools.json` is ignored. Missing or malformed state uses defaults. See the hangar guide for locks, recovery and merging.
-
-## Session lifetime
-
-hangar owns the windows, subscriptions and timers of each view. See [architecture](architecture.md) for OrbitVim's composition of hangar.
+Hangar owns state persistence and the view lifecycle. See [architecture](architecture.md#hangar) for OrbitVim's composition of settings, registry and runtime adapters.

@@ -1,6 +1,6 @@
 vim.opt.runtimepath:prepend(vim.fn.getcwd())
 package.path = vim.fn.getcwd() .. "/?.lua;" .. package.path
-require("scripts.tests.build_fixture").run("LuaSnip", function(directory)
+require("tests.support.build_fixture").run("LuaSnip", function(directory)
   local build
   for _, dependency in
     ipairs(require("features.completion.spec")[1].dependencies)

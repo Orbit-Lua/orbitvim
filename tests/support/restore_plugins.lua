@@ -4,7 +4,7 @@ vim.opt.runtimepath:prepend(repository)
 local fixture = vim.fn.tempname()
 local previous_path = vim.env.PATH
 vim.env.PATH =
-  require("scripts.tests.roslyn_fixture").path(fixture .. "/bin", previous_path)
+  require("tests.support.roslyn_fixture").path(fixture .. "/bin", previous_path)
 vim.fn.mkdir(fixture .. "/vault", "p")
 vim.g.orbitvim_settings_path = fixture .. "/settings.json"
 vim.g.hangar_state_path = fixture .. "/hangar.json"

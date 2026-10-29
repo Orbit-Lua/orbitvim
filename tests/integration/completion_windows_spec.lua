@@ -2,7 +2,7 @@ describe("pinned completion window compatibility", function()
   it(
     "renders configured documentation and resizes actual Blink windows",
     function()
-      local session = require("scripts.tests.session").open(vim.fn.getcwd(), {})
+      local session = require("tests.support.session").open(vim.fn.getcwd(), {})
       local ok, err = pcall(function()
         session.exec([[
 vim.api.nvim_exec_autocmds('InsertEnter', {})
@@ -37,7 +37,7 @@ assert(docs.win.config.max_height == sizes.documentation.height)
   it(
     "finishes one actual Noice progress message without retaining its timer",
     function()
-      local session = require("scripts.tests.session").open(vim.fn.getcwd(), {})
+      local session = require("tests.support.session").open(vim.fn.getcwd(), {})
       local ok, err = pcall(function()
         session.exec([[
 local progress = require('utils.progress').start({
@@ -55,6 +55,8 @@ assert(message.opts.keep == nil and message.opts.orbit_formatter == 'done')
 progress:finish({message='duplicate completion'})
 assert(message:content():find('Synthetic formatting complete', 1, true))
 ]])
+        local health = session.exec("return orbitvim_session_health()")
+        assert.same({}, health.errors)
       end)
       session.close()
       assert(ok, err)

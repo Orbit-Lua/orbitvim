@@ -140,6 +140,7 @@ describe("JSON settings", function()
       local runtime = require("features.settings.runtime")
       runtime.setup()
       local before = settings.get()
+      local before_ui = runtime.info().values.hangar
       test.write_file(
         settings.path(),
         '{"editor":{"number":false},"hangar":{"width":0}}'
@@ -161,6 +162,7 @@ describe("JSON settings", function()
       assert.is_false(runtime.reload())
       assert.equals(2, vim.o.shiftwidth)
       assert.same(before, settings.get())
+      assert.same(before_ui, runtime.info().values.hangar)
     end
   )
 

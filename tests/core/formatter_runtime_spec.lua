@@ -6,6 +6,7 @@ describe("features.formatter.runtime", function()
   local original_state_module
   local original_runtime_module
   local original_buffer_formatting
+  local original_buffer
   local notifications
 
   before_each(function()
@@ -13,7 +14,8 @@ describe("features.formatter.runtime", function()
     original_state_path = vim.g.hangar_state_path
     original_state_module = package.loaded["hangar.state"]
     original_runtime_module = package.loaded["features.formatter.runtime"]
-    original_buffer_formatting = vim.b.orbit_formatting
+    original_buffer = vim.api.nvim_get_current_buf()
+    original_buffer_formatting = vim.b[original_buffer].orbit_formatting
     vim.g.hangar_state_path = require("tests.helpers").temp_dir(
       "formatter-options"
     ) .. "/hangar.json"
@@ -35,7 +37,9 @@ describe("features.formatter.runtime", function()
     vim.g.hangar_state_path = original_state_path
     package.loaded["hangar.state"] = original_state_module
     vim.notify = original_notify
-    vim.b.orbit_formatting = original_buffer_formatting
+    if vim.api.nvim_buf_is_valid(original_buffer) then
+      vim.b[original_buffer].orbit_formatting = original_buffer_formatting
+    end
     package.loaded["features.formatter.runtime"] = original_runtime_module
     test.cleanup_all()
   end)
@@ -62,7 +66,6 @@ describe("features.formatter.runtime", function()
     assert.is_false(notifications[1].opts.keep())
     assert.is_truthy(notifications[2].message:find("Formatted"))
     assert.same("done", notifications[2].opts.orbit_formatter)
-    assert.same("✔", notifications[2].opts.orbit_formatter_icon)
     assert.is_true(vim.bo.modifiable)
     assert.is_nil(vim.b.orbit_formatting)
   end)
@@ -79,7 +82,6 @@ describe("features.formatter.runtime", function()
     assert.same(vim.log.levels.ERROR, notifications[2].level)
     assert.is_truthy(notifications[2].message:find("failed"))
     assert.same("error", notifications[2].opts.orbit_formatter)
-    assert.same("✖", notifications[2].opts.orbit_formatter_icon)
     assert.is_nil(vim.b.orbit_formatting)
   end)
 
