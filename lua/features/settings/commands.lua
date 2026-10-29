@@ -2,7 +2,7 @@ local M = {}
 
 local function open()
   local settings = require("features.settings.config")
-  local path = settings.edit_path()
+  local path = settings.path()
   local stat, stat_error, code = vim.uv.fs_stat(path)
   if not stat and code ~= "ENOENT" then
     vim.notify(
@@ -18,28 +18,6 @@ local function open()
         and "./settings.schema.json"
       or vim.uri_from_fname(settings.schema_path)
     local contents = '{\n  "$schema": ' .. vim.json.encode(reference) .. "\n}\n"
-    local source = settings.path()
-    if source ~= path then
-      local file, err = io.open(source, "rb")
-      if not file then
-        vim.notify(
-          tostring(err),
-          vim.log.levels.WARN,
-          { title = "OrbitSettings" }
-        )
-        return
-      end
-      contents = file:read("*a")
-      file:close()
-      if not contents then
-        vim.notify(
-          "Could not read legacy settings",
-          vim.log.levels.WARN,
-          { title = "OrbitSettings" }
-        )
-        return
-      end
-    end
     local ok, err, publish_code =
       require("utils.fs").atomic_write(path, contents, { exclusive = true })
     if not ok and publish_code ~= "EEXIST" then

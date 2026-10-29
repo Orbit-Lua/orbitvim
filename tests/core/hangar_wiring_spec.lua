@@ -10,10 +10,6 @@ describe("hangar wiring through features.hangar.runtime", function()
   it("reads only hangar.json and honors an explicit state path", function()
     vim.g.hangar_state_path = nil
     local current = vim.fn.stdpath("data") .. "/hangar.json"
-    -- The pre-rename file is not read and stays untouched.
-    local legacy = vim.fn.stdpath("data") .. "/tools.json"
-    local old_state = '{"lsp":{"lua_ls":false}}'
-    test.write_file(legacy, old_state)
     test.configure_tool()
     local state = require("hangar.state")
     assert.is_true(state.is_enabled("lsp", "lua_ls"))
@@ -34,7 +30,6 @@ describe("hangar wiring through features.hangar.runtime", function()
       vim.json.decode(table.concat(vim.fn.readfile(override), "\n"))
     assert.is_false(overridden.lsp.pyright)
     assert.same(saved, vim.fn.readfile(current, "b"))
-    assert.same({ old_state }, vim.fn.readfile(legacy))
   end)
 
   it("applies a saved missing-package policy to the configured view", function()

@@ -1,9 +1,7 @@
 local fs = require("utils.fs")
 local settings = require("features.settings.config")
 -- The JSON service normalizes Windows drive letters before matching patterns.
-local settings_files = vim.tbl_map(function(path)
-  return path:gsub("^%a:", string.lower)
-end, settings.schema_paths())
+local settings_file = settings.path():gsub("^%a:", string.lower)
 
 ---@type Lsp.Server.Module
 return {
@@ -14,7 +12,7 @@ return {
           validate = { enable = true },
           schemas = {
             {
-              fileMatch = settings_files,
+              fileMatch = { settings_file },
               url = vim.uri_from_fname(settings.schema_path),
             },
           },

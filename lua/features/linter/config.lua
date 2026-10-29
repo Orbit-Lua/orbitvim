@@ -1,6 +1,7 @@
 local fs = require("utils.fs")
 local os_utils = require("utils.os")
 local sqlfluff_util = require("features.sql.runtime")
+local project = require("utils.project")
 
 -- Mason's luacheck 1.1.0 fails under Lua 5.5, whose for-loop variables are
 -- <const>. Prefer a LuaRocks or standalone 1.2.0+ install even when an old
@@ -23,7 +24,7 @@ local function markdownlint_parser(...)
 end
 
 ---@class LinterExtend
----@field condition? boolean
+---@field condition? fun(ctx: {filename: string, dirname: string}): boolean
 
 ---@alias Linter lint.Linter | LinterExtend | fun(): lint.Linter | LinterExtend
 
@@ -66,6 +67,18 @@ return {
 
   -- refer to: https://github.com/mfussenegger/nvim-lint#custom-linters
   linters = {
+    eslint_d = function()
+      local filename = vim.api.nvim_buf_get_name(0)
+      local linter = vim.deepcopy(require("lint.linters.eslint_d"))
+      linter.cwd = project.tool_root(filename, "eslint")
+      linter.cmd = function()
+        return project.tool_executable(filename, "eslint", "eslint_d")
+      end
+      linter.condition = function(ctx)
+        return project.tool_root(ctx.filename, "eslint") ~= nil
+      end
+      return linter
+    end,
     luacheck = {
       cmd = luacheck_command(),
       stdin = true,

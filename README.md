@@ -48,6 +48,8 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 ### Language workflows
 
+Tailwind LSP and ESLint diagnostics and fixes require project evidence. Package declarations or tool-specific configuration qualify; unrelated Git repositories do not. See [project conditions](doc/architecture.md#project-conditions) for workspace boundaries.
+
 For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Hangar. Restart Neovim after installation.
 
 Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
@@ -58,9 +60,9 @@ SQLFluff formats and lints T-SQL. Linting runs on read, on save and when leaving
 
 ## Configuration
 
-Open personal settings with `:OrbitSettings` or `<leader>uc`. The writable default is `stdpath('data')/settings.json`. Startup reads legacy config settings while that destination is absent.
+Open personal settings with `:OrbitSettings` or `<leader>uc`. The default is `stdpath('data')/settings.json`.
 
-The command creates the destination only on explicit invocation. It copies legacy bytes unchanged and keeps the legacy file. Existing input is preserved, including invalid JSON. Enable `jsonls` for schema completion and validation.
+The command creates the file only on explicit invocation. Existing input is preserved, including invalid JSON. Enable `jsonls` for schema completion and validation.
 
 For example, set these overrides in the generated file:
 

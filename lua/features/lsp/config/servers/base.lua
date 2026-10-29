@@ -1,7 +1,7 @@
 ---@module "lspconfig"
 
 ---@class Lsp.Config.Servers
----@field [string] vim.lsp.Config | {keys?: LazyKeysSpec[]}
+---@field [string] vim.lsp.Config | {keys?: LazyKeysSpec[], condition?: fun(bufnr: integer): boolean}
 
 ---@class Lsp.Config.Spec
 ---@field servers Lsp.Config.Servers

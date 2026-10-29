@@ -171,6 +171,66 @@ describe("LSP server registration", function()
     assert.same(settings, registered.settings)
   end)
   it(
+    "gates each source buffer and preserves the upstream root callback across setup",
+    function()
+      vim.lsp.config = vim.deepcopy(original_config)
+      vim.lsp.enable = function() end
+      package.loaded["features.hangar.config.packages"] =
+        { lsp_servers = { "tailwindcss" } }
+      local test = require("tests.helpers")
+      local root = test.temp_dir("conditional lsp")
+      local a, b =
+        vim.api.nvim_create_buf(true, false),
+        vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_buf_set_name(a, root .. "/eligible/src/page.tsx")
+      vim.api.nvim_buf_set_name(b, root .. "/plain/page.tsx")
+      test.write_file(
+        root .. "/eligible/package.json",
+        '{"devDependencies":{"tailwindcss":"1"}}'
+      )
+      vim.fn.mkdir(root .. "/plain/.git", "p")
+      local seen = {}
+      vim.lsp.config("tailwindcss", {
+        root_dir = function(bufnr, on_dir)
+          seen[#seen + 1] = bufnr
+          on_dir(root .. "/upstream-selected-root")
+        end,
+      })
+      local opts = {
+        servers = {
+          tailwindcss = require("features.lsp.config.servers.typescript").servers.tailwindcss,
+        },
+        setup = {},
+        disable_default_settings = {},
+      }
+      local runtime = require("features.lsp.runtime")
+      runtime.register_servers(opts)
+      vim.api.nvim_set_current_buf(b)
+      local resolved
+      vim.lsp.config.tailwindcss.root_dir(b, function()
+        error("ineligible root activated")
+      end)
+      vim.lsp.config.tailwindcss.root_dir(a, function(value)
+        resolved = value
+      end)
+      assert.same({ a }, seen)
+      test.assert_path(root .. "/upstream-selected-root", resolved)
+      assert.is_nil(vim.lsp.config.tailwindcss.condition)
+      opts.servers.tailwindcss = {
+        condition = function()
+          return true
+        end,
+      }
+      runtime.register_servers(opts)
+      vim.lsp.config.tailwindcss.root_dir(b, function(value)
+        resolved = value
+      end)
+      assert.same({ a, b }, seen)
+      test.assert_path(root .. "/upstream-selected-root", resolved)
+    end
+  )
+
+  it(
     "applies hint exclusions and restores previous hints if a backend update fails",
     function()
       local a, b =

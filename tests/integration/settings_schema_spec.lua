@@ -3,6 +3,7 @@ describe("settings schema language server", function()
   local client, buffer
 
   after_each(function()
+    pcall(vim.api.nvim_del_user_command, "OrbitSettings")
     if client then
       client:stop(true)
       vim.wait(3000, function()
@@ -31,16 +32,15 @@ describe("settings schema language server", function()
       local root = test.temp_dir("settings-schema")
       local filename = root .. "/settings.json"
       vim.g.orbitvim_settings_path = filename
-      local lines = {
-        "{",
-        '  "editor": {},',
-        '  "hangar": { "missing_package_policy": "" }',
-        "}",
-      }
-      test.write_file(filename, lines)
-      buffer = vim.fn.bufadd(filename)
-      vim.fn.bufload(buffer)
+      require("features.settings.commands").setup()
+      vim.cmd.OrbitSettings()
+      local created =
+        vim.json.decode(table.concat(vim.fn.readfile(filename), "\n"))
+      local schema_reference = assert(created["$schema"])
+      buffer = vim.api.nvim_get_current_buf()
       vim.bo[buffer].filetype = "json"
+      -- Keep manual pull requests separate from current-buffer auto pulls.
+      vim.api.nvim_set_current_buf(vim.api.nvim_create_buf(false, true))
       local id = assert(vim.lsp.start({
         name = "orbitvim-schema-test",
         cmd = { executable, "--stdio" },
@@ -56,36 +56,54 @@ describe("settings schema language server", function()
       assert.is_true(vim.wait(10000, function()
         return client.initialized
       end, 20))
-      local response, err = client:request_sync("textDocument/completion", {
-        textDocument = { uri = vim.uri_from_fname(filename) },
-        position = {
-          line = 2,
-          character = assert(lines[3]:find('""', 1, true)),
-        },
-      }, 10000, buffer)
-      assert.is_not_nil(response, vim.inspect(err))
-      assert.is_nil(response.err)
-      local labels = {}
-      for _, item in ipairs(response.result.items or response.result) do
-        labels[item.label:gsub('"', "")] = true
-      end
-      assert.is_true(labels.auto, vim.inspect(response.result))
-      assert.is_true(labels.manual)
-      lines[3] = '  "hangar": { "width": 0 }'
-      vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
-      local diagnostics =
-        assert(client:request_sync("textDocument/diagnostic", {
-          textDocument = { uri = vim.uri_from_fname(filename) },
-        }, 10000, buffer))
-      local rejected = false
-      for _, diagnostic in ipairs(diagnostics.result.items) do
-        rejected = rejected
-          or (
-            diagnostic.range.start.line == 2
-            and diagnostic.message:find("24", 1, true) ~= nil
+      for _, linked in ipairs({ false, true }) do
+        local lines = {
+          "{",
+          '  "editor": {},',
+          '  "hangar": { "missing_package_policy": "" }',
+          "}",
+        }
+        local row = 2
+        if linked then
+          table.insert(
+            lines,
+            2,
+            '  "$schema": ' .. vim.json.encode(schema_reference) .. ","
           )
+          row = row + 1
+        end
+        vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+        local response, err = client:request_sync("textDocument/completion", {
+          textDocument = { uri = vim.uri_from_fname(filename) },
+          position = {
+            line = row,
+            character = assert(lines[row + 1]:find('""', 1, true)),
+          },
+        }, 10000, buffer)
+        assert.is_not_nil(response, vim.inspect(err))
+        assert.is_nil(response.err)
+        local labels = {}
+        for _, item in ipairs(response.result.items or response.result) do
+          labels[item.label:gsub('"', "")] = true
+        end
+        assert.is_true(labels.auto, vim.inspect(response.result))
+        assert.is_true(labels.manual)
+        lines[row + 1] = '  "hangar": { "width": 0 }'
+        vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+        local diagnostics =
+          assert(client:request_sync("textDocument/diagnostic", {
+            textDocument = { uri = vim.uri_from_fname(filename) },
+          }, 10000, buffer))
+        local rejected = false
+        for _, diagnostic in ipairs(diagnostics.result.items) do
+          rejected = rejected
+            or (
+              diagnostic.range.start.line == row
+              and diagnostic.message:lower():find("minimum", 1, true) ~= nil
+            )
+        end
+        assert.is_true(rejected, vim.inspect(diagnostics))
       end
-      assert.is_true(rejected, vim.inspect(diagnostics))
     end
   )
 end)

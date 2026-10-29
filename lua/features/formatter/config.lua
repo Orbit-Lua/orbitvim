@@ -12,6 +12,17 @@ return {
   },
 
   formatters = {
+    eslint_d = {
+      condition = function(_, ctx)
+        return project.tool_root(ctx.filename, "eslint") ~= nil
+      end,
+      cwd = function(_, ctx)
+        return project.tool_root(ctx.filename, "eslint")
+      end,
+      command = function(_, ctx)
+        return project.tool_executable(ctx.filename, "eslint", "eslint_d")
+      end,
+    },
     ["markdown-toc"] = {
       condition = function(_, ctx)
         for _, line in ipairs(vim.api.nvim_buf_get_lines(ctx.buf, 0, -1, false)) do

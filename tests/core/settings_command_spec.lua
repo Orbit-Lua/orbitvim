@@ -6,31 +6,26 @@ describe("settings command", function()
   end)
 
   it(
-    "copies legacy bytes to writable storage and observes the destination",
+    "creates the current settings file on demand and observes its saves",
     function()
       vim.g.orbitvim_settings_path = nil
       local settings = require("features.settings.config")
-      local legacy, destination = settings.legacy_path(), settings.edit_path()
-      test.write_file(legacy, '{"editor":{"shiftwidth":4}}')
-      assert.equals(legacy, settings.path())
+      local destination = settings.path()
+      test.assert_path(vim.fn.stdpath("data") .. "/settings.json", destination)
       require("features.settings.runtime").setup()
       assert.is_nil(vim.uv.fs_stat(destination))
       require("features.settings.commands").setup()
       vim.cmd.OrbitSettings()
       assert.equals(destination, settings.path())
       test.assert_path(destination, vim.api.nvim_buf_get_name(0))
-      assert.same(
-        vim.fn.readfile(legacy, "b"),
-        vim.fn.readfile(destination, "b")
+      local created =
+        vim.json.decode(table.concat(vim.fn.readfile(destination), "\n"))
+      assert.equals(
+        vim.uri_from_fname(settings.schema_path),
+        created["$schema"]
       )
       test.write_file(destination, '{"editor":{"shiftwidth":6}}')
       vim.api.nvim_exec_autocmds("BufWritePost", { pattern = destination })
-      assert.equals(
-        6,
-        require("features.settings.runtime").info().values.editor.shiftwidth
-      )
-      test.write_file(legacy, '{"editor":{"shiftwidth":8}}')
-      vim.api.nvim_exec_autocmds("BufWritePost", { pattern = legacy })
       assert.equals(
         6,
         require("features.settings.runtime").info().values.editor.shiftwidth

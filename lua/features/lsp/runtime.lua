@@ -1,5 +1,38 @@
 local M = {}
 local feature_options
+local gated_roots = setmetatable({}, { __mode = "k" })
+
+local function apply_condition(server, options)
+  local condition = options.condition
+  options.condition = nil
+  if not condition then
+    return
+  end
+  local upstream = vim.lsp.config[server] or {}
+  local resolve = options.root_dir or upstream.root_dir
+  if gated_roots[resolve] then
+    resolve = gated_roots[resolve].resolve
+  end
+  local markers = options.root_markers or upstream.root_markers
+  local workspace_required = options.workspace_required
+  if workspace_required == nil then
+    workspace_required = upstream.workspace_required
+  end
+  local function root_dir(bufnr, on_dir)
+    if not condition(bufnr) then
+      return
+    end
+    if type(resolve) == "function" then
+      return resolve(bufnr, on_dir)
+    end
+    local root = resolve or (markers and vim.fs.root(bufnr, markers))
+    if root or not workspace_required then
+      on_dir(root)
+    end
+  end
+  gated_roots[root_dir] = { resolve = resolve }
+  options.root_dir = root_dir
+end
 
 ---Retain distinct findings even when their diagnostic messages match.
 function M.publish_typescript_diagnostics(err, result, context, config)
@@ -113,6 +146,7 @@ M.register_servers = function(opts)
       opts.setup[server]()
     end
 
+    apply_condition(server, server_opts)
     local server_ok, server_err = pcall(vim.lsp.config, server, server_opts)
     if server_ok and state_mod.is_enabled("lsp", server) then
       local enable_ok, enable_err = pcall(vim.lsp.enable, server)

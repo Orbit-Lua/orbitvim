@@ -28,6 +28,6 @@ Mark externally managed tools with `mason = nil` in the registry. Prepare their 
 
 ## State and ownership
 
-OrbitVim selects `stdpath('data')/hangar.json` as the state path. Set `vim.g.hangar_state_path` before setup to override it. The older `tools.json` file is ignored and preserved.
+OrbitVim selects `stdpath('data')/hangar.json` as the state path. Set `vim.g.hangar_state_path` before setup to override it.
 
 Hangar owns state persistence and the view lifecycle. See [architecture](architecture.md#hangar) for OrbitVim's composition of settings, registry and runtime adapters.

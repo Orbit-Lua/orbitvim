@@ -83,6 +83,18 @@ Blink documentation uses its supplied renderer. Live resize needs the pinned rev
 - Build each buffer-dependent linter definition once per execution.
 - Keep automatic linting and custom parser activation disabled for detected large files.
 
+## Project conditions
+
+`utils.project.tool_root(filename, tool)` checks package declarations and tool configuration from the source file's ancestors. It preserves the existing project-root precedence.
+
+The nearest `.git`, `.hg`, `.svn` or `.bzr` marker bounds the search. Nested packages can inherit evidence within that repository. Sibling packages are not searched. Without a repository marker, the nearest package manifest or tool configuration bounds the search.
+
+Tailwind accepts its package declaration, Tailwind configuration, Django configuration paths and Tailwind dependency entries in Elixir or Ruby lockfiles. PostCSS configuration alone does not qualify. ESLint accepts its package declaration or a flat configuration file. Missing or malformed manifests supply no package evidence.
+
+LSP server declarations can supply a buffer-scoped `condition`. The runtime checks it before calling the effective upstream root resolver. Repeated setup replaces the condition. ESLint linter and formatter conditions use the same project query. Their executable and working directory follow the captured source file, including hoisted workspace binaries.
+
+Conditions govern new startup and execution attempts. They do not change saved tool enablement or installation state. Existing clients, published diagnostics and pending lint results keep their current lifetime. Manifest changes are checked on later attempts without a permanent miss cache.
+
 ## Shared tasks
 
 Several plugins can do the same task. This table gives each task one owner.

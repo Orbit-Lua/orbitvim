@@ -4,7 +4,6 @@ describe("utils.icons", function()
   local saved_mini_icons
   local module_names = {
     "mini.icons",
-    "nvim-web-devicons",
     "utils.icons",
   }
 
@@ -52,53 +51,19 @@ describe("utils.icons", function()
       }
     end
 
-    package.preload["nvim-web-devicons"] = function()
-      return {
-        get_icon = function()
-          error("nvim-web-devicons should not be used")
-        end,
-      }
-    end
-
     local icons = reload_icons()
 
     assert.equals("M", icons.get_file_icon("init.lua"))
     assert.is_true(setup_called)
-  end)
-
-  it("falls back to nvim-web-devicons compatibility", function()
-    package.preload["mini.icons"] = function()
-      error("mini.icons unavailable")
-    end
-
-    package.preload["nvim-web-devicons"] = function()
-      return {
-        get_icon = function(name, ext, opts)
-          assert.equals("init.lua", name)
-          assert.equals("lua", ext)
-          assert.is_true(opts.default)
-          return "D", "DevIconLua"
-        end,
-      }
-    end
-
-    local icons = reload_icons()
-
     assert.equals(
-      "%#DevIconLua#D%*",
-      icons.get_file_icon("init.lua", {
-        colored = true,
-      })
+      "%#MiniIconsBlue#M%*",
+      icons.get_file_icon("init.lua", { colored = true })
     )
   end)
 
   it("returns an empty string when no provider is available", function()
     package.preload["mini.icons"] = function()
       error("mini.icons unavailable")
-    end
-
-    package.preload["nvim-web-devicons"] = function()
-      error("nvim-web-devicons unavailable")
     end
 
     local icons = reload_icons()
