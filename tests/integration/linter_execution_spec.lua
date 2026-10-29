@@ -1,58 +1,100 @@
 describe("buffer-dependent linter execution", function()
-  it("builds one definition for preflight and native execution", function()
-    local test = require("tests.helpers")
-    test.configure_tool()
-    vim.opt.runtimepath:append(test.plugin_path("nvim-lint"))
-    local root = test.temp_dir("linter-execution")
-    local script, marker = root .. "/probe.lua", root .. "/executed"
-    test.write_file(
-      script,
-      "vim.fn.writefile({'executed'}, " .. vim.json.encode(marker) .. ")"
-    )
-    -- nvim-lint's Windows wrapper can split a spaced executable path when
-    -- an argument also needs quoting (upstream issue #745). The shim keeps
-    -- the linter command free of spaces on every platform.
-    local windows = vim.fn.has("win32") == 1
-    local shim = root .. "/probe" .. (windows and ".cmd" or "")
-    local command = string.format(
-      '"%s" --headless -u NONE -i NONE -l "%s"',
-      vim.v.progpath,
-      script
-    )
-    test.write_file(
-      shim,
-      windows and { "@" .. command } or { "#!/bin/sh", "exec " .. command }
-    )
-    if not windows then
-      assert(vim.uv.fs_chmod(shim, 448))
-    end
-    local builds = 0
-    local buffer = vim.api.nvim_create_buf(true, false)
-    vim.api.nvim_set_current_buf(buffer)
-    vim.bo[buffer].filetype = "orbit_linter_fixture"
-    require("features.linter.runtime").setup({
-      events = { "BufWritePost" },
-      linters_by_ft = { orbit_linter_fixture = { "probe" } },
-      linters = {
-        probe = function()
-          builds = builds + 1
-          return {
-            cmd = shim,
-            args = {},
-            stdin = false,
-            parser = function()
-              return {}
+  it(
+    "preserves spaced commands and arguments through native execution",
+    function()
+      local test = require("tests.helpers")
+      test.configure_tool()
+      vim.opt.runtimepath:append(test.plugin_path("nvim-lint"))
+      local windows = vim.fn.has("win32") == 1
+      local root = test.temp_dir("linter execution with spaces")
+      local command = root .. "/node" .. (windows and ".exe" or "")
+      local node = vim.fn.exepath(windows and "node.exe" or "node")
+      assert.is_not.equals("", node, "Node.js is required for adapter fixtures")
+      assert(vim.uv.fs_copyfile(node, command))
+      if not windows then
+        assert(vim.uv.fs_chmod(command, 448))
+      end
+      local script = root .. "/probe with spaces.js"
+      test.write_file(
+        script,
+        [[
+let input = '';
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('end', () => {
+  process.stdout.write(JSON.stringify({
+    input, args: process.argv.slice(2), cwd: process.cwd(),
+    env: process.env.ORBIT_LINT_PROBE,
+  }));
+});
+]]
+      )
+      local shim = root .. "/shim with spaces" .. (windows and ".cmd" or "")
+      local invocation = '"' .. command .. '" "' .. script .. '"'
+      test.write_file(
+        shim,
+        windows and ("@" .. invocation .. " %*")
+          or ("#!/bin/sh\nexec " .. invocation .. ' "$@"\n')
+      )
+      if not windows then
+        assert(vim.uv.fs_chmod(shim, 448))
+      end
+      local lint = require("lint")
+      local builds = 0
+      for _, adapter in ipairs({ "native", "shim" }) do
+        local buffer = vim.api.nvim_create_buf(true, false)
+        vim.api.nvim_set_current_buf(buffer)
+        vim.bo[buffer].filetype = "orbit_linter_fixture"
+        vim.api.nvim_buf_set_lines(
+          buffer,
+          0,
+          -1,
+          false,
+          { adapter, "second line" }
+        )
+        local name = "orbit_execution_" .. adapter
+        local namespace = lint.get_namespace(name)
+        require("features.linter.runtime").setup({
+          events = { "BufWritePost" },
+          linters_by_ft = { orbit_linter_fixture = { name } },
+          linters = {
+            [name] = function()
+              builds = builds + 1
+              return {
+                cmd = function()
+                  return adapter == "native" and command or shim
+                end,
+                args = adapter == "native"
+                    and { script, "argument with spaces" }
+                  or { "argument with spaces" },
+                append_fname = false,
+                stdin = true,
+                cwd = root,
+                env = { ORBIT_LINT_PROBE = "preserved" },
+                parser = function(output)
+                  return { { lnum = 0, col = 0, message = output } }
+                end,
+              }
             end,
-          }
-        end,
-      },
-    })
-    vim.api.nvim_exec_autocmds("BufWritePost", { buffer = buffer })
-    assert.is_true(vim.wait(5000, function()
-      return vim.uv.fs_stat(marker) ~= nil
-    end, 10))
-    assert.equals(1, builds)
-  end)
+          },
+        })
+        vim.api.nvim_exec_autocmds("BufWritePost", { buffer = buffer })
+        assert.is_true(vim.wait(5000, function()
+          return #vim.diagnostic.get(buffer, { namespace = namespace }) == 1
+            and #lint.get_running(buffer) == 0
+        end, 10))
+        local diagnostics =
+          vim.diagnostic.get(buffer, { namespace = namespace })
+        local result = vim.json.decode(diagnostics[1].message)
+        assert.same({ "argument with spaces" }, result.args)
+        assert.equals(adapter .. "\nsecond line\n", result.input)
+        test.assert_path(root, result.cwd)
+        assert.equals("preserved", result.env)
+        assert.same({}, require("utils.logger").get_entries("linter", name))
+      end
+      assert.equals(2, builds)
+    end
+  )
   it(
     "scopes ESLint execution and formatter selection to each source project",
     function()

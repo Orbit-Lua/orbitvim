@@ -90,6 +90,8 @@ Blink documentation uses its supplied renderer. Live resize needs the pinned rev
 - Build each buffer-dependent linter definition once per execution.
 - Keep automatic linting and custom parser activation disabled for detected large files.
 
+On Windows, the linter runtime adapts command quoting through nvim-lint's public `wrap_linter` option. Preflight checks use the original executable. nvim-lint retains process and diagnostic ownership.
+
 ## Project conditions
 
 `utils.project.tool_root(filename, tool)` checks package declarations and tool configuration from the source file's ancestors. It preserves the existing project-root precedence.
