@@ -1,6 +1,6 @@
 # Architecture
 
-`init.lua` applies editor options and settings. It bootstraps the locked Lazy revision and imports plugin specs. Then it registers commands and finishes theme, shell, highlights and general mappings. Plugin imports describe loading. Their lifecycle callbacks give activation to feature owners.
+`init.lua` applies editor options and settings. It registers core commands, shell settings and general mappings. `core.startup` initializes plugins before their first use. Plugin imports describe loading. Their lifecycle callbacks give activation to feature owners.
 
 Each feature lives under `lua/features/<name>/`. Fixed entry names separate editable declarations from activation.
 
@@ -17,15 +17,22 @@ Keep feature directories free of `init.lua` files. Import another feature's decl
 
 `lua/plugins/init.lua` imports each feature spec explicitly. Lazy tracks these modules for change detection. Spec imports do not load runtime owners or register editor resources.
 
-Core owns editor options, autocommands, filetypes and mappings. It also owns shell setup, Lazy options and the command registration list. Shared owns borders and icons. Utils holds helpers that have no feature owner. Keep `lua/chadrc.lua` at the top level for nv-ui.
+Core owns editor options, autocommands, filetypes and mappings. It also owns plugin startup, shell setup, Lazy options and the command registration list. Shared owns borders and icons. Utils holds helpers that have no feature owner. Keep `lua/chadrc.lua` at the top level for nv-ui.
 
 ## Startup
 
-- Keep editor setup, Lazy bootstrap and final UI setup in that order.
+- Apply editor settings before plugin initialization.
+- Keep core commands, shell settings and general mappings available before plugin initialization.
 - Let plugin specs declare loading and plugin keys. Let their lifecycle callbacks call runtime owners.
 - Do not register commands, events or mappings, or load highlight caches, during spec import.
 - Treat configuration templates under `lua/features/*/config/template/` as reusable files.
 - Keep project-root precedence in `utils.project` stable when you change discovery helpers.
+
+`core.startup` starts Lazy immediately for file arguments, attached UIs or a missing Lazy installation. Otherwise, it waits for UI, file, command, colorscheme or unresolved module use. Empty headless sessions can exit without loading plugins.
+
+Repeated setup replaces pending subscriptions. Plugin initialization runs once. New groups receive the file event that triggered setup. Existing observers do not run twice. Startup failures retain their context and require a restart.
+
+Lazy keeps ownership of runtime plugin sourcing. Plugin startup then loads theme caches and custom highlights. Missing default or statusline caches are compiled before use.
 
 ## Settings
 
@@ -46,7 +53,7 @@ flowchart TD
     Registry --> Derived[features.hangar.config.packages derived lists]
 ```
 
-The hangar spec loads at startup with `lazy = false`. Its `config` calls `features.hangar.runtime.setup()`. LSP, formatter, linter and DAP read tool state on later events.
+The hangar spec loads during plugin initialization with `lazy = false`. Its `config` calls `features.hangar.runtime.setup()`. LSP, formatter, linter and DAP read tool state on later events.
 
 `features.hangar.runtime` passes the registry, default orders from settings and the `hangar.json` path. The `hangar` settings section becomes the view options. It also passes the border, DAP owner, formatter and linter activation, and linter logs. Every view default and icon comes from hangar.nvim. When the section changes, `features.settings.runtime` calls `hangar.update_ui()`, which rebuilds the options and refreshes the open view.
 

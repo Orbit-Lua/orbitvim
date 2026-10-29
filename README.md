@@ -26,6 +26,8 @@ nvim
 
 Lazy installs the locked plugins on first start. Install language tools through Hangar. Install parsers with `:TSInstallAll`.
 
+Empty headless sessions defer plugins until their first use. Core settings, commands and mappings remain available. File arguments and UI startup initialize plugins normally.
+
 ## Usage
 
 Open Hangar with `:Hangar` or `<leader>us`. The leader key is Space.

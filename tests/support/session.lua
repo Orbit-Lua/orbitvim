@@ -18,9 +18,17 @@ local function link(source, destination)
   assert(ok, err)
 end
 
+---@class OrbitVimSessionOptions
+---@field file? string
+---@field directory? boolean
+---@field init? string
+---@field timeout? integer
+---@field roslyn? boolean
+---@field headless? boolean
+
 ---Start a complete editor with synthetic state and read-only plugin sources.
 ---@param repository string
----@param opts? {file?: string, directory?: boolean, init?: string, timeout?: integer, roslyn?: boolean}
+---@param opts? OrbitVimSessionOptions
 ---@return table
 function M.open(repository, opts)
   opts = opts or {}
@@ -219,7 +227,9 @@ assert(vim.uv.fs_rename(response .. '.tmp', response))
     vim.fn.delete(root, "rf")
   end
   local attached, err = pcall(function()
-    vim.rpcnotify(job, "nvim_ui_attach", 120, 40, { rgb = true })
+    if not opts.headless then
+      vim.rpcnotify(job, "nvim_ui_attach", 120, 40, { rgb = true })
+    end
     assert(
       vim.wait(10000, function()
         return session.exec(

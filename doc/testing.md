@@ -34,6 +34,8 @@ Each spec runs in its own headless Neovim process. The runner fails a spec in th
 
 A test that expects a failure notification observes it explicitly. Other tests must not produce that notification.
 
+Startup sessions attach a real UI by default. Use the session helper's `headless` option to exercise plugin activation before UI attachment.
+
 Check collected errors before closing a child editor session. The parent process cannot observe those errors directly.
 
 ## Fixtures
