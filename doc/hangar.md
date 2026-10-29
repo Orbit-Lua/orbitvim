@@ -2,7 +2,7 @@
 
 OrbitVim uses [hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) to manage its tools. This guide defines OrbitVim's entry points, settings, registry and state paths.
 
-The [upstream guide](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/guide.md) defines operations, keys, statuses, persistence and recovery. These links match the revision in `lazy-lock.json`.
+The [upstream guide](https://github.com/Orbit-Lua/hangar.nvim/blob/fb79cc024aba1a20661064245541a821d0516ead/doc/guide.md) defines operations, keys, statuses, persistence and recovery. These links match the revision in `lazy-lock.json`.
 
 ## Entry points and settings
 

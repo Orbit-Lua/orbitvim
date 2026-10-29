@@ -33,7 +33,7 @@ Core owns editor options, autocommands, filetypes and mappings. It also owns she
 
 ## Hangar
 
-[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the tool view, operations and state. Its [guide](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/guide.md) defines that behavior. Its [architecture](https://github.com/Orbit-Lua/hangar.nvim/blob/0a78244ecfb5c84ac4160653a12c39b22a8dc237/doc/architecture.md) defines plugin internals.
+[hangar.nvim](https://github.com/Orbit-Lua/hangar.nvim) provides the tool view, operations and state. Its [guide](https://github.com/Orbit-Lua/hangar.nvim/blob/fb79cc024aba1a20661064245541a821d0516ead/doc/guide.md) defines that behavior. Its [architecture](https://github.com/Orbit-Lua/hangar.nvim/blob/fb79cc024aba1a20661064245541a821d0516ead/doc/architecture.md) defines plugin internals.
 
 ```mermaid
 flowchart TD
