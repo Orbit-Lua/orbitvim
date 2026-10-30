@@ -1,6 +1,6 @@
 # Testing
 
-OrbitVim validates changes through just recipes. CI runs them on Linux. Run them locally on Windows before each push.
+OrbitVim validates changes through just recipes. CI runs them on Linux. [AGENTS.md](../AGENTS.md#ci) defines required local Windows validation.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ On Windows, use MSYS2 UCRT64 build tools with native Git. Preserve `LOCALAPPDATA
 
 ## Recipes
 
-Run `just all` for every change. It checks formatting, runs Luacheck and runs the hermetic core specs. Some changes need another recipe:
+`just all` checks formatting, runs Luacheck and runs the hermetic core specs. Some changes need another recipe:
 
 | Change | Recipe |
 | --- | --- |
@@ -24,7 +24,9 @@ Use `just --list` for recipe descriptions. Use `just test-spec <path>` to run on
 
 ## Execution
 
-Keep behavioral specs in `tests/core/` or `tests/integration/`. Keep runners, bootstrap files and dependency fixtures in `tests/support/`. Use `tests.helpers` for shared isolation and fixture operations.
+- Keep behavioral specs in `tests/core/` or `tests/integration/`.
+- Keep runners, bootstrap files and dependency fixtures in `tests/support/`.
+- Use `tests.helpers` for shared isolation and fixture operations.
 
 Each spec runs in its own headless Neovim process. The runner fails a spec in these cases:
 

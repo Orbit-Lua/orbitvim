@@ -6,7 +6,16 @@ Neovim configuration for programming, SQL and Markdown, with persistent language
 
 ## Install
 
-Use Neovim 0.12+, Git and network access. Parser and native plugin builds need a C compiler, Tree-sitter CLI 0.26.1+, GNU Make and Bash. Language servers can also need their language runtime or package manager. `:checkhealth mason` reports available installers.
+Install these requirements:
+
+- Neovim 0.12+.
+- Git.
+- A C compiler for parser and native plugin builds.
+- Tree-sitter CLI 0.26.1+ for parser builds.
+- GNU Make for native plugin builds.
+- Bash for native plugin builds.
+
+Use network access for plugin and tool installation. Language servers can also need their language runtime or package manager. `:checkhealth mason` reports available installers.
 
 Move any existing configuration aside before cloning.
 
@@ -26,9 +35,15 @@ nvim
 
 Lazy installs the locked plugins on first start. Install language tools through Hangar. Install parsers with `:TSInstallAll`.
 
-Empty headless sessions defer plugins until their first use. Core settings, commands and mappings remain available. File arguments and UI startup initialize plugins normally.
+See [startup behavior](doc/architecture.md#startup) for headless sessions and plugin activation.
 
 ## Usage
+
+Start the editor:
+
+```sh
+nvim
+```
 
 Open Hangar with `:Hangar` or `<leader>us`. The leader key is Space.
 
@@ -52,9 +67,17 @@ Press `s` on an image in nvim-tree to open the system viewer. Terminal image pre
 
 Tailwind LSP and ESLint diagnostics and fixes require project evidence. Package declarations or tool-specific configuration qualify; unrelated Git repositories do not. See [project conditions](doc/architecture.md#project-conditions) for workspace boundaries.
 
-Copy an ESLint template from `lua/features/linter/config/template/` into the project as `eslint.config.mjs`. Follow its dependency instructions. Copy the updated TanStack template again to apply its Windows async-client diagnostic fix.
+Use an ESLint template:
 
-For C#, put `dotnet` and `roslyn-language-server` on PATH. Install the server through Hangar. Restart Neovim after installation.
+1. Copy a template from `lua/features/linter/config/template/` into the project as `eslint.config.mjs`.
+2. Follow its dependency instructions.
+3. Copy the template again when you need template updates.
+
+Prepare C# tooling:
+
+1. Install `roslyn-language-server` through Hangar.
+2. Put `dotnet` and `roslyn-language-server` on PATH.
+3. Restart Neovim after installation.
 
 Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
 
@@ -81,10 +104,26 @@ Saving applies editor options, Hangar options and inlay hints. Server configurat
 
 Set `notes.vault` to an Obsidian vault path to enable Markdown note integration.
 
+## Shared tasks
+
+| Task | Owner |
+| --- | --- |
+| Plugin installation and loading | Lazy |
+| Tool view, operations and saved tool state | hangar.nvim |
+| Tool registry, settings and runtime adapters | OrbitVim |
+
+See [shared-task boundaries](doc/architecture.md#shared-tasks) for terminal, navigation and display owners.
+
 ## Supported platforms
 
-CI runs the validation recipes on Linux. Run them locally on Windows before each push. The justfile uses `sh` on Linux and native `cmd.exe` on Windows.
+Linux and Windows are supported. See [testing](doc/testing.md) for contributor validation and platform recipes.
 
-On Windows, keep native Git before MSYS2 tools on PATH. Add MSYS2 UCRT64 GCC, Make and Bash for native builds. Keep explicit `shell` and `CC` choices when customizing the environment. OrbitVim selects available defaults otherwise.
+Prepare native builds on Windows:
+
+1. Add MSYS2 UCRT64 GCC, Make and Bash to PATH.
+2. Keep native Git before MSYS2 tools on PATH.
+3. Keep explicit `shell` and `CC` choices when customizing the environment.
+
+OrbitVim selects available defaults otherwise.
 
 On Windows, nvim-tree disables filesystem watchers. It refreshes on save, on entry and with `R`. `:ClearShada` keeps `main.shada` while removing temporary ShaDa files.

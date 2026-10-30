@@ -4,9 +4,18 @@ SQL Server conventions used by [OrbitVim snippets](tsql-snippets.md). Examples a
 
 ## Common rules
 
-Use explicit schemas, target columns and meaningful aliases. Terminate statements with semicolons. Prefer ANSI joins and set-based operations. Order results when the order affects their meaning. Use `CREATE OR ALTER` for supported programmable objects. Use `SET NOCOUNT ON` in procedures and triggers.
+- Use explicit schemas, target columns and meaningful aliases.
+- Terminate statements with semicolons.
+- Prefer ANSI joins and set-based operations.
+- Order results when the order affects their meaning.
+- Use `CREATE OR ALTER` for supported programmable objects.
+- Use `SET NOCOUNT ON` in procedures and triggers.
 
-Keep transactions short. Define whether a procedure owns or joins the transaction of its caller. Use `XACT_ABORT`, `TRY`/`CATCH` and `THROW` for transaction-owning code. Parameterize dynamic values. Allowlist identifiers before `QUOTENAME`.
+- Keep transactions short.
+- Define whether a procedure owns or joins the transaction of its caller.
+- Use `XACT_ABORT`, `TRY`/`CATCH` and `THROW` for transaction-owning code.
+- Parameterize dynamic values.
+- Allowlist identifiers before `QUOTENAME`.
 
 ## Names and data types
 

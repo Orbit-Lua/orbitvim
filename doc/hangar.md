@@ -24,7 +24,8 @@ Registry support lists do not change initial activation in `features.formatter.c
 
 Set `tools.formatter_defaults` and `tools.linter_defaults` in personal settings to override initial priority. Valid saved order takes precedence.
 
-Mark externally managed tools with `mason = nil` in the registry. Prepare their dependencies, such as debugpy, outside Mason.
+- Mark externally managed tools with `mason = nil` in the registry.
+- Prepare their dependencies, such as debugpy, outside Mason.
 
 ## State and ownership
 

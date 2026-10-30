@@ -49,7 +49,12 @@ Corrections use a higher priority to override generic captures. Built-in functio
 
 [`syntax/tsql.vim`](../syntax/tsql.vim) covers the items that error recovery can discard: batch separators, control-flow keywords, variables, bracketed identifiers, built-in types and functions. Strings and comments shield their contents from keyword matches.
 
-Markdown loads the fallback in a contained cluster. It must not affect prose, inline code or other languages. Keep patterns lexical and bounded. Model stable syntax with queries. Do not use Vim regions for nested procedures, transactions or dynamic SQL. Add an overlap only where parser recovery can remove the queryable node.
+Markdown loads the fallback in a contained cluster. It must not affect prose, inline code or other languages.
+
+- Keep patterns lexical and bounded.
+- Model stable syntax with queries.
+- Do not use Vim regions for nested procedures, transactions or dynamic SQL.
+- Add an overlap only where parser recovery can remove the queryable node.
 
 ## Validation contract
 

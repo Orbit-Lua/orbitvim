@@ -23,7 +23,8 @@ Core owns editor options, autocommands, filetypes and mappings. It also owns plu
 
 - Apply editor settings before plugin initialization.
 - Keep core commands, shell settings and general mappings available before plugin initialization.
-- Let plugin specs declare loading and plugin keys. Let their lifecycle callbacks call runtime owners.
+- Let plugin specs declare loading and plugin keys.
+- Let their lifecycle callbacks call runtime owners.
 - Do not register commands, events or mappings, or load highlight caches, during spec import.
 - Treat configuration templates under `lua/features/*/config/template/` as reusable files.
 - Keep project-root precedence in `utils.project` stable when you change discovery helpers.
@@ -55,7 +56,7 @@ flowchart TD
 
 The hangar spec loads during plugin initialization with `lazy = false`. Its `config` calls `features.hangar.runtime.setup()`. LSP, formatter, linter and DAP read tool state on later events.
 
-`features.hangar.runtime` passes the registry, default orders from settings and the `hangar.json` path. The `hangar` settings section becomes the view options. It also passes the border, DAP owner, formatter and linter activation, and linter logs. Every view default and icon comes from hangar.nvim. When the section changes, `features.settings.runtime` calls `hangar.update_ui()`, which rebuilds the options and refreshes the open view.
+`features.hangar.runtime` passes the registry, default orders from settings and the `hangar.json` path. The `hangar` settings section becomes the view options. It also passes the border, DAP owner, formatter and linter activation, and linter logs. Every view default and icon comes from hangar.nvim. When the section changes, `features.settings.runtime` calls `hangar.update_ui()`. This rebuilds the options and refreshes the open view.
 
 `features.hangar.config` owns logical IDs, supported filetypes, backend aliases, installers and default order. `features.hangar.config.packages` derives sorted, unique server, package and parser lists. When formatters and linters are enabled again, they obey the initial activation in `features.formatter.config` and `features.linter.config`. They do not activate all supported filetypes.
 

@@ -18,7 +18,12 @@ Use an absolute file URI when settings and schema files have different directori
 
 ## Merge and precedence
 
-Objects merge by field. Arrays replace previous arrays, also when they are empty. Boolean `false` is preserved. Removing a field restores its default. Unknown keys, wrong types, invalid ranges and typed null values reject the complete input before it applies. Server-specific `settings` accept arbitrary JSON.
+- Objects merge by field.
+- Arrays replace previous arrays, also when they are empty.
+- Boolean `false` is preserved.
+- Removing a field restores its default.
+- Unknown keys, wrong types, invalid ranges and typed null values reject the complete input before it applies.
+- Server-specific `settings` accept arbitrary JSON.
 
 `tools.formatter_defaults` and `tools.linter_defaults` set the initial filetype order. They use logical IDs such as `yaml`, not backend aliases such as `yamlfmt`. They override registry defaults at startup. Valid saved order in `hangar.json` overrides both. Reload never changes saved enablement or order. Supported filetypes do not imply initial activation.
 

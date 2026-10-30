@@ -35,8 +35,7 @@ Prefixes describe the operation. Suffixes identify joined and output variants:
 | `o` suffix | DML variant with `OUTPUT` |
 | `dyn` | Dynamic SQL |
 
-For example, `upd` creates an alias-based update, `updj` adds a join, and
-`updo` returns changed values with `OUTPUT`.
+For example, `upd` creates an alias-based update. `updj` adds a join. `updo` returns changed values with `OUTPUT`.
 
 ## Snippet catalog
 
@@ -153,9 +152,7 @@ For example, `upd` creates an alias-based update, `updj` adds a join, and
 | `dynsql` | Execute dynamic SQL with parameterized values through `sys.sp_executesql` |
 | `dynident` | Allowlist a dynamic identifier, wrap it with `QUOTENAME`, and execute it |
 
-Put values in `sp_executesql` parameters. Identifiers cannot be
-parameters, so `dynident` validates the identifier before it applies
-`QUOTENAME`. Quoting alone is not authorization.
+Put values in `sp_executesql` parameters. Identifiers cannot be parameters. Thus `dynident` validates the identifier before it applies `QUOTENAME`. Quoting alone is not authorization.
 
 ### Security and object lifecycle
 
@@ -201,17 +198,16 @@ parameters, so `dynident` validates the identifier before it applies
 
 ## Safety notes
 
-- Review `droptable`, `dropobj`, `truncate`, `del`, `delj`, and `delo` before
-  execution. Snippets generate text. They do not confirm destructive actions.
-- `cprocw`, `txn`, and `upsert` assume ownership of the transaction. Reusable
-  procedures that participate in a caller-owned transaction need an explicit
-  transaction-ownership design.
-- `GO` is understood by clients such as `sqlcmd` and SQL Server Management
-  Studio. Do not send it through application APIs such as `SqlCommand`.
-- `upsert` still needs an appropriate unique constraint and concurrency
-  strategy. The template does not make an unsafe data model race-free.
-- Index templates are starting points. Choose keys, includes, and filters from
-  real predicates, ordering needs, and execution plans.
+- Review `droptable`, `dropobj`, `truncate`, `del`, `delj`, and `delo` before execution.
+- Snippets generate text. They do not confirm destructive actions.
+- `cprocw`, `txn`, and `upsert` assume ownership of the transaction.
+- Give reusable procedures in caller-owned transactions an explicit transaction-ownership design.
+- Clients such as `sqlcmd` and SQL Server Management Studio understand `GO`.
+- Do not send `GO` through application APIs such as `SqlCommand`.
+- `upsert` still needs an appropriate unique constraint and concurrency strategy.
+- The template does not make an unsafe data model race-free.
+- Index templates are starting points.
+- Choose keys, includes, and filters from real predicates, ordering needs, and execution plans.
 
 ## Maintenance
 
