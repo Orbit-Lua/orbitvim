@@ -79,7 +79,18 @@ Prepare C# tooling:
 2. Put `dotnet` and `roslyn-language-server` on PATH.
 3. Restart Neovim after installation.
 
-Roslyn prefers a single solution at the Git root that contains the current project. Use `:Roslyn target` to select one manually. `:DotnetManager` or `<leader>ud` opens build, test, package, EF Core and publish actions. `:DotnetDebug` and `:DotnetAttach` need `netcoredbg` and enabled `coreclr` tools.
+Roslyn prefers one solution at the Git root that contains the current project.
+Use `:Roslyn target` to select a solution manually.
+Open .NET workflows with `:DotnetManager` or `<leader>ud`.
+Use its Command Line action for SDK suggestions and Tab completion.
+
+`DapNew` and `DotnetDebug` reuse the saved startup project.
+Without a selection, one runnable non-test project is selected automatically.
+Multiple candidates open a picker.
+A missing saved project requires an explicit replacement.
+Selections persist under Neovim's state directory.
+`DotnetDebug` and `DotnetAttach` require enabled `coreclr` tools and netcoredbg.
+Use netcoredbg 3.2.0-1092 or newer for .NET 10 debugging.
 
 SQLFluff formats and lints T-SQL. Linting runs on read, on save and when leaving Insert mode. See the [highlighting guide](doc/tsql-highlighting.md), [snippet catalog](doc/tsql-snippets.md) and [SQL conventions](doc/tsql-conventions.md).
 

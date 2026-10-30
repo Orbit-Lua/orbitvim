@@ -1,9 +1,9 @@
 {
   "LuaSnip": { "branch": "master", "commit": "0abc8f390b278c3b4aabc4c004ac8a088b65cf24" },
   "blink.cmp": { "branch": "main", "commit": "78336bc89ee5365633bcf754d93df01678b5c08f" },
-  "comet.nvim": { "branch": "main", "commit": "40592b1e0c044ffb058e01fabc36b5600a785aac" },
+  "comet.nvim": { "branch": "main", "commit": "b30afe9e5fcd5445804e584eb1cadf68c64873fe" },
   "conform.nvim": { "branch": "master", "commit": "016802de402556da54c36bd7359b441266b01cdd" },
-  "dotnet-cli.nvim": { "branch": "main", "commit": "7f2799b52b2dcdeabf4f883ca7508a818cda658f" },
+  "dotnet-cli.nvim": { "branch": "main", "commit": "9dd15efaf06fcf3fdd24263f084e0cd3bfb11480" },
   "edgy.nvim": { "branch": "main", "commit": "8bfd2808994a988c975694122f68624b8a219f5f" },
   "friendly-snippets": { "branch": "main", "commit": "b2ea5c41a150ba72fb656eedb4ed0a86d138d945" },
   "gitsigns.nvim": { "branch": "main", "commit": "d4854fa9a94b5c8b37dd209fb4a19e98e764186f" },

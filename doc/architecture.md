@@ -105,6 +105,23 @@ LSP server declarations can supply a buffer-scoped `condition`. The runtime chec
 
 Conditions govern new startup and execution attempts. They do not change saved tool enablement or installation state. Existing clients, published diagnostics and pending lint results keep their current lifetime. Manifest changes are checked on later attempts without a permanent miss cache.
 
+## .NET workflows
+
+`features.dotnet.spec` owns plugin loading and the manager mapping.
+`features.dap.runtime` delegates CoreCLR registration to dotnet-cli.nvim.
+Hangar owns tool enablement and installation state.
+
+dotnet-cli.nvim owns startup selection, saved workspace choices, build execution, evaluated output paths, and CoreCLR launch configuration.
+Comet owns the command page, completion request lifetime, and task output.
+The .NET plugin supplies SDK suggestions and structured command arguments through Comet's public interface.
+
+`DapNew` and `DotnetDebug` share startup selection.
+A valid saved choice takes precedence over automatic discovery.
+One runnable non-test project is selected automatically.
+Multiple candidates require selection.
+A missing saved project stops launch until an explicit replacement is selected.
+Workspace choices stay under Neovim's state directory.
+
 ## Shared tasks
 
 Several plugins can do the same task. This table gives each task one owner.
