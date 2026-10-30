@@ -93,7 +93,8 @@ local function build_runner(lint, skip_while_editing)
   local wrap_linter
   if require("utils.os").is_win() then
     wrap_linter = function(linter)
-      -- nvim-lint #745: cmd.exe strips quotes when both paths contain spaces.
+      -- WORKAROUND: nvim-lint #745: cmd.exe strips quotes when both paths contain spaces.
+      -- #745 is related; no upstream report isolates this cause yet.
       -- The @ modifier preserves the first command's quotes without CALL expansion.
       -- wrap_linter receives a copy after preflight; nvim-lint keeps process ownership.
       linter.args = vim.list_extend({ linter.cmd }, linter.args or {})
