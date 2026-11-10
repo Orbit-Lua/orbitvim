@@ -1,4 +1,4 @@
-name: Validate OrbitVim
+name: Validate
 
 on:
   push:
